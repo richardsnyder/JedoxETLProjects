@@ -1,0 +1,287 @@
+<project name="[03-01]-PAS-FINANCIALS [Financial LTM] LTM Period and Data Load" version="7.3" modified="1490070755087" modifiedBy="ONEPAS\richards" olapId="p20">
+  <headers>
+    <header name="comment">
+      <comment>The Retail LTM cube is  identical to the standard Retail cube with the exception of the Year and Period dimension being combined into one dimension called LTM Period. “Oct-12 LTM”</comment>
+    </header>
+  </headers>
+  <variables />
+  <connections>
+    <connection name="Jedox" type="JedoxGlobal" modified="1461821185366" modifiedBy="_internal_suite">
+      <globalReference>localhost</globalReference>
+      <database>PAS-Financials</database>
+    </connection>
+    <connection name="Export File" type="File" modified="1461821185366" modifiedBy="_internal_suite">
+      <location type="FileSystem" />
+      <database>Retail_Export_For_LTM.csv</database>
+      <header>true</header>
+      <delimiter>,</delimiter>
+      <quote>"</quote>
+      <ssl>verify</ssl>
+      <enableEscape>false</enableEscape>
+    </connection>
+  </connections>
+  <extracts>
+    <extract name="ex-Jedox [Dim]: LTM Period" type="Dimension" modified="1461821185366" modifiedBy="_internal_suite">
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Period">
+          <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Full Year]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>defaultLanguage</attributesMode>
+    </extract>
+    <extract modified="1490070755087" name="ex-Jedox [Cube]: Period LTM Calendar" type="Cube" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <query celltype="only_string" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Period Dates">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Period LTM]]></condition>
+          </dimension>
+          <dimension name="Period">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Base Periods]]></condition>
+            <condition mode="onlyBases" operator="equal" type="deny"><![CDATA[P00]]></condition>
+            <condition mode="onlyBases" operator="equal" type="deny"><![CDATA[Please select a period]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="rootToBases" operator="equal" type="deny"><![CDATA[Variances]]></condition>
+            <condition mode="onlyBases" operator="equal" type="deny"><![CDATA[Please select a year]]></condition>
+            <condition mode="onlyBases" operator="equal" type="deny"><![CDATA[2005]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Period Calender" />
+      </query>
+    </extract>
+    <extract modified="1485478819921" name="ex-Jedox [Cube]: Financial Cube for LTM" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Period">
+            <condition mode="onlyBases" operator="equal" type="deny"><![CDATA[P00]]></condition>
+          </dimension>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Budget]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Financials" />
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Period LTM Calendar copy" type="Cube" modified="1461821185366" modifiedBy="_internal_suite">
+      <connection nameref="Jedox" />
+      <query useRules="true" onlyBasisAsDefault="true" celltype="only_string" zeroSuppressionType="excludeEmpty">
+        <cube name="Period Calender" />
+        <dimensions>
+          <dimension name="Period">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Base Periods]]></condition>
+            <condition operator="equal" mode="onlyBases" type="deny"><![CDATA[P00]]></condition>
+          </dimension>
+        </dimensions>
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Cube]: FinancialLTM Cube Z-Out" type="Cube" modified="1461821185366" modifiedBy="_internal_suite">
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <cube name="Financial LTM" />
+      </query>
+    </extract>
+  </extracts>
+  <transforms>
+    <transform name="tr-FT [Dim]: LTM Period" type="FieldTransform" modified="1461821185366" modifiedBy="_internal_suite">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Period LTM Calendar" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr- FH [Dim]: LTM Period" type="TreeFH" modified="1461821185366" modifiedBy="_internal_suite">
+      <sources>
+        <source nameref="tr-FT [Dim]: LTM Period" />
+      </sources>
+      <target type="numeric" skipEmpty="false">
+        <levels>
+          <level>
+            <input nameref="#Value" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform name="tr-FT [Cube]: Financial LTM" type="FieldTransform" modified="1461821185366" modifiedBy="_internal_suite">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Financial Cube for LTM" />
+      </sources>
+      <functions>
+        <function name="LTM Period _input" type="OlapData">
+          <inputs>
+            <input constant="Period LTM" />
+            <input nameref="Period" />
+            <input nameref="FYear" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>Period Calender</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="LTM Period">
+            <input nameref="LTM Period _input" />
+          </coordinate>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="Profit-Cost Centre">
+            <input nameref="Profit-Cost Centre" />
+          </coordinate>
+          <coordinate name="Account">
+            <input nameref="Account" />
+          </coordinate>
+          <coordinate name="Fin Measure">
+            <input nameref="Fin Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr-FT [Dim]: LTM Period L2" type="FieldTransform" modified="1461821185366" modifiedBy="_internal_suite">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Period LTM Calendar copy" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+          <coordinate name="Dim_LTM_L1">
+            <input nameref="Dim_LTM_L1" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Period Dates">
+            <input nameref="Period Dates" />
+          </coordinate>
+        </coordinates>
+      </target>
+      <functions>
+        <function name="Dim_LTM_L1" type="Concatenation">
+          <inputs>
+            <input nameref="#Value" />
+          </inputs>
+          <parameters>
+            <template>#{_input1} LTM</template>
+          </parameters>
+        </function>
+      </functions>
+    </transform>
+    <transform name="tr- [Dim]: LTM L2" type="TableDenormalization" modified="1461821185366" modifiedBy="_internal_suite">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Period LTM Calendar copy" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+        <measures denormalize="Period Dates">
+          <measure name="Period Start" aggregate="none" type="numeric">
+            <input nameref="Period Dates" />
+          </measure>
+          <measure name="Period End" aggregate="none" type="numeric">
+            <input nameref="Period Dates" />
+          </measure>
+        </measures>
+      </target>
+    </transform>
+  </transforms>
+  <loads>
+    <load name="ld-Jedox [Dim]: LTM Period" type="Dimension" modified="1461821185366" modifiedBy="_internal_suite">
+      <source nameref="tr- FH [Dim]: LTM Period" />
+      <connection nameref="Jedox" />
+      <dimension name="LTM Period">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Cube]: Financial LTM" type="Cube" modified="1461821185366" modifiedBy="_internal_suite">
+      <source nameref="tr-FT [Cube]: Financial LTM" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <cube name="Financial LTM" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Currency" name="Currency" />
+          <dimension input="LTM Period" name="LTM Period" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Company" name="Company" />
+          <dimension input="Profit-Cost Centre" name="Profit-Cost Centre" />
+          <dimension input="Account" name="Account" />
+          <dimension input="Fin Measure" name="Fin Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Financial LTM (Z-Out)" type="Cube" modified="1461821185366" modifiedBy="_internal_suite">
+      <source nameref="ex-Jedox [Cube]: FinancialLTM Cube Z-Out" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Financial LTM" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Currency" name="Currency" />
+          <dimension input="LTM Period" name="LTM Period" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Company" name="Company" />
+          <dimension input="Profit-Cost Centre" name="Profit-Cost Centre" />
+          <dimension input="Account" name="Account" />
+          <dimension input="Fin Measure" name="Fin Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="Financial Export for LTM" type="File" modified="1461821185366" modifiedBy="_internal_suite">
+      <source nameref="ex-Jedox [Cube]: Financial Cube for LTM" />
+      <connection nameref="Export File" />
+      <mode>create</mode>
+    </load>
+  </loads>
+  <jobs>
+    <job name="[02-02]-load [Cube]: Financial LTM" type="Standard" modified="1461821185366" modifiedBy="_internal_suite">
+      <comment><![CDATA[Heads up: Rules on period calendar in case it failed - name of Database needs to be changed]]></comment>
+      <execution nameref="ld-Jedox [Cube]: Financial LTM" type="load" />
+    </job>
+    <job name="[02-00]-load [Cube]: Financial LTM (All)" type="Standard" modified="1461821185366" modifiedBy="_internal_suite">
+      <execution nameref="[02-01]-load [Cube]: Financial LTM (Z-Out)" type="job" />
+      <execution nameref="[02-02]-load [Cube]: Financial LTM" type="job" />
+    </job>
+    <job name="[02-01]-load [Cube]: Financial LTM (Z-Out)" type="Standard" modified="1461821185366" modifiedBy="_internal_suite">
+      <execution nameref="ld-Jedox [Cube]: Financial LTM (Z-Out)" type="load" />
+    </job>
+  </jobs>
+</project>

@@ -1,0 +1,2222 @@
+<project name="[02-00]-PAS-FINANCIALS [Retail] Store Update and Data Load" version="7.3" modified="1564957329794" modifiedBy="ONEPAS\richards" olapId="p37">
+  <headers>
+    <header name="comment">
+      <comment>The Retail cube is a summary of the detail held in the Finance cube namely across some key retail measures.</comment>
+    </header>
+  </headers>
+  <variables>
+    <variable modified="1508972370531" name="Version" modifiedBy="richardsADMIN">
+      <comment />
+      <default>Actual</default>
+    </variable>
+    <variable name="ForecastVersion" modified="1508972370531" modifiedBy="richardsADMIN" />
+    <variable name="ForecastYr" modified="1508972370531" modifiedBy="richardsADMIN" />
+    <variable name="ParameterYear" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment />
+      <default>CurrYear|PrevYear</default>
+    </variable>
+    <variable modified="1508972370531" name="Version2" modifiedBy="richardsADMIN">
+      <comment />
+      <default>Forecast</default>
+    </variable>
+    <variable modified="1553651448960" name="BudgetYear" modifiedBy="richardsADMIN">
+      <comment />
+      <default>2020</default>
+    </variable>
+    <variable modified="1564957329794" name="Budget Copy Target" modifiedBy="ONEPAS\richards">
+      <comment />
+      <default>Budget_2</default>
+    </variable>
+    <variable modified="1563511377817" name="CurrYear" modifiedBy="ONEPAS\richards">
+      <comment />
+      <default>2020</default>
+    </variable>
+    <variable modified="1563511386508" name="PrevYear" modifiedBy="ONEPAS\richards">
+      <comment />
+      <default>2019</default>
+    </variable>
+  </variables>
+  <connections>
+    <connection modified="1508972370531" name="Jedox" type="JedoxGlobal" modifiedBy="richardsADMIN">
+      <globalReference>localhost</globalReference>
+      <database>PAS-Financials</database>
+      <ssl>off</ssl>
+    </connection>
+    <connection modified="1508972642705" name="DW" type="Sqlserver" modifiedBy="richardsADMIN">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DataWarehouse</database>
+      <parameters>
+        <parameter name="integratedSecurity">true</parameter>
+        <parameter name="autoCommit">true</parameter>
+      </parameters>
+    </connection>
+    <connection name="Z_FileTest" type="File" modified="1508972370531" modifiedBy="richardsADMIN">
+      <location type="FileSystem" />
+      <database>D:\Jedox\FileOut\z_FileTest.txt</database>
+      <header>true</header>
+      <delimiter>,</delimiter>
+      <enableEscape>false</enableEscape>
+    </connection>
+  </connections>
+  <extracts>
+    <extract name="ex-Jedox [Dim]: Store (Hierarchy1)" type="Dimension" modified="1508972370531" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Profit-Cost Centre">
+          <condition operator="equal" mode="nodesToBases" type="accept"><![CDATA[Retail]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>defaultLanguage</attributesMode>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Fin" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from cube fin to load into Retail]]></comment>
+      <connection nameref="Jedox" />
+      <query useRules="false" onlyBasisAsDefault="false" celltype="both" zeroSuppressionType="excludeEmpty">
+        <cube name="Financials" />
+        <dimensions>
+          <dimension name="Period">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Base Periods]]></condition>
+          </dimension>
+          <dimension name="Version">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[${Version}]]></condition>
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[${Version2}]]></condition>
+          </dimension>
+          <dimension name="Business Division">
+            <condition operator="equal" mode="onlyNodes" type="accept"><![CDATA[All Business Divisions]]></condition>
+          </dimension>
+          <dimension name="Company">
+            <condition operator="equal" mode="onlyNodes" type="accept"><![CDATA[PAS Group Cons]]></condition>
+          </dimension>
+          <dimension name="Profit-Cost Centre">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Retail]]></condition>
+          </dimension>
+          <dimension name="Account">
+            <condition operator="equal" mode="onlyNodes" type="accept"><![CDATA[Net Sales]]></condition>
+            <condition operator="equal" mode="onlyNodes" type="accept"><![CDATA[Gross Profit]]></condition>
+            <condition operator="equal" mode="onlyNodes" type="accept"><![CDATA[Contribution Margin]]></condition>
+            <condition operator="equal" mode="onlyNodes" type="accept"><![CDATA[Employment Costs]]></condition>
+            <condition operator="equal" mode="onlyNodes" type="accept"><![CDATA[Property & Occupancy Costs]]></condition>
+            <condition operator="equal" mode="onlyNodes" type="accept"><![CDATA[Trading EBITDA]]></condition>
+            <condition operator="equal" mode="onlyNodes" type="accept"><![CDATA[Finished Goods]]></condition>
+          </dimension>
+        </dimensions>
+      </query>
+    </extract>
+    <extract name="Store [Attr]" type="Relational" modified="1508972370531" modifiedBy="richardsADMIN">
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT VProfCen.ProfCen, VProfCen.Description, VProfCen.ProCenTy, VProfCen.BusDiv, VProfCen.LegEnt, VProfCen.State, VProfCen.Country, VProfCen.Area, VProfCen.StoreType, VProfCen.SCapex, VProfCen.Grading, VProfCen.OpenDate, VProfCen.CloseDate, VProfCen.RefStartDate, VProfCen.RefEndDate, VProfCen.BOpenDate, VProfCen.BCloseDate, VProfCen.BRefStartDate, VProfCen.BRefEndDate, VProfCen.FOpenDate, VProfCen.FCloseDate, VProfCen.FRefStartDate, VProfCen.FRefEndDate
+FROM PAS_DWH.dbo.VProfCen VProfCen]]></query>
+      <alias_map>
+        <alias origin="ProfCen">1</alias>
+        <alias origin="Description">2</alias>
+        <alias origin="ProCenTy">3</alias>
+        <alias origin="BusDiv">4</alias>
+        <alias origin="LegEnt">5</alias>
+        <alias origin="State">6</alias>
+        <alias origin="Country">7</alias>
+        <alias origin="Area">8</alias>
+        <alias origin="StoreType">9</alias>
+        <alias origin="SCapex">10</alias>
+        <alias origin="Grading">11</alias>
+        <alias origin="OpenDate">12</alias>
+        <alias origin="CloseDate">13</alias>
+        <alias origin="RefStartDate">14</alias>
+        <alias origin="RefEndDate">15</alias>
+        <alias origin="BOpenDate">16</alias>
+        <alias origin="BCloseDate">17</alias>
+        <alias origin="BRefStartDate">18</alias>
+        <alias origin="BRefEndDate">19</alias>
+        <alias origin="FOpenDate">20</alias>
+        <alias origin="FCloseDate">21</alias>
+        <alias origin="FRefStartDate">22</alias>
+        <alias origin="FRefEndDate">23</alias>
+      </alias_map>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Retail (Z-Out: Forecast_Mmm)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Source to zero out forecast backup before replacing with current forecast
+${ForecastYr}
+Forecast_Mmm = e.g. Forecast_Jul]]></comment>
+      <connection nameref="Jedox" />
+      <query useRules="false" onlyBasisAsDefault="true" celltype="both" zeroSuppressionType="excludeEmpty">
+        <cube name="Retail" />
+        <dimensions>
+          <dimension name="Version">
+            <condition operator="like" mode="onlyBases" type="accept"><![CDATA[Forecast_]]></condition>
+          </dimension>
+        </dimensions>
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Retail (Forcast)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Source to copy Forecast Version]]></comment>
+      <connection nameref="Jedox" />
+      <query useRules="false" onlyBasisAsDefault="true" celltype="both" zeroSuppressionType="excludeEmpty">
+        <cube name="Retail" />
+        <dimensions>
+          <dimension name="Version">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+        </dimensions>
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Dim]: Store (Hierarchy2)" type="Dimension" modified="1508972370531" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Profit-Cost Centre">
+          <condition operator="equal" mode="rootToBases" type="accept"><![CDATA[Total Retail (by BusinessDiv)]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>defaultLanguage</attributesMode>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Retail (Z-Out: Financials Load)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Z-Out process for AP21 Entities: This process will extract the retail cube for loaded values from Fin Cube.]]></comment>
+      <connection nameref="Jedox" />
+      <query useRules="false" onlyBasisAsDefault="true" celltype="both" zeroSuppressionType="excludeEmpty">
+        <cube name="Retail" />
+        <dimensions>
+          <dimension name="Comp Type">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Financials Load]]></condition>
+          </dimension>
+          <dimension name="Version">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[${Version}]]></condition>
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[${Version2}]]></condition>
+          </dimension>
+        </dimensions>
+      </query>
+    </extract>
+    <extract modified="1508972370531" name="ex-Jedox [Attr]: Parameters (Variable)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Used as a general purpose extract where defines the Year for each process: 
+1- The Years are defined in [Cube]:#Parameter
+2- Each process will set a variable in relation to the purpose of that job
+(eg. 1- Z-Out Process for [Attr]:Parameter Cube where CurrYear and PrevYear exist
+2- Filter a full extract from Financials to CY & PY
+3- Filter BudYear for CompType Budgets)]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[CurrYear]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[PrevYear]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Attr]: (Non- LegacyStore)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Load only NonLegacyStore attribute = 1]]></comment>
+      <connection nameref="Jedox" />
+      <query useRules="true" onlyBasisAsDefault="true" celltype="both" zeroSuppressionType="excludeEmpty">
+        <cube name="#_Profit-Cost Centre" />
+        <dimensions>
+          <dimension name="#_Profit-Cost Centre_">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[NonLegacyStore]]></condition>
+          </dimension>
+        </dimensions>
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Retail (Z-Out: CY - LY)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from "Cube:[Retail]" used to Zero out "Comp type". Note this is only from Retail. Used for zero out since Manual Load shall not be Z-Out at any time]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="false" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${Version}]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${Version2}]]></condition>
+          </dimension>
+          <dimension name="Period">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Base Periods]]></condition>
+          </dimension>
+          <dimension name="Comp Type">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[CY - All Stores]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[LY - All Stores]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Stores]]></condition>
+          </dimension>
+          <dimension name="Retail Measure">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Retail ETL Elements]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail" />
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Retail (Financials Load)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from [cube]:Retail>Comp Type>Financial Load ,and spread out against the actual comp types,]]></comment>
+      <connection nameref="Jedox" />
+      <query useRules="false" onlyBasisAsDefault="false" celltype="both" zeroSuppressionType="excludeEmpty">
+        <cube name="Retail" />
+        <dimensions>
+          <dimension name="Version">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[${Version}]]></condition>
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[${Version2}]]></condition>
+          </dimension>
+          <dimension name="Period">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Base Periods]]></condition>
+          </dimension>
+          <dimension name="Comp Type">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Financials Load]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[All Stores]]></condition>
+          </dimension>
+          <dimension name="Retail Measure">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Retail ETL Elements]]></condition>
+          </dimension>
+        </dimensions>
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Retail (Manual Load)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from [cube]:Retail>Comp Type>Manuall Load ,and spread out against the actual comp types,]]></comment>
+      <connection nameref="Jedox" />
+      <query useRules="false" onlyBasisAsDefault="false" celltype="both" zeroSuppressionType="excludeEmpty">
+        <cube name="Retail" />
+        <dimensions>
+          <dimension name="Version">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[${Version}]]></condition>
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[${Version2}]]></condition>
+          </dimension>
+          <dimension name="Period">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Base Periods]]></condition>
+          </dimension>
+          <dimension name="Comp Type">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Manual Load]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[All Stores]]></condition>
+          </dimension>
+          <dimension name="Retail Measure">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Retail ETL Elements]]></condition>
+          </dimension>
+        </dimensions>
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Attr]: Parameters (Forecast_Mmm)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Used as a general purpose extract where defines the Year for each process: 
+1- The Years are defined in [Cube]:#Parameter
+2- Each process will set a variable in relation to the purpose of that job
+(eg. 1- Z-Out Process for [Attr]:Parameter Cube where CurrYear and PrevYear exist
+2- Filter a full extract from Financials to CY & PY
+3- Filter BudYear for CompType Budgets)]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[FMth]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Retail (Budget Copy)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract of Budget Year and Budget Version for Budget Copy]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Budget]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${BudgetYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail" />
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Attr]: Parameters (Variable CurrYear)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Used as a general purpose extract where defines the Year for each process: 
+1- The Years are defined in [Cube]:#Parameter
+2- Each process will set a variable in relation to the purpose of that job
+(eg. 1- Z-Out Process for [Attr]:Parameter Cube where CurrYear and PrevYear exist
+2- Filter a full extract from Financials to CY & PY
+3- Filter BudYear for CompType Budgets)]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[CurrYear]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Attr]: Parameters (Variable Bud Year)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Used as a general purpose extract where defines the Year for each process: 
+1- The Years are defined in [Cube]:#Parameter
+2- Each process will set a variable in relation to the purpose of that job
+(eg. 1- Z-Out Process for [Attr]:Parameter Cube where CurrYear and PrevYear exist
+2- Filter a full extract from Financials to CY & PY
+3- Filter BudYear for CompType Budgets)]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[BudYear]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Dim]: Store (Hierarchy3)" type="Dimension" modified="1508972370531" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Profit-Cost Centre">
+          <condition mode="rootToBases" operator="equal" type="accept"><![CDATA[Reporting Consolidations]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>defaultLanguage</attributesMode>
+    </extract>
+    <extract name="Retail Forecast Extract" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN" />
+    <extract modified="1508972370531" name="ex-Jedox [Cube]: Fin - For DW" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from cube fin to load into Retail]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="false" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[2017]]></condition>
+          </dimension>
+          <dimension name="Period">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Base Periods]]></condition>
+          </dimension>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Retail]]></condition>
+          </dimension>
+          <dimension name="Retail Measure">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Net Sales]]></condition>
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Gross Profit]]></condition>
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Contribution Margin]]></condition>
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Employee Costs]]></condition>
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Property Costs]]></condition>
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Contribution]]></condition>
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Closing Inventory]]></condition>
+          </dimension>
+          <dimension name="Comp Type">
+            <condition mode="onlyBases" operator="like" type="accept"><![CDATA[Y -]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail" />
+      </query>
+    </extract>
+    <extract modified="1508972370531" name="Duplicate of ex-Jedox [Cube]: Fin" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from cube fin to load into Retail]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[2017]]></condition>
+          </dimension>
+          <dimension name="Period">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Base Periods]]></condition>
+            <condition mode="onlyBases" operator="equal" type="deny"><![CDATA[Please select a period]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Retail]]></condition>
+          </dimension>
+          <dimension name="Store Status">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Comp Type CY]]></condition>
+          </dimension>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${Version}]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${Version2}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Store Calendar" />
+      </query>
+    </extract>
+    <extract modified="1554791414150" name="Store [By Area Manager]" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="DW" />
+      <query><![CDATA[DECLARE @ReportingRetailWeek INT = (SELECT ConfigurationValue from DataWarehouse.dbo.SysConfiguration WHERE ConfigurationKey = 'ReportingRetailWeek')
+DECLARE @ReportingRetailYear INT = (SELECT ConfigurationValue from DataWarehouse.dbo.SysConfiguration Where ConfigurationKey ='ReportingRetailYear')
+DECLARE @ReportingRetailPeriodId INT = (SELECT DISTINCT RetailPeriodId from Datawarehouse.dbo.DimDate where RetailWeek = (Select ConfigurationValue from DataWarehouse.dbo.SysConfiguration Where ConfigurationKey = 'ReportingRetailWeek' and RetailYear = @ReportingRetailYear))
+
+DECLARE @ReportingPeriodEnd DATE = (SELECT DISTINCT RetailPeriodEnd from Datawarehouse.dbo.DimDate where RetailPeriodId = @ReportingRetailPeriodId -1)
+
+SELECT DISTINCT 'Manually Managed Consolidations' AS Level1 
+  , 'Reporting Consolidations' AS Level2 
+  , 'Payroll Reporting Consolidations' AS Level3 
+  , 'Store By AreaManager' AS Level4 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - Total' AS Level5 
+  , 
+  CASE 
+    WHEN DimAreaManager.Code IS NULL 
+    THEN CAST(DimBusinessDivision.Code AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+    ELSE DimAreaManager.Code 
+  END AS Level6 
+
+  , DimProfitCentre.Code AS Level7 
+  , 
+  CASE 
+    WHEN MatWarehouse.AreaManagerName IS NULL 
+    THEN CAST(DimBusinessDivision.Code AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+    ELSE MatWarehouse.AreaManagerName 
+  END AS 'Name' 
+  , matwarehouse.tradingstatus
+  , DimProfitCentre.OpenDate
+  , DimProfitCentre.CloseDate
+FROM DimProfitCentre 
+    INNER JOIN DimBusinessDivision 
+    ON DimBusinessDivision.id = DimProfitCentre.CurrentBusinessDivisionId 
+--    LEFT OUTER JOIN MatWarehouse 
+    INNER JOIN MatWarehouse 
+    ON MatWArehouse.ProfitCentreId = DimProfitCentre.Id 
+--    LEFT OUTER JOIN dbo.DimAreaManager 
+    INNER JOIN dbo.DimAreaManager 
+    ON DimAreaManager.Id = MatWarehouse.AreaManagerId
+WHERE DimAreaManager.Code != 'RENA'
+  AND DimProfitCentre.IsActive = 1 
+  AND DimProfitCentre.OpenDate IS NOT NULL
+  AND (DimProfitCentre.CloseDate IS NULL OR DimProfitCentre.CloseDate >= @ReportingPeriodEnd)
+  OR DimProfitCentre.Code LIKE '85%'
+  OR DimProfitCentre.Code = 1992  
+  AND DimBusinessDivision.id != 11 
+
+
+/*
+DECLARE @ReportingRetailWeek INT = (SELECT ConfigurationValue from DataWarehouse.dbo.SysConfiguration WHERE ConfigurationKey = 'ReportingRetailWeek')
+DECLARE @ReportingRetailYear INT = (SELECT ConfigurationValue from DataWarehouse.dbo.SysConfiguration Where ConfigurationKey ='ReportingRetailYear')
+DECLARE @ReportingRetailPeriodId INT = (SELECT DISTINCT RetailPeriodId from Datawarehouse.dbo.DimDate where RetailWeek = (Select ConfigurationValue from DataWarehouse.dbo.SysConfiguration Where ConfigurationKey = 'ReportingRetailWeek' and RetailYear = @ReportingRetailYear))
+
+DECLARE @ReportingPeriodEnd DATE = (SELECT DISTINCT RetailPeriodEnd from Datawarehouse.dbo.DimDate where RetailPeriodId = @ReportingRetailPeriodId -1)
+
+SELECT DISTINCT 'Manually Managed Consolidations' AS Level1 
+  , 'Reporting Consolidations' AS Level2 
+  , 'Payroll Reporting Consolidations' AS Level3 
+  , 'Store By AreaManager' AS Level4 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - Total' AS Level5 
+  , 
+  CASE 
+    WHEN DimAreaManager.Code IS NULL 
+    THEN CAST(DimBusinessDivision.Code AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+    ELSE DimAreaManager.Code 
+  END AS Level6 
+  , DimProfitCentre.Code AS Level7 
+  , 
+  CASE 
+    WHEN MatWarehouse.AreaManagerName IS NULL 
+    THEN CAST(DimBusinessDivision.Code AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+    ELSE MatWarehouse.AreaManagerName 
+  END AS 'Name' 
+  , matwarehouse.tradingstatus
+  , DimProfitCentre.OpenDate
+  , DimProfitCentre.CloseDate
+FROM DimProfitCentre 
+    INNER JOIN DimBusinessDivision 
+    ON DimBusinessDivision.id = DimProfitCentre.CurrentBusinessDivisionId 
+    LEFT OUTER JOIN MatWarehouse 
+    ON MatWArehouse.ProfitCentreId = DimProfitCentre.Id 
+    LEFT OUTER JOIN dbo.DimAreaManager 
+    ON DimAreaManager.Id = MatWarehouse.AreaManagerId
+WHERE DimProfitCentre.IsActive = 1 
+  AND DimProfitCentre.OpenDate IS NOT NULL
+  AND (DimProfitCentre.CloseDate IS NULL OR DimProfitCentre.CloseDate >= @ReportingPeriodEnd)
+  OR DimProfitCentre.Code LIKE '85%'
+  AND DimBusinessDivision.id != 11 
+  and DimArea
+*/  
+  
+/* 2018-01-09 Changed the query below to drive from DimProfitCentre to pick up Jets/Bondi Bather etc
+SELECT 'Manually Managed Consolidations' AS Level1 
+  , 'Reporting Consolidations' AS Level2 
+  , 'Payroll Reporting Consolidations' AS Level3 
+  , 'Store By AreaManager' AS Level4 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - Total' AS Level5 
+    , 
+    CASE 
+      WHEN DimAreaManager.Code IS NULL 
+      THEN CAST(MatWarehouse.BusinessDivisionCode AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+      ELSE DimAreaManager.Code 
+    END AS Level6 
+  , MatWarehouse.ProfitCentreCode AS Level7 
+  ,
+    CASE 
+      WHEN MatWarehouse.AreaManagerName IS NULL 
+      THEN CAST(MatWarehouse.BusinessDivisionCode AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+      ELSE MatWarehouse.AreaManagerName 
+    END AS 'Name' 
+  , matwarehouse.tradingstatus 
+FROM dbo.MatWarehouse
+LEFT JOIN dbo.DimAreaManager on DimAreaManager.Id = MatWarehouse.AreaManagerId
+INNER JOIN dbo.DimBusinessDivision on DimBusinessDivision.Id = MatWarehouse.BusinessDivisionId
+WHERE 1=1 -- MatWarehouse.AreaManagerId IS NOT NULL
+  AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+  AND MatWarehouse.IsPlanningWarehouse = 1 
+  AND MatWarehouse.TradingStatus <> 'Closed' 
+ORDER BY DimBusinessDivision.FinancialBusinessDivisionDescription
+  ,MatWarehouse.AreaManagerName
+  , MatWarehouse.ProfitCentreCode
+*/
+/* Original Query changed for Area Manager Report 2018-01-08 */
+/*
+SELECT 'Manually Managed Consolidations' AS Level1
+  , 'Reporting Consolidations' AS Level2
+  , 'Payroll Reporting Consolidations' AS Level3
+  , 'Store By AreaManager' AS Level4
+  , CASE 
+      WHEN MatWarehouse.AreaManagerName IS NULL THEN 'No Area Manager Assigned' 
+	  ELSE MatWarehouse.AreaManagerName 
+	END AS Level5
+  , MatWarehouse.ProfitCentreCode AS Level6
+  , matwarehouse.tradingstatus
+FROM dbo.MatWarehouse 
+WHERE 1=1 -- MatWarehouse.AreaManagerId IS NOT NULL
+AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+AND MatWarehouse.IsPlanningWarehouse = 1
+AND MatWarehouse.TradingStatus <> 'Closed'
+ORDER BY MatWarehouse.AreaManagerName, MatWarehouse.ProfitCentreCode
+*/  
+/* 2018-01-09 Changed the query below to drive from DimProfitCentre to pick up Jets/Bondi Bather etc
+SELECT 'Manually Managed Consolidations' AS Level1 
+  , 'Reporting Consolidations' AS Level2 
+  , 'Payroll Reporting Consolidations' AS Level3 
+  , 'Store By AreaManager' AS Level4 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - Total' AS Level5 
+    , 
+    CASE 
+      WHEN DimAreaManager.Code IS NULL 
+      THEN CAST(MatWarehouse.BusinessDivisionCode AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+      ELSE DimAreaManager.Code 
+    END AS Level6 
+  , MatWarehouse.ProfitCentreCode AS Level7 
+  ,
+    CASE 
+      WHEN MatWarehouse.AreaManagerName IS NULL 
+      THEN CAST(MatWarehouse.BusinessDivisionCode AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+      ELSE MatWarehouse.AreaManagerName 
+    END AS 'Name' 
+  , matwarehouse.tradingstatus 
+FROM dbo.MatWarehouse
+LEFT JOIN dbo.DimAreaManager on DimAreaManager.Id = MatWarehouse.AreaManagerId
+INNER JOIN dbo.DimBusinessDivision on DimBusinessDivision.Id = MatWarehouse.BusinessDivisionId
+WHERE 1=1 -- MatWarehouse.AreaManagerId IS NOT NULL
+  AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+  AND MatWarehouse.IsPlanningWarehouse = 1 
+  AND MatWarehouse.TradingStatus <> 'Closed' 
+ORDER BY DimBusinessDivision.FinancialBusinessDivisionDescription
+  ,MatWarehouse.AreaManagerName
+  , MatWarehouse.ProfitCentreCode
+*/
+/* Original Query changed for Area Manager Report 2018-01-08 */
+/*
+SELECT 'Manually Managed Consolidations' AS Level1
+  , 'Reporting Consolidations' AS Level2
+  , 'Payroll Reporting Consolidations' AS Level3
+  , 'Store By AreaManager' AS Level4
+  , CASE 
+      WHEN MatWarehouse.AreaManagerName IS NULL THEN 'No Area Manager Assigned' 
+	  ELSE MatWarehouse.AreaManagerName 
+	END AS Level5
+  , MatWarehouse.ProfitCentreCode AS Level6
+  , matwarehouse.tradingstatus
+FROM dbo.MatWarehouse 
+WHERE 1=1 -- MatWarehouse.AreaManagerId IS NOT NULL
+AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+AND MatWarehouse.IsPlanningWarehouse = 1
+AND MatWarehouse.TradingStatus <> 'Closed'
+ORDER BY MatWarehouse.AreaManagerName, MatWarehouse.ProfitCentreCode
+*/
+/* 20180209 Changed the query to include closed stores from the prior period.
+
+SELECT 'Manually Managed Consolidations' AS Level1 
+  , 'Reporting Consolidations' AS Level2 
+  , 'Payroll Reporting Consolidations' AS Level3 
+  , 'Store By AreaManager' AS Level4 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - Total' AS Level5 
+  , 
+  CASE 
+    WHEN DimAreaManager.Code IS NULL 
+    THEN CAST(DimBusinessDivision.Code AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+    ELSE DimAreaManager.Code 
+  END AS Level6 
+  , DimProfitCentre.Code AS Level7 
+  , 
+  CASE 
+    WHEN MatWarehouse.AreaManagerName IS NULL 
+    THEN CAST(DimBusinessDivision.Code AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+    ELSE MatWarehouse.AreaManagerName 
+  END AS 'Name' 
+  , matwarehouse.tradingstatus 
+FROM DimProfitCentre 
+    INNER JOIN DimBusinessDivision 
+    ON DimBusinessDivision.id = DimProfitCentre.CurrentBusinessDivisionId 
+    LEFT OUTER JOIN MatWarehouse 
+    ON MatWArehouse.ProfitCentreId = DimProfitCentre.Id 
+    LEFT OUTER JOIN dbo.DimAreaManager 
+    ON DimAreaManager.Id = MatWarehouse.AreaManagerId 
+WHERE DimProfitCentre.IsActive = 1 
+  AND DimProfitCentre.OpenDate IS NOT NULL 
+  AND DimProfitCentre.CloseDate IS NULL
+  OR DimProfitCentre.Code LIKE '85%'
+  AND DimBusinessDivision.id != 11 
+ */ 
+  
+/* 2018-01-09 Changed the query below to drive from DimProfitCentre to pick up Jets/Bondi Bather etc
+SELECT 'Manually Managed Consolidations' AS Level1 
+  , 'Reporting Consolidations' AS Level2 
+  , 'Payroll Reporting Consolidations' AS Level3 
+  , 'Store By AreaManager' AS Level4 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - Total' AS Level5 
+    , 
+    CASE 
+      WHEN DimAreaManager.Code IS NULL 
+      THEN CAST(MatWarehouse.BusinessDivisionCode AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+      ELSE DimAreaManager.Code 
+    END AS Level6 
+  , MatWarehouse.ProfitCentreCode AS Level7 
+  ,
+    CASE 
+      WHEN MatWarehouse.AreaManagerName IS NULL 
+      THEN CAST(MatWarehouse.BusinessDivisionCode AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+      ELSE MatWarehouse.AreaManagerName 
+    END AS 'Name' 
+  , matwarehouse.tradingstatus 
+FROM dbo.MatWarehouse
+LEFT JOIN dbo.DimAreaManager on DimAreaManager.Id = MatWarehouse.AreaManagerId
+INNER JOIN dbo.DimBusinessDivision on DimBusinessDivision.Id = MatWarehouse.BusinessDivisionId
+WHERE 1=1 -- MatWarehouse.AreaManagerId IS NOT NULL
+  AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+  AND MatWarehouse.IsPlanningWarehouse = 1 
+  AND MatWarehouse.TradingStatus <> 'Closed' 
+ORDER BY DimBusinessDivision.FinancialBusinessDivisionDescription
+  ,MatWarehouse.AreaManagerName
+  , MatWarehouse.ProfitCentreCode
+*/
+/* Original Query changed for Area Manager Report 2018-01-08 */
+/*
+SELECT 'Manually Managed Consolidations' AS Level1
+  , 'Reporting Consolidations' AS Level2
+  , 'Payroll Reporting Consolidations' AS Level3
+  , 'Store By AreaManager' AS Level4
+  , CASE 
+      WHEN MatWarehouse.AreaManagerName IS NULL THEN 'No Area Manager Assigned' 
+	  ELSE MatWarehouse.AreaManagerName 
+	END AS Level5
+  , MatWarehouse.ProfitCentreCode AS Level6
+  , matwarehouse.tradingstatus
+FROM dbo.MatWarehouse 
+WHERE 1=1 -- MatWarehouse.AreaManagerId IS NOT NULL
+AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+AND MatWarehouse.IsPlanningWarehouse = 1
+AND MatWarehouse.TradingStatus <> 'Closed'
+ORDER BY MatWarehouse.AreaManagerName, MatWarehouse.ProfitCentreCode
+*/]]></query>
+      <alias_map>
+        <alias origin="Level1">1</alias>
+        <alias origin="Level2">2</alias>
+        <alias origin="Level3">3</alias>
+        <alias origin="Level4">4</alias>
+        <alias origin="Level5">5</alias>
+        <alias origin="Level6">6</alias>
+        <alias origin="Level7">7</alias>
+        <alias origin="Name">8</alias>
+        <alias origin="tradingstatus">9</alias>
+        <alias origin="OpenDate">10</alias>
+        <alias origin="CloseDate">11</alias>
+      </alias_map>
+    </extract>
+  </extracts>
+  <transforms>
+    <transform modified="1508972370531" name="tr-FT [Cube]: Retail (Fcst2Fcst_Mmm)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[The alien creatures "Curr Year" is eliminated from this stage and the version is changed to Forcast_mmm. Cool Stuff]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Fcst2Fcst_Mmm)" />
+      </sources>
+      <functions>
+        <function name="Forecast_mmm" type="OlapData">
+          <inputs>
+            <input constant="Item" />
+            <input constant="FMth" />
+            <input constant="~" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>#_Parameter</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Forecast_mmm" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr-TJ [Dim]: Store" type="TreeJoin" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Joins two hierarchies under one parent]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Dim]: Store (Hierarchy1)" root="All Stores" />
+        <source nameref="ex-Jedox [Dim]: Store (Hierarchy2)" />
+        <source nameref="ex-Jedox [Dim]: Store (Hierarchy3)" />
+      </sources>
+    </transform>
+    <transform name="tr-TJ [Cube]: Retail (Z-Out: Financials Load)" type="TableJoin" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Z-Out process to merge the entities with the following flags:
+Financials load & CurrYear & PrevYear
+
+** set the ParameterYear in variables from [Cube]:#_Parameter (default: CurrYear|PrevYear) **]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail (Z-Out: Financials Load)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (Variable)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Retail (Z-Out: Financials Load)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (Variable)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tr-TJ [Cube]: Retail (Non-LegacyStore)" type="TableJoin" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Joins two hierarchies under one parent]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Fin" />
+        <source nameref="tr-FT [Attr]: (Non-LegacyStore)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Fin">
+            <key nameref="Profit-Cost Centre" />
+          </left>
+          <right nameref="tr-FT [Attr]: (Non-LegacyStore)">
+            <key nameref="Non-LegacyStore" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tr-TJ [Cube]: Retail (CY - PY)" type="TableJoin" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Filter the load for Non-LegacyStore based on CY & PY
+
+** set the ParameterYear in variables from [Cube]:#_Parameter (default: CurrYear|PrevYear) **]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Non-LegacyStore)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (Variable)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="tr-TJ [Cube]: Retail (Non-LegacyStore)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (Variable)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tr-FT [Cube]: Retail ()" type="FieldTransform" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Account mapping is happening in "Account_Input"]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (CY - PY)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Profit-Cost Centre" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input constant="Financials Load" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Account_Input" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+      <functions>
+        <function name="Account_Input" type="Map">
+          <comment>Mapping from Financials [Dim]:Account to Retail [Dim]:Retail Measures - Cause the names are different. Changes to Accounts should be map/edit here.</comment>
+          <inputs>
+            <input nameref="Account" />
+          </inputs>
+          <parameters>
+            <mapping>
+              <map from="Property &amp; Occupancy Costs" to="Property Costs" />
+              <map from="Employment Costs" to="Employee Costs" />
+              <map from="Finished Goods" to="Closing Inventory" />
+              <map from="Trading EBITDA" to="Contribution" />
+            </mapping>
+          </parameters>
+        </function>
+      </functions>
+    </transform>
+    <transform name="tr-FT [Attr]: (Non-LegacyStore)" type="FieldTransform" modified="1508972370531" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Attr]: (Non- LegacyStore)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Non-LegacyStore">
+            <input nameref="Profit-Cost Centre" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr-TJ [Cube]: Retail (Z-Out: Fcst_Mmm) 0" type="TableJoin" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Filter the load for Non-LegacyStore based on variable ParameterYear which is set to CurrYear at the top Job level.]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail (Z-Out: Forecast_Mmm)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (Variable CurrYear)" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Retail (Z-Out: Forecast_Mmm)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (Variable CurrYear)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tr-TJ [Cube]: Retail (Fcst2Fcst_Mmm)" type="TableJoin" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Filter the load for Non-LegacyStore based on CY & PY
+
+** set the ParameterYear in variables from [Cube]:#_Parameter (default: CurrYear|PrevYear) **]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail (Forcast)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (Variable CurrYear)" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Retail (Forcast)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (Variable CurrYear)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tr-FT [Cube]: Retail (Z-Out: CY - LY)" type="FieldTransform" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[CY - LY Zero Out]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail (Z-Out: CY - LY)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr-TJ [Cube]: Retail (Z-Out: CY - LY)" type="TableJoin" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Join two tables of: CY-LY All stores with Calendar Curr-Prev to Zero out only the current and previous years.
+
+** set the ParameterYear in variables from [Cube]:#_Parameter (default: CurrYear|PrevYear) **]]></comment>
+      <sources>
+        <source nameref="tr-FT [Cube]: Retail (Z-Out: CY - LY)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (Variable)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="tr-FT [Cube]: Retail (Z-Out: CY - LY)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (Variable)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972370531" name="tr-FT [Cube]: Retail (Financials Load) CY" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Lookup "[Element]:Comp Type CurrentYear" from [Cube]:Store Calendar in order to load the]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Financials Load)" />
+      </sources>
+      <functions>
+        <function name="Comp Type CY _input" type="OlapData">
+          <inputs>
+            <input nameref="Version" />
+            <input nameref="FYear" />
+            <input nameref="Period" />
+            <input nameref="Store" />
+            <input constant="Comp Type CY" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>Store Calendar</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type CY _input" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr-FT [Cube]: Retail (Financialsl Load) LY" type="FieldTransform" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Lookup "[Element]:Comp Type CurrentYear" from [Cube]:Store Calendar in order to load the]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Financials Load)" />
+      </sources>
+      <functions>
+        <function name="Comp Type LY _input" type="OlapData">
+          <inputs>
+            <input nameref="Version" />
+            <input nameref="FYear" />
+            <input nameref="Period" />
+            <input nameref="Store" />
+            <input constant="Comp Type LY" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>Store Calendar</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type LY _input" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr-TJ [Cube]: Retail (Manual Load)" type="TableJoin" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Filter the load for CY & PY
+
+** set the ParameterYear in variables from [Cube]:#_Parameter (default: CurrYear|PrevYear) **]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail (Manual Load)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (Variable)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Retail (Manual Load)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (Variable)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972370531" name="tr-TJ [Cube]: Retail (Financials Load)" type="TableJoin" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Filter the load for CY & PY
+
+** set the ParameterYear in variables from [Cube]:#_Parameter (default: CurrYear|PrevYear) **]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail (Financials Load)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (Variable)" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="ex-Jedox [Cube]: Retail (Financials Load)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (Variable)">
+            <key nameref="#Value" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tr-FT [Cube]: Retail (Manual Load) CY" type="FieldTransform" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Lookup "[Element]:Comp Type CurrentYear" from [Cube]:Store Calendar in order to load the]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Manual Load)" />
+      </sources>
+      <functions>
+        <function name="Comp Type CY _input" type="OlapData">
+          <inputs>
+            <input nameref="Version" />
+            <input nameref="FYear" />
+            <input nameref="Period" />
+            <input nameref="Store" />
+            <input constant="Comp Type CY" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>Store Calendar</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type CY _input" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr-FT [Cube]: Retail (Manual Load) LY" type="FieldTransform" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Lookup "[Element]:Comp Type CurrentYear" from [Cube]:Store Calendar in order to load the]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Manual Load)" />
+      </sources>
+      <functions>
+        <function name="Comp Type LY _input" type="OlapData">
+          <inputs>
+            <input nameref="Version" />
+            <input nameref="FYear" />
+            <input nameref="Period" />
+            <input nameref="Store" />
+            <input constant="Comp Type LY" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>Store Calendar</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type LY _input" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr-FT [Attr]: Version (Forecast_Mmm)" type="FieldTransform" modified="1508972370531" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Attr]: Parameters (Forecast_Mmm)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Attr#_Parameter_">
+            <input nameref="#_Parameter_" />
+          </coordinate>
+          <coordinate name="AttrVersion">
+            <input nameref="Parameter" />
+          </coordinate>
+          <coordinate name="Attr#Value">
+            <input nameref="#Value" />
+          </coordinate>
+          <coordinate name="Item">
+            <input nameref="#_Parameter_" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr-TJ [Cube]: Retail (Z-Out: Fcst_Mmm) 1" type="TableJoin" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Filter the load for Forecast_Mmm based on forecast version stored in [Cube]:#_Parameter:(Fmth)]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Z-Out: Fcst_Mmm) 0" />
+        <source nameref="tr-FT [Attr]: Version (Forecast_Mmm)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="tr-TJ [Cube]: Retail (Z-Out: Fcst_Mmm) 0">
+            <key nameref="Version" />
+          </left>
+          <right nameref="tr-FT [Attr]: Version (Forecast_Mmm)">
+            <key nameref="Attr#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-FT [Cube]: Retail (Budget Copy)" type="FieldTransform" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Transforms the version of the budget copy from Budget to what ever the variable ${Budget Target Copy} is set to.
+To change the target change the version in the variable.]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail (Budget Copy)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input constant="${Budget Copy Target}" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr-TJ [Cube]: Retail (Budget Year)" type="TableJoin" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Filter the load for Non-LegacyStore based on CY & PY
+
+** set the ParameterYear in variables from [Cube]:#_Parameter (default: CurrYear|PrevYear) **]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Non-LegacyStore)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (Variable Bud Year)" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="tr-TJ [Cube]: Retail (Non-LegacyStore)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (Variable Bud Year)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tr-FT [Cube]: Retail (Budget Load)" type="FieldTransform" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Account mapping is happening in "Account_Input"]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Budget Year)" />
+      </sources>
+      <functions>
+        <function name="Account_Input" type="Map">
+          <comment><![CDATA[Mapping from Financials [Dim]:Account to Retail [Dim]:Retail Measures - Cause the names are different. Changes to Accounts should be map/edit here.]]></comment>
+          <inputs>
+            <input nameref="Account" />
+          </inputs>
+          <parameters>
+            <mapping>
+              <map from="Property &amp; Occupancy Costs" to="Property Costs" />
+              <map from="Employment Costs" to="Employee Costs" />
+              <map from="Finished Goods" to="Closing Inventory" />
+              <map from="Trading EBITDA" to="Contribution" />
+            </mapping>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Profit-Cost Centre" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input constant="Financials Load" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Account_Input" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr-TJ [Cube]: Retail (Z-Out: Financials Load - Budget Load)" type="TableJoin" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Z-Out process to merge the entities with the following flags:
+Financials load & CurrYear & PrevYear
+
+** set the ParameterYear in variables from [Cube]:#_Parameter (default: CurrYear|PrevYear) **]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail (Z-Out: Financials Load)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (Variable Bud Year)" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Retail (Z-Out: Financials Load)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (Variable Bud Year)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tr-TJ [Cube]: Retail (Z-Out: CY - LY) - Budget Load" type="TableJoin" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Join two tables of: CY-LY All stores with Calendar Curr-Prev to Zero out only the current and previous years.
+
+** set the ParameterYear in variables from [Cube]:#_Parameter (default: CurrYear|PrevYear) **]]></comment>
+      <sources>
+        <source nameref="tr-FT [Cube]: Retail (Z-Out: CY - LY)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (Variable Bud Year)" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="tr-FT [Cube]: Retail (Z-Out: CY - LY)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (Variable Bud Year)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tr-TJ [Cube]: Retail (Manual Load) - Budget Load" type="TableJoin" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Filter the load for CY & PY
+
+** set the ParameterYear in variables from [Cube]:#_Parameter (default: CurrYear|PrevYear) **]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail (Manual Load)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (Variable Bud Year)" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Retail (Manual Load)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (Variable Bud Year)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tr-FT [Cube]: Retail (Manual Load) CY - Budget Load" type="FieldTransform" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Lookup "[Element]:Comp Type CurrentYear" from [Cube]:Store Calendar in order to load the]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Manual Load) - Budget Load" />
+      </sources>
+      <functions>
+        <function name="Comp Type CY _input" type="OlapData">
+          <inputs>
+            <input nameref="Version" />
+            <input nameref="FYear" />
+            <input nameref="Period" />
+            <input nameref="Store" />
+            <input constant="Comp Type CY" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>Store Calendar</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type CY _input" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr-FT [Cube]: Retail (Manual Load) LY - Budget Load" type="FieldTransform" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Lookup "[Element]:Comp Type CurrentYear" from [Cube]:Store Calendar in order to load the]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Manual Load) - Budget Load" />
+      </sources>
+      <functions>
+        <function name="Comp Type LY _input" type="OlapData">
+          <inputs>
+            <input nameref="Version" />
+            <input nameref="FYear" />
+            <input nameref="Period" />
+            <input nameref="Store" />
+            <input constant="Comp Type LY" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>Store Calendar</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type LY _input" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972370531" name="tr-TJ [Cube]: Retail (Financials Load) - Budget Load" type="TableJoin" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Filter the load for CY & PY
+
+** set the ParameterYear in variables from [Cube]:#_Parameter (default: CurrYear|PrevYear) **]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail (Financials Load)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (Variable Bud Year)" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="ex-Jedox [Cube]: Retail (Financials Load)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (Variable Bud Year)">
+            <key nameref="#Value" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tr-FT [Cube]: Retail (Financials Load) CY - Budget Load" type="FieldTransform" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Lookup "[Element]:Comp Type CurrentYear" from [Cube]:Store Calendar in order to load the]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Financials Load) - Budget Load" />
+      </sources>
+      <functions>
+        <function name="Comp Type CY _input" type="OlapData">
+          <inputs>
+            <input nameref="Version" />
+            <input nameref="FYear" />
+            <input nameref="Period" />
+            <input nameref="Store" />
+            <input constant="Comp Type CY" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>Store Calendar</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type CY _input" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr-FT [Cube]: Retail (Financialsl Load) LY - Budget Load" type="FieldTransform" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Lookup "[Element]:Comp Type CurrentYear" from [Cube]:Store Calendar in order to load the]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Financials Load) - Budget Load" />
+      </sources>
+      <functions>
+        <function name="Comp Type LY _input" type="OlapData">
+          <inputs>
+            <input nameref="Version" />
+            <input nameref="FYear" />
+            <input nameref="Period" />
+            <input nameref="Store" />
+            <input constant="Comp Type LY" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>Store Calendar</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type LY _input" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972370531" name="Duplicate of tr-FT [Cube]: Retail (Financials Load) CY" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Lookup "[Element]:Comp Type CurrentYear" from [Cube]:Store Calendar in order to load the]]></comment>
+      <sources>
+        <source nameref="tr-TJ [Cube]: Retail (Financials Load)" />
+      </sources>
+      <functions>
+        <function name="Comp Type CY _input" type="OlapData">
+          <inputs>
+            <input nameref="Version" />
+            <input nameref="FYear" />
+            <input nameref="Period" />
+            <input nameref="Store" />
+            <input constant="Comp Type CY" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>Store Calendar</cube>
+          </parameters>
+        </function>
+        <function name="OLAP Test" type="OlapData">
+          <inputs>
+            <input nameref="Version" />
+            <input nameref="FYear" />
+            <input constant="WK01" />
+            <input constant="AUD" />
+            <input constant="All Regions" />
+            <input nameref="Store" />
+            <input constant="CY - All Stores" />
+            <input constant="Net Sales" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>Retail Sales Weekly</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type CY _input" />
+          </coordinate>
+          <coordinate name="Retail Measure">
+            <input nameref="Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1515373189510" name="tr-FH [Dim]: Store - Area Manager" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-FT [Dim]: Store - Area Manager" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="Name" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="Manually Managed Consolidations" />
+          </level>
+          <level>
+            <input constant="Reporting Consolidations" />
+          </level>
+          <level>
+            <input constant="Payroll Reporting Consolidations" />
+          </level>
+          <level>
+            <input constant="Store By AreaManager" />
+          </level>
+          <level>
+            <input nameref="Division" />
+          </level>
+          <level>
+            <input nameref="Area Manager Code" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="Name" />
+              </attribute>
+            </attributes>
+          </level>
+          <level>
+            <input nameref="Store" />
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1515373156541" name="tf-FT [Dim]: Store - Area Manager" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="Store [By Area Manager]" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Division">
+            <input nameref="Level5" />
+          </coordinate>
+          <coordinate name="Area Manager Code">
+            <input nameref="Level6" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Level7" />
+          </coordinate>
+          <coordinate name="Name">
+            <input nameref="Name" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+  </transforms>
+  <loads>
+    <load name="ld-Jedox [Cube]: Retail ()" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Loads from Fin]]></comment>
+      <source nameref="tr-FT [Cube]: Retail ()" />
+      <connection nameref="Jedox" />
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+      <mode>insert</mode>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Fcst2Fcst_Mmm)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <source nameref="tr-FT [Cube]: Retail (Fcst2Fcst_Mmm)" />
+      <connection nameref="Jedox" />
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+      <mode>add</mode>
+    </load>
+    <load name="ld-Jedox [Dim]: Store" type="Dimension" modified="1508972370531" modifiedBy="richardsADMIN">
+      <source nameref="tr-TJ [Dim]: Store" />
+      <connection nameref="Jedox" />
+      <dimension name="Store">
+        <elements mode="insert" />
+        <consolidations mode="update" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Z-Out: Financials Load )" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Deletes Financials load for CY & PY as in #_Parameter (A join of two tables created in order to Z-Out)]]></comment>
+      <source nameref="tr-TJ [Cube]: Retail (Z-Out: Financials Load)" />
+      <connection nameref="Jedox" />
+      <cube name="Retail" splash="default" deactivateRules="false" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+          <dimension input="#Value" />
+          <dimension input="#_Parameter_" />
+        </dimensions>
+      </cube>
+      <mode>delete</mode>
+    </load>
+    <load name="ld-DW [Dim]: Store (Hierarchy1)" type="Relational" modified="1508972370531" modifiedBy="richardsADMIN">
+      <source nameref="ex-Jedox [Dim]: Store (Hierarchy1)" format="ea" />
+      <connection nameref="DW" />
+      <mode>create</mode>
+      <table name="Store" schema="Fin" aggregate="false" />
+    </load>
+    <load modified="1508972370531" name="Z_TestFile" type="File" modifiedBy="richardsADMIN">
+      <source nameref="tr-TJ [Cube]: Retail (Z-Out: Fcst_Mmm) 1" />
+      <connection nameref="Z_FileTest" />
+      <mode>create</mode>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Z-Out: CY - LY)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <source nameref="tr-TJ [Cube]: Retail (Z-Out: CY - LY)" />
+      <connection nameref="Jedox" />
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+      <mode>delete</mode>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Financials Load) LY" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[LY - Part2 load]]></comment>
+      <source nameref="tr-FT [Cube]: Retail (Financialsl Load) LY" />
+      <connection nameref="Jedox" />
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+      <mode>insert</mode>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Financialsl Load) CY" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[CY - Part1 load]]></comment>
+      <source nameref="tr-FT [Cube]: Retail (Financials Load) CY" />
+      <connection nameref="Jedox" />
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+      <mode>insert</mode>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Manual Load) CY" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[CY - Part1 load]]></comment>
+      <source nameref="tr-FT [Cube]: Retail (Manual Load) CY" />
+      <connection nameref="Jedox" />
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+      <mode>insert</mode>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Manual Load) LY" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[LY - Part2 load]]></comment>
+      <source nameref="tr-FT [Cube]: Retail (Manual Load) LY" />
+      <connection nameref="Jedox" />
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+      <mode>insert</mode>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Z-Out: Forecast_Mmm)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <source nameref="tr-TJ [Cube]: Retail (Z-Out: Fcst_Mmm) 1" />
+      <connection nameref="Jedox" />
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+          <dimension input="#Value" />
+          <dimension input="#_Parameter_" />
+        </dimensions>
+      </cube>
+      <mode>delete</mode>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Budget Copy)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Second step in the budget copy process
+Copies the Budget to the Budget target version (as defined in the variable Budget Copy Target) for the budget year (as defined in the variable BudgetYear).]]></comment>
+      <source nameref="tf-FT [Cube]: Retail (Budget Copy)" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Budget Copy Z-Out)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[First step in the budget copy process
+Zeros out the Budget target version (as defined in the variable Budget Copy Target) for the budget year (as defined in the variable BudgetYear).]]></comment>
+      <source nameref="tf-FT [Cube]: Retail (Budget Copy)" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Budget Load)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Loads from Fin]]></comment>
+      <source nameref="tr-FT [Cube]: Retail (Budget Load)" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Z-Out: Financials Load - Budget Load)" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Deletes Financials load for CY & PY as in #_Parameter (A join of two tables created in order to Z-Out)]]></comment>
+      <source nameref="tr-TJ [Cube]: Retail (Z-Out: Financials Load - Budget Load)" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Retail" splash="default" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+          <dimension input="#Value" />
+          <dimension input="#_Parameter_" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Z-Out: CY - LY) - Budget Load" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <source nameref="tr-TJ [Cube]: Retail (Z-Out: CY - LY) - Budget Load" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Manual Load) CY - Budget Load" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[CY - Part1 load]]></comment>
+      <source nameref="tr-FT [Cube]: Retail (Manual Load) CY - Budget Load" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Manual Load) LY - Budget Load" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[LY - Part2 load]]></comment>
+      <source nameref="tr-FT [Cube]: Retail (Manual Load) LY - Budget Load" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Financialsl Load) CY - Budget Load" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[CY - Part1 load]]></comment>
+      <source nameref="tr-FT [Cube]: Retail (Financials Load) CY - Budget Load" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail (Financials Load) LY - Budget Load" type="Cube" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[LY - Part2 load]]></comment>
+      <source nameref="tr-FT [Cube]: Retail (Financialsl Load) LY - Budget Load" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <cube name="Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Retail Measure" name="Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1515373310376" name="ld-Jedox [Dim]: Store by Area Manager" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tr-FH [Dim]: Store - Area Manager" />
+      <connection nameref="Jedox" />
+      <dimension name="Store">
+        <elements mode="insert" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+  </loads>
+  <jobs>
+    <job modified="1514428053997" name="[01-01]-load[Dim]:Store" type="Standard" modifiedBy="richardsADMIN">
+      <comment><![CDATA[This job runs two extracts from the Jedox [Dim]: Profit/Cost Center , joins them and loads them into [Dim]:Store]]></comment>
+      <execution nameref="ld-Jedox [Dim]: Store" type="load" />
+      <execution nameref="ld-Jedox [Dim]: Store by Area Manager" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+    <job name="Z_FileTest" type="Standard" modified="1508972370531" modifiedBy="richardsADMIN">
+      <variable name="Version">
+        <default>Actual</default>
+      </variable>
+      <variable name="Version2">
+        <default>Forecast</default>
+      </variable>
+      <variable name="ParameterYear">
+        <default>CurrYear|PrevYear</default>
+      </variable>
+      <execution nameref="Z_TestFile" type="load" />
+    </job>
+    <job modified="1508972370531" name="[02-00]-load[Cube]:Retail(FinancialsLoad_All:_Actual_Forecast)" type="Standard" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Load actuals and forecast from the Financials cube into the Retail cube. This job will be scheduled on a nightly basis and will only update Actual and Forecast versions.]]></comment>
+      <execution nameref="ld-Jedox [Cube]: Retail (Z-Out: Financials Load )" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail ()" type="load" />
+      <variable name="ParameterYear">
+        <default>CurrYear|PrevYear</default>
+      </variable>
+      <variable name="Version2">
+        <default>Forecast</default>
+      </variable>
+      <variable name="Version">
+        <default>Actual</default>
+      </variable>
+      <failStatus>error</failStatus>
+    </job>
+    <job name="[02-00]-load[Cube]:Retail(FinancialsLoad_All:_Budget)" type="Standard" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Load Version:Budget* from the Finance cube into the Retail cube. This job will be run on demand. It can be run for different versions by changing the variable value.]]></comment>
+      <execution nameref="ld-Jedox [Cube]: Retail (Z-Out: Financials Load - Budget Load)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail (Budget Load)" type="load" />
+      <variable name="ParameterYear">
+        <default>BudYear</default>
+      </variable>
+      <variable name="Version">
+        <default>Budget</default>
+      </variable>
+    </job>
+    <job modified="1508972370531" name="[03-00]-load[Cube]:Retail(CompType_All:_Actual_Forecastl)" type="Standard" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Master job for populating "Comp" values in the Retail Cube based on Comp Type CY and Comp Type LY in the Store Calendar Cube. This ETL populates Actual and Forecast values, for current and previous year only.]]></comment>
+      <execution nameref="ld-Jedox [Cube]: Retail (Z-Out: CY - LY)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail (Manual Load) CY" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail (Manual Load) LY" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail (Financialsl Load) CY" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail (Financials Load) LY" type="load" />
+      <variable name="ParameterYear">
+        <default>CurrYear|PrevYear</default>
+      </variable>
+      <variable name="Version">
+        <default>Actual</default>
+      </variable>
+      <variable name="Version2">
+        <default>Forecast</default>
+      </variable>
+      <failStatus>error</failStatus>
+    </job>
+    <job name="[03-00]-load[Cube]:Retail(CompType_All:_Budget)" type="Standard" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Master job for populating "Comp" values in the Retail Cube based on Comp Type CY and Comp Type LY in the Store Calendar Cube. This ETL populates BUDGET values, for budget year (set in #_Parameters cube) only, and is run on demand only!!!!!!!
+----------------------------------------------------------------------
+NOTES!
+- Version variable can be set for the appropriate working Budget version (e.g. Budget_1, Budget_2, etc...).
+- This ETL may return a warning if the future year Store Calender: Comp Type LY values do not exist. This is due to the fact that the rules used to calculate Comp Type LY values look forward. If the year does not exist, values returned are empty and hence the warning. The warning can be ignored or the year can added to the FYear dimension and #_FYear attribute (Next Year).
+- It is debatable whether Comp Type LY values need to be populated for Budget version. The "LY" jobs can be removed if required in future.]]></comment>
+      <execution nameref="ld-Jedox [Cube]: Retail (Z-Out: CY - LY) - Budget Load" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail (Manual Load) CY - Budget Load" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail (Manual Load) LY - Budget Load" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail (Financialsl Load) CY - Budget Load" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail (Financials Load) LY - Budget Load" type="load" />
+      <variable name="ParameterYear">
+        <default>BudYear</default>
+      </variable>
+      <variable name="Version">
+        <default>Budget</default>
+      </variable>
+    </job>
+    <job name="[04-00]-load[Cube]:Retail(Copy_Fcst2Fcst_Mmm)" type="Standard" modified="1508972370531" modifiedBy="richardsADMIN">
+      <variable name="ParameterYear">
+        <default>CurrYear</default>
+      </variable>
+      <execution nameref="ld-Jedox [Cube]: Retail (Z-Out: Forecast_Mmm)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail (Fcst2Fcst_Mmm)" type="load" />
+    </job>
+    <job modified="1508972370531" name="Nightly" type="Standard" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Runs the load of retail ACTUAL and FORECAST data from the finance cube.
+Budget data is loaded "as required" and is not scheduled.
+20141106 RKS]]></comment>
+      <execution nameref="[01-01]-load[Dim]:Store" type="job" />
+      <execution nameref="[02-00]-load[Cube]:Retail(FinancialsLoad_All:_Actual_Forecast)" type="job" />
+      <execution nameref="[03-00]-load[Cube]:Retail(CompType_All:_Actual_Forecastl)" type="job" />
+      <execution nameref="[04-00]-load[Cube]:Retail(Copy_Fcst2Fcst_Mmm)" type="job" />
+      <execution nameref="[02-00]-load[Cube]:Retail(FinancialsLoad_All:_Budget)" type="job" />
+      <execution nameref="[03-00]-load[Cube]:Retail(CompType_All:_Budget)" type="job" />
+      <failStatus>error</failStatus>
+    </job>
+    <job name="[99-00-01]-load[Cube]:Budget Copy" type="Standard" modified="1508972370531" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Zeros out and then performs a copy using the Variables BudgetYear and Budget Target Version from the Budget version to the version set in Budget Target Version for the variable BudgetYear.]]></comment>
+      <execution nameref="ld-Jedox [Cube]: Retail (Budget Copy Z-Out)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail (Budget Copy)" type="load" />
+    </job>
+  </jobs>
+</project>

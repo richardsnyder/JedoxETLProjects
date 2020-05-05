@@ -1,0 +1,397 @@
+<project name="[07-00]-PAS-FINANCIALS [Sales]" version="7.3" modified="1564957532606" modifiedBy="ONEPAS\richards" olapId="p21">
+  <headers>
+    <header name="comment">
+      <comment><![CDATA[Project description]]></comment>
+    </header>
+  </headers>
+  <variables>
+    <variable modified="1508972429263" name="CurrentYear" modifiedBy="richardsADMIN">
+      <comment />
+      <default>2018</default>
+    </variable>
+    <variable modified="1508972429263" name="Forecast_MMM" modifiedBy="richardsADMIN">
+      <comment />
+      <default>Forecast_Sep</default>
+    </variable>
+    <variable modified="1560989431671" name="BudgetYear" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Used in Budget Copy process to identify/determine the Budget Year to be copied]]></comment>
+      <default>2020</default>
+    </variable>
+    <variable modified="1564957525799" name="Budget Copy Target" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Determines the target version of the Budget Copy process]]></comment>
+      <default>Budget_2</default>
+    </variable>
+  </variables>
+  <connections>
+    <connection name="Jedox" type="JedoxGlobal" modified="1508972429263" modifiedBy="richardsADMIN">
+      <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
+      <globalReference>localhost</globalReference>
+      <database>PAS-Financials</database>
+    </connection>
+  </connections>
+  <extracts>
+    <extract name="ex-Jedox [Cube]: Sales (Forecast)" type="Cube" modified="1508972429263" modifiedBy="richardsADMIN">
+      <comment><![CDATA[1- Source to zero out before loading
+2- Source to Copy (Act 2 Fcst)]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition operator="equal" type="accept"><![CDATA[${CurrentYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Sales" />
+      </query>
+    </extract>
+    <extract modified="1508972429263" name="ex-Jedox [Attr]: Period (Actual)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Is Used to:
+1- Copy Act 2 Fcst
+2- Fcst Z-Out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmptyAndZero">
+        <dimensions>
+          <dimension name="#_Period_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual Period]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Period" />
+      </query>
+    </extract>
+    <extract modified="1508972429263" name="ex-Jedox [Cube]: Sales - Forecast (Fcst2Fcst_mmm Z-Out)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
+NOTE: This is only used for the actual/Forecast load at this stage.
+NOTE: Manual loads will not be cleared out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmptyAndZero">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${Forecast_MMM}]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrentYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Sales" />
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Sales (Fcst2Fcst_mmm)" type="Cube" modified="1508972429263" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extracts the Forecast_DW version for loading into Forecast_MMM]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrentYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Sales" />
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Sales (Budget Copy)" type="Cube" modified="1508972429263" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extracts the Forecast_DW version for loading into Forecast_MMM]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Budget]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${BudgetYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Sales" />
+      </query>
+    </extract>
+  </extracts>
+  <transforms>
+    <transform name="tf-FT [Cube]: Sales (Fcst 2 Act) 2" type="FieldTransform" modified="1508972429263" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube]: Sales (Fcst2 Act) 1" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input constant="Actual" />
+          </coordinate>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Fin Measure">
+            <input nameref="Fin Measure" />
+          </coordinate>
+          <coordinate name="Customer">
+            <input nameref="Customer" />
+          </coordinate>
+          <coordinate name="Brand">
+            <input nameref="Brand" />
+          </coordinate>
+          <coordinate name="Gender">
+            <input nameref="Gender" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-TJ [Cube]: Sales (Fcst2 Act) 1" type="TableJoin" modified="1508972429263" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Sales (Forecast)" />
+        <source nameref="tf-FT [Attr]: Period (Actual)" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Sales (Forecast)">
+            <key nameref="Period" />
+          </left>
+          <right nameref="tf-FT [Attr]: Period (Actual)">
+            <key nameref="AttrPeriod" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-FT [Attr]: Period (Actual)" type="FieldTransform" modified="1508972429263" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Rename the fields so the ensuing join does not give a warninng]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Attr]: Period (Actual)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Attr#_Period_">
+            <input nameref="#_Period_" />
+          </coordinate>
+          <coordinate name="AttrPeriod">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Attr#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972429263" name="tf-FT [Cube]: Sales - Forecast (Fcst 2 Fcst_Mmm)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Sales (Fcst2Fcst_mmm)" />
+      </sources>
+      <functions>
+        <function name="ForecastVersion" type="OlapData">
+          <inputs>
+            <input constant="Item" />
+            <input constant="FMth" />
+            <input constant="~" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>#_Parameter</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="ForecastVersion" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Fin Measure">
+            <input nameref="Fin Measure" />
+          </coordinate>
+          <coordinate name="Customer">
+            <input nameref="Customer" />
+          </coordinate>
+          <coordinate name="Brand">
+            <input nameref="Brand" />
+          </coordinate>
+          <coordinate name="Gender">
+            <input nameref="Gender" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-FT [Cube]: Sales - Budget (Budget Copy)" type="FieldTransform" modified="1508972429263" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Sales (Budget Copy)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input constant="${Budget Copy Target}" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Fin Measure">
+            <input nameref="Fin Measure" />
+          </coordinate>
+          <coordinate name="Customer">
+            <input nameref="Customer" />
+          </coordinate>
+          <coordinate name="Brand">
+            <input nameref="Brand" />
+          </coordinate>
+          <coordinate name="Gender">
+            <input nameref="Gender" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+  </transforms>
+  <loads>
+    <load name="ld-Jedox [Cube]: Sales (Fcst 2  Act)" type="Cube" modified="1508972429263" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Backup current forecast into Forecast_Mmm]]></comment>
+      <source nameref="tf-FT [Cube]: Sales (Fcst 2 Act) 2" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Sales" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Company" name="Company" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Fin Measure" name="Fin Measure" />
+          <dimension input="Customer" name="Customer" />
+          <dimension input="Brand" name="Brand" />
+          <dimension input="Gender" name="Gender" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Sales (Fcst 2 Act) - [Z-Out]" type="Cube" modified="1508972429263" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Backup current forecast into Forecast_Mmm]]></comment>
+      <source nameref="tf-FT [Cube]: Sales (Fcst 2 Act) 2" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Sales" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite" />
+    </load>
+    <load name="ld-Jedox [Cube]: Sales - Forecast (Fcst2Fcst_mmm Z-Out)" type="Cube" modified="1508972429263" modifiedBy="richardsADMIN">
+      <source nameref="ex-Jedox [Cube]: Sales - Forecast (Fcst2Fcst_mmm Z-Out)" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Sales" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Company" name="Company" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Fin Measure" name="Fin Measure" />
+          <dimension input="Customer" name="Customer" />
+          <dimension input="Brand" name="Brand" />
+          <dimension input="Gender" name="Gender" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Sales - Forecast (Fcst2Fcst_mmm)" type="Cube" modified="1508972429263" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Sales - Forecast (Fcst 2 Fcst_Mmm)" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Sales" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Company" name="Company" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Fin Measure" name="Fin Measure" />
+          <dimension input="Customer" name="Customer" />
+          <dimension input="Brand" name="Brand" />
+          <dimension input="Gender" name="Gender" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Sales - Budget (Budget Copy)" type="Cube" modified="1508972429263" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Sales - Budget (Budget Copy)" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Sales" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Company" name="Company" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Fin Measure" name="Fin Measure" />
+          <dimension input="Customer" name="Customer" />
+          <dimension input="Brand" name="Brand" />
+          <dimension input="Gender" name="Gender" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Sales - Budget (Budget Copy Z-Out)" type="Cube" modified="1508972429263" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Sales - Budget (Budget Copy)" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Sales" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Company" name="Company" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Fin Measure" name="Fin Measure" />
+          <dimension input="Customer" name="Customer" />
+          <dimension input="Brand" name="Brand" />
+          <dimension input="Gender" name="Gender" />
+        </dimensions>
+      </cube>
+    </load>
+  </loads>
+  <jobs>
+    <job name="[01-01]-load[Cube]: Sales Forecast(Fcst2Act)" type="Standard" modified="1508972429263" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Sales (Fcst 2 Act) - [Z-Out]" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Sales (Fcst 2  Act)" type="load" />
+    </job>
+    <job name="[01-02]-load[Cube]: Sales Forecast2Fcst_mmm" type="Standard" modified="1508972429263" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Sales - Forecast (Fcst2Fcst_mmm Z-Out)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Sales - Forecast (Fcst2Fcst_mmm)" type="load" />
+    </job>
+    <job name="[01-00] Sales Actual And Forecast_MMM Load" type="Standard" modified="1508972429263" modifiedBy="richardsADMIN">
+      <execution nameref="[01-01]-load[Cube]: Sales Forecast(Fcst2Act)" type="job" />
+      <execution nameref="[01-02]-load[Cube]: Sales Forecast2Fcst_mmm" type="job" />
+    </job>
+    <job modified="1564957532606" name="[99-00-01]-load[Cube]:Budget Copy" type="Standard" modifiedBy="ONEPAS\richards">
+      <execution nameref="ld-Jedox [Cube]: Sales - Budget (Budget Copy Z-Out)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Sales - Budget (Budget Copy)" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+  </jobs>
+</project>

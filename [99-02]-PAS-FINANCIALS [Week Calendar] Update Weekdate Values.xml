@@ -1,0 +1,123 @@
+<project name="[99-02]-PAS-FINANCIALS [Week Calendar] Update Weekdate Values" version="7.3" modified="1529473518615" modifiedBy="richardsADMIN" olapId="p17">
+  <variables />
+  <connections>
+    <connection name="Jedox" type="JedoxGlobal" modified="1461821184424" modifiedBy="_internal_suite">
+      <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
+      <globalReference>localhost</globalReference>
+      <database>PAS-FINANCIALS</database>
+    </connection>
+    <connection modified="1529473108219" name="DW" type="Sqlserver" modifiedBy="richardsADMIN">
+      <host>mtwsql06.onepas.local</host>
+      <port>1433</port>
+      <database>DataWarehouse</database>
+      <parameters>
+        <parameter name="autoComit">true</parameter>
+        <parameter name="integratedSecurity">true</parameter>
+      </parameters>
+    </connection>
+  </connections>
+  <extracts>
+    <extract modified="1529473120495" name="ex-DW-WeekStart/End Dates" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[20150115 RKS
+Extract the year, retail week, retail week start, retail week end, and period from the PAS-DWH PTime table
+NOTE: To give the serial number of the date in AP21 an additional 2 days must be added to the DATEDIFF computation. Otherwise the start and end dates will be 2 days off the AP21 dates]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[select distinct DD.RetailYear [FYear]
+, Format(DD.RetailWeek,'WK00') [Week]
+, 'WeekStartXL' [WeekDates]
+, DATEDIFF(dd,'19000101',convert(varchar(12), DD.RetailWeekStart, 112)) +2 [SerialDate]
+from dbo.DimDate DD
+WHERE RetailYear >= 2019
+union
+select distinct DD.RetailYear [FYear]
+, Format(DD.RetailWeek,'WK00') [Week]
+, 'WeekEndXL' [WeekDates]
+, DATEDIFF(dd,'19000101',convert(varchar(12), DD.RetailWeekEnd, 112)) +2 [SerialDate]
+from dbo.DimDate DD
+WHERE RetailYear >= 2019
+order by 1,2,3 desc]]></query>
+    </extract>
+    <extract modified="1529473518615" name="ex-[Dim] FYear" type="Dimension" modifiedBy="richardsADMIN">
+      <comment><![CDATA[20150115 RKS
+Extract the FYear dimension to control which years are loaded into the Weekly Calendar cube]]></comment>
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="FYear">
+          <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[2019]]></condition>
+          <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[2020]]></condition>
+          <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[2021]]></condition>
+          <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[2022]]></condition>
+          <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[2023]]></condition>
+          <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[2024]]></condition>
+          <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[2025]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>none</attributesMode>
+    </extract>
+  </extracts>
+  <transforms>
+    <transform name="tf-ft [DW Week Start End]" type="FieldTransform" modified="1461821184424" modifiedBy="_internal_suite">
+      <comment><![CDATA[20150115 RKS
+Maps the data extracted from PAS-DWH PTime table to the dimensions in the Week Calendar cube]]></comment>
+      <sources>
+        <source nameref="tf-tj [Cube] Weekly Calendar" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+          <coordinate name="WeekDates">
+            <input nameref="WeekDates" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="SerialDate" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-tj [Cube] Weekly Calendar" type="TableJoin" modified="1461821184424" modifiedBy="_internal_suite">
+      <sources>
+        <source nameref="ex-DW-WeekStart/End Dates" />
+        <source nameref="ex-[Dim] FYear" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="ex-DW-WeekStart/End Dates">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-[Dim] FYear">
+            <key nameref="level1" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+  </transforms>
+  <loads>
+    <load name="ld-[Cube] Week Calendar" type="Cube" modified="1461821184424" modifiedBy="_internal_suite">
+      <comment><![CDATA[20150115 RKS
+Loads the Week Calendar cube with data from PAS-DWH PTime table]]></comment>
+      <source nameref="tf-ft [DW Week Start End]" />
+      <connection nameref="Jedox" />
+      <cube name="Week Calendar" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite" />
+      <mode>add</mode>
+    </load>
+    <load name="ld-[Cube] Week Calendar - Z-Out" type="Cube" modified="1461821184424" modifiedBy="_internal_suite">
+      <comment><![CDATA[20150115 RKS
+Clears the Week Calendar cube prior to reload]]></comment>
+      <source nameref="tf-ft [DW Week Start End]" />
+      <connection nameref="Jedox" />
+      <cube name="Week Calendar" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite" />
+      <mode>delete</mode>
+    </load>
+  </loads>
+  <jobs>
+    <job name="Update Weekly Calendar Cube" type="Standard" modified="1461821184424" modifiedBy="_internal_suite">
+      <execution nameref="ld-[Cube] Week Calendar - Z-Out" type="load" />
+      <execution nameref="ld-[Cube] Week Calendar" type="load" />
+    </job>
+  </jobs>
+</project>

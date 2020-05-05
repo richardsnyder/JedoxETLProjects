@@ -1,0 +1,2009 @@
+<project name="[09-00]-PAS-FINANCIALS [Payroll Costing]" version="7.3" modified="1563172942744" modifiedBy="ONEPAS\richards" olapId="p34">
+  <headers>
+    <header name="comment">
+      <comment><![CDATA[Project description]]></comment>
+    </header>
+  </headers>
+  <variables>
+    <variable modified="1563144175973" name="CurrYear" modifiedBy="ONEPAS\richards">
+      <comment />
+      <default>2020</default>
+    </variable>
+    <variable modified="1563146458731" name="PrevYear" modifiedBy="ONEPAS\richards">
+      <comment />
+      <default>2019</default>
+    </variable>
+    <variable modified="1531719681746" name="ForecastVersion" modifiedBy="richardsADMIN">
+      <comment />
+      <default>Forecast_Sep</default>
+    </variable>
+    <variable modified="1563144034453" name="BudYear" modifiedBy="ONEPAS\richards">
+      <comment />
+      <default>2020</default>
+    </variable>
+  </variables>
+  <connections>
+    <connection modified="1531719681746" name="Jedox" type="JedoxGlobal" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Jedox]]></comment>
+      <globalReference>localhost</globalReference>
+      <database>PAS-FINANCIALS</database>
+      <ssl>off</ssl>
+    </connection>
+    <connection modified="1531719681746" name="DW" type="Sqlserver" modifiedBy="richardsADMIN">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DataWarehouse</database>
+      <parameters>
+        <parameter name="integratedSecurity">true</parameter>
+        <parameter name="autoCommit">true</parameter>
+      </parameters>
+    </connection>
+    <connection modified="1531719681746" name="Chris21 DWH" type="Sqlserver" modifiedBy="richardsADMIN">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>Chris21_DWH</database>
+      <parameters>
+        <parameter name="autoCommit">true</parameter>
+        <parameter name="integratedSecurity">true</parameter>
+      </parameters>
+    </connection>
+    <connection modified="1531719681746" name="ExportFile" type="File" modifiedBy="richardsADMIN">
+      <location type="FileSystem" />
+      <database>D:\Jedox\FileOut\PayDateExport.csv</database>
+      <header>true</header>
+      <delimiter>,</delimiter>
+      <quote>"</quote>
+      <enableEscape>false</enableEscape>
+    </connection>
+    <connection modified="1531719681746" name="MTWSQL06" type="Sqlserver" modifiedBy="richardsADMIN">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>Chris21_DWH</database>
+      <parameters>
+        <parameter name="autoCommit">true</parameter>
+        <parameter name="integratedSecurity">true</parameter>
+      </parameters>
+    </connection>
+  </connections>
+  <extracts>
+    <extract modified="1531719681746" name="ex-DW-Payroll Cost FACT Extract" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extracts summary data from Chris21DataWarehouse.dbo.F_PayrollCostFACT table for Payroll Cost cube]]></comment>
+      <connection nameref="MTWSQL06" />
+      <query><![CDATA[SELECT
+ PayDate
+, Version
+, Region
+, Store
+, Currency
+, EmployeeType
+, PayrollCostAccounts
+, sum(Value) as '#Value'
+FROM Chris21_DWH.dbo.F_PayrollCost
+WHERE 1=1 
+and RYear in ((Select ConfigurationValue from DataWarehouse.dbo.SysConfiguration where ConfigurationKey = 'ETLPrevRetailYear')
+              , (Select ConfigurationValue from DataWarehouse.dbo.SysConfiguration where ConfigurationKey = 'ETLCurrRetailYear')) 
+and Store in (select distinct Code from DataWarehouse.dbo.DimProfitCentre where ProfitCentreType in ('CO', 'EC', 'OU', 'RT'))
+and PayDate not in ('20151130', '20151231')
+and PayInterval = 'Fortnight'
+GROUP BY PayDate
+, Version
+, Region
+, Store
+, Currency
+, EmployeeType
+, PayrollCostAccounts]]></query>
+      <alias_map>
+        <alias origin="PayDate">1</alias>
+        <alias origin="Version">2</alias>
+        <alias origin="Region">3</alias>
+        <alias origin="Store">4</alias>
+        <alias origin="Currency">5</alias>
+        <alias origin="EmployeeType">6</alias>
+        <alias origin="PayrollCostAccounts">7</alias>
+        <alias origin="#Value">8</alias>
+      </alias_map>
+    </extract>
+    <extract name="ex-Jedox [Cube]:Payroll Costing (Z-Out: Actuals)" type="Cube" modified="1531719681746" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual]]></condition>
+          </dimension>
+          <dimension name="PayDate">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${PrevYear}]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Payroll Costing Retail" />
+      </query>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]: Retail Sales Daily (Net Sales - Actual)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="false" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual]]></condition>
+          </dimension>
+          <dimension name="Weekly Retail Measure">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Net Sales]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Traffic Count]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Number of Transactions]]></condition>
+          </dimension>
+          <dimension name="Comp Type">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[CY - All Stores]]></condition>
+          </dimension>
+          <dimension name="Region">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[AUS]]></condition>
+          </dimension>
+          <dimension name="Dispatch Type">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[All Dispatch Types]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Stores]]></condition>
+          </dimension>
+          <dimension name="Day">
+            <condition mode="onlyNodes" operator="like" type="accept"><![CDATA[.RE]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Daily" />
+      </query>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]: Retail Sales Daily (Net Sales - Forecast_MMM)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="false" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+          <dimension name="Weekly Retail Measure">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Net Sales]]></condition>
+          </dimension>
+          <dimension name="Comp Type">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[CY - All Stores]]></condition>
+          </dimension>
+          <dimension name="Region">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[AUS]]></condition>
+          </dimension>
+          <dimension name="Dispatch Type">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[All Dispatch Types]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Stores]]></condition>
+          </dimension>
+          <dimension name="Day">
+            <condition mode="onlyNodes" operator="like" type="accept"><![CDATA[.RE]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Daily" />
+      </query>
+    </extract>
+    <extract modified="1531719681746" name="zz-ex-Jedox [Cube]: Retail Sales Daily (Net Sales - Z-Out Forecast_MMM) 20160913" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Why is this needed?]]></comment>
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="like" type="accept"><![CDATA[Forecast_]]></condition>
+          </dimension>
+          <dimension name="Payroll Cost Accounts">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Net Sales]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Payroll Costing Retail" />
+      </query>
+    </extract>
+    <extract modified="1531719681746" name="PayDate Extract" type="Dimension" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="PayDate">
+          <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[AllPayDates]]></condition>
+          <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Retail Week]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>defaultLanguage</attributesMode>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]:Payroll Costing (Z-Out: Forecast)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmptyAndZero">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+          <dimension name="PayDate">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Payroll Costing Retail" />
+      </query>
+    </extract>
+    <extract modified="1531719681746" name="ex-DW-Payroll Cost Forecast Extract" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extracts summary forecast data from Chris21DataWarehouse.dbo.F_PayrollCostFACT table for Payroll Cost cube]]></comment>
+      <connection nameref="MTWSQL06" />
+      <query><![CDATA[SELECT
+	PayDate
+	,Version
+	,Region
+	,Store
+	,Currency
+	,CASE
+		WHEN EmployeeType = 'Permanent' THEN 'Permanent - Salaried'
+		ELSE EmployeeType
+	END AS EmployeeType
+	,PayrollCostAccounts
+	,SUM(Value) AS '#Value'
+FROM Chris21_DWH.dbo.F_PayrollCost
+WHERE 1 = 1
+AND RYear IN ((SELECT
+		ConfigurationValue
+	FROM DataWarehouse.dbo.SysConfiguration
+	WHERE ConfigurationKey = 'ETLPrevRetailYear')
+, (SELECT
+		ConfigurationValue
+	FROM DataWarehouse.dbo.SysConfiguration
+	WHERE ConfigurationKey = 'ETLCurrRetailYear')
+)
+AND Store IN (SELECT DISTINCT
+		Code
+	FROM DataWarehouse.dbo.DimProfitCentre
+	WHERE ProfitCentreType IN ('CO', 'EC', 'OU', 'RT'))
+AND [Version] = 'Forecast'
+GROUP BY	PayDate
+			,Version
+			,Region
+			,Store
+			,Currency
+			,EmployeeType
+			,PayrollCostAccounts]]></query>
+      <alias_map>
+        <alias origin="PayDate">1</alias>
+        <alias origin="Version">2</alias>
+        <alias origin="Region">3</alias>
+        <alias origin="Store">4</alias>
+        <alias origin="Currency">5</alias>
+        <alias origin="EmployeeType">6</alias>
+        <alias origin="PayrollCostAccounts">7</alias>
+        <alias origin="#Value">8</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]: PayDate (Actual)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmptyAndZero">
+        <dimensions>
+          <dimension name="#_PayDate_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[ActualWeek]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_PayDate" />
+      </query>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]: PayDate (Forecast)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmptyAndZero">
+        <dimensions>
+          <dimension name="#_PayDate_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[ForecastWeek]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_PayDate" />
+      </query>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]:Payroll Costing (Actual)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual]]></condition>
+          </dimension>
+          <dimension name="PayDate">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Payroll Costing Retail" />
+      </query>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]:Payroll Costing (Copy Forecast to Forecast_MMM)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+          <dimension name="PayDate">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Payroll Costing Retail" />
+      </query>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]: Retail Sales Daily (Z-Out Forecast_MMM)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="like" type="accept"><![CDATA[Forecast_]]></condition>
+          </dimension>
+          <dimension name="PayDate">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Payroll Costing Retail" />
+      </query>
+    </extract>
+    <extract modified="1556514315148" name="ex-Jedox [Cube]:Payroll Costing (Z-Out: Target Net Sales)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Target]]></condition>
+          </dimension>
+          <dimension name="PayDate">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+          <dimension name="Payroll Cost Accounts">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Net Sales]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Payroll Costing Retail" />
+      </query>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]: Retail Sales Daily (Net Sales - Target)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="false" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Target]]></condition>
+          </dimension>
+          <dimension name="Weekly Retail Measure">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Net Sales]]></condition>
+          </dimension>
+          <dimension name="Comp Type">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[CY - All Stores]]></condition>
+          </dimension>
+          <dimension name="Region">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[AUS]]></condition>
+          </dimension>
+          <dimension name="Dispatch Type">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[All Dispatch Types]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Stores]]></condition>
+          </dimension>
+          <dimension name="Day">
+            <condition mode="onlyNodes" operator="like" type="accept"><![CDATA[.RE]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Daily" />
+      </query>
+    </extract>
+    <extract modified="1554698775687" name="ex-DW-Area Manager" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extracts area manger from DimArea manger table]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[Select 
+CheckSum('MD2',AM.Name) AS [AreaManagerCodeNum]
+,AM.Name as [AreaManagerName]
+From 
+(SELECT DISTINCT
+	DimAreaManager.Name 
+FROM dbo.DimAreaManager
+LEFT OUTER JOIN dbo.MatWarehouse
+	ON DimAreaManager.Id = MatWarehouse.AreaManagerId
+LEFT OUTER JOIN DimBusinessDivision
+	ON MatWarehouse.BusinessDivisionId = DimBusinessDivision.Id
+WHERE DimAreaManager.IsActive = 1
+AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+AND DimAreaManager.Name <> 'Not Assigned'
+) AS AM
+ORDER BY 2
+
+/* Original Query - Replaced 25-May-2017
+SELECT DISTINCT
+--	DimAreaManager.Id AS [AreaManagerId]
+	DimAreaManager.Code AS [Area Manager Code]
+	,DimAreaManager.Name AS [Area Manager Name]
+--	,DimBusinessDivision.Code AS [Business Division]
+FROM dbo.DimAreaManager
+LEFT OUTER JOIN dbo.MatWarehouse
+	ON DimAreaManager.Id = MatWarehouse.AreaManagerId
+LEFT OUTER JOIN DimBusinessDivision
+	ON MatWarehouse.BusinessDivisionId = DimBusinessDivision.Id
+WHERE DimAreaManager.IsActive = 1
+AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+ORDER BY 1
+*/]]></query>
+      <alias_map>
+        <alias origin="AreaManagerCodeNum">1</alias>
+        <alias origin="AreaManagerName">2</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]: Payroll Costing (Z-Out Target)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Target]]></condition>
+          </dimension>
+          <dimension name="PayDate">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${PrevYear}]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+          <dimension name="Payroll Cost Accounts">
+            <condition mode="onlyBases" operator="equal" type="deny"><![CDATA[Net Sales]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Payroll Costing Retail" />
+      </query>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]:Payroll Costing (Copy Forecast to Target)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+          <dimension name="PayDate">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Payroll Costing Retail" />
+      </query>
+    </extract>
+    <extract modified="1531719681746" name="ex-DW-Payroll Cost Budget Extract" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extracts summary forecast data from Chris21DataWarehouse.dbo.F_PayrollCostFACT table for Payroll Cost cube]]></comment>
+      <connection nameref="MTWSQL06" />
+      <query><![CDATA[SELECT
+ PayDate
+, Version
+, Region
+, Store
+, Currency
+, CASE WHEN EmployeeType = 'Permanent' THEN 'Permanent - Salaried' ELSE EmployeeType END AS EmployeeType
+, PayrollCostAccounts
+, sum(Value) as '#Value'
+FROM Chris21_DWH.dbo.F_PayrollCost
+WHERE 1=1 
+and RYear in (Select ConfigurationValue from DataWarehouse.dbo.SysConfiguration where ConfigurationKey = 'ETLBudRetailYear')
+and Store in (select distinct Code from DataWarehouse.dbo.DimProfitCentre where ProfitCentreType in ('CO', 'EC', 'OU', 'RT'))
+and [Version] = 'Budget'
+GROUP BY PayDate
+, Version
+, Region
+, Store
+, Currency
+, EmployeeType
+, PayrollCostAccounts]]></query>
+      <alias_map>
+        <alias origin="PayDate">1</alias>
+        <alias origin="Version">2</alias>
+        <alias origin="Region">3</alias>
+        <alias origin="Store">4</alias>
+        <alias origin="Currency">5</alias>
+        <alias origin="EmployeeType">6</alias>
+        <alias origin="PayrollCostAccounts">7</alias>
+        <alias origin="#Value">8</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]:Payroll Costing (Z-Out: Budget)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Budget]]></condition>
+          </dimension>
+          <dimension name="PayDate">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${BudYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Payroll Costing Retail" />
+      </query>
+    </extract>
+    <extract modified="1563172942744" name="ex-DW PayDates (Add Another Year)" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT DISTINCT
+  'AllPayDates' [AllPayDates],
+  CONVERT(VARCHAR(12), DimDate.RetailWeekEnd, 112) 'PayDate',
+  CONVERT(VARCHAR(12), DimDate.RetailWeekEnd, 113) 'DisplayDate',
+  DimDate.RetailPeriod 'RetailPeriodValue',
+  FORMAT(DimDate.RetailWeek, 'WK00') RetailWeek,
+  DimDate.RetailWeek 'RetailWeekValue',
+  DimDate.RetailYear 'RetailYear',
+  DATEDIFF(dd, '19000101', CONVERT(VARCHAR(12), RetailWeekEnd, 112)) + 2 [XLDate],
+
+  --CASE
+  --  WHEN DimDate.RetailWeek % 2 = 0 THEN 'RE/BA/YT'
+  --  ELSE 'ME'
+  --END ORIGINAL_PayType,
+
+  CASE 
+    WHEN RetailWeek % 2 = 0  AND (DimDate.RetailYear < 2020 OR DimDate.RetailYear > 2024) THEN 'RE/BA/YT'
+    WHEN RetailWeek % 2 != 0  AND (DimDate.RetailYear < 2020 OR DimDate.RetailYear > 2024) THEN 'ME'
+    WHEN RetailWeek % 2 = 0   AND (DimDate.RetailYear BETWEEN 2020 AND 2024) THEN 'ME'
+    WHEN RetailWeek % 2 != 0   AND (DimDate.RetailYear BETWEEN 2020 AND 2024) THEN 'RE/BA/YT'
+ END PayType, 
+ 
+   
+  CONVERT(VARCHAR(12), DATEADD(DAY, -14, DimDate.RetailWeekEnd), 112) 'Prior PayDate',
+  CASE
+    WHEN DimDate.RetailPeriod = 1 THEN 'Forecast_000'
+    WHEN DimDate.RetailPeriod = 2 THEN 'Forecast_Jul'
+    WHEN DimDate.RetailPeriod = 3 THEN 'Forecast_Aug'
+    WHEN DimDate.RetailPeriod = 4 THEN 'Forecast_Sep'
+    WHEN DimDate.RetailPeriod = 5 THEN 'Forecast_Oct'
+    WHEN DimDate.RetailPeriod = 6 THEN 'Forecast_Nov'
+    WHEN DimDate.RetailPeriod = 7 THEN 'Forecast_Dec'
+    WHEN DimDate.RetailPeriod = 8 THEN 'Forecast_Jan'
+    WHEN DimDate.RetailPeriod = 9 THEN 'Forecast_Feb'
+    WHEN DimDate.RetailPeriod = 10 THEN 'Forecast_Mar'
+    WHEN DimDate.RetailPeriod = 11 THEN 'Forecast_Apr'
+    WHEN DimDate.RetailPeriod = 12 THEN 'Forecast_May'
+  END 'Retail Forecast Version',
+
+  --CASE
+  --  WHEN DimDate.RetailWeek % 2 = 0 THEN CONVERT(VARCHAR(12), DimDate.RetailWeekEnd, 112) + ' Q' + CONVERT(VARCHAR(2), DimDate.FinancialQuarter) + 'TD'
+  --  ELSE CONVERT(VARCHAR(12), DimDate.RetailWeekEnd, 112) + ' QTD'
+  --END ORIGINAL_QTD,
+
+    CASE 
+      WHEN RetailWeek % 2 = 0  AND (DimDate.RetailYear < 2020 OR DimDate.RetailYear > 2024) THEN CONVERT(VARCHAR(12), DimDate.RetailWeekEnd, 112) + ' Q' + CONVERT(VARCHAR(2), DimDate.FinancialQuarter) + 'TD'
+      WHEN RetailWeek % 2 != 0  AND (DimDate.RetailYear < 2020 OR DimDate.RetailYear > 2024) THEN CONVERT(VARCHAR(12), DimDate.RetailWeekEnd, 112) + ' QTD'
+      WHEN RetailWeek % 2 = 0   AND (DimDate.RetailYear BETWEEN 2020 AND 2024) THEN CONVERT(VARCHAR(12), DimDate.RetailWeekEnd, 112) + ' QTD'
+      WHEN RetailWeek % 2 != 0   AND (DimDate.RetailYear BETWEEN 2020 AND 2024) THEN CONVERT(VARCHAR(12), DimDate.RetailWeekEnd, 112) + ' Q' + CONVERT(VARCHAR(2), DimDate.FinancialQuarter) + 'TD'
+    END QTD,
+
+
+  CONVERT(VARCHAR(12), DimDate.RetailWeekEnd, 112) + ' YTD' YTD
+FROM dbo.DimDate DimDate
+WHERE CalendarDate > '24-Jun-2018'
+ORDER BY 2
+
+/* ORIGINAL QUERY
+SELECT DISTINCT 'AllPayDates' [AllPayDates] 
+	, CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) 'PayDate' 
+	, CONVERT(VARCHAR(12), p.RetailWeekEnd, 113) 'DisplayDate' 
+	, p.RetailPeriod 'RetailPeriodValue' 
+	, FORMAT(p.RetailWeek,'WK00') RetailWeek 
+	, p.RetailWeek 'RetailWeekValue' 
+	, p.RetailYear 'RetailYear' 
+	, DATEDIFF(dd,'19000101',CONVERT(VARCHAR(12), RetailWeekEnd, 112)) +2 [XLDate] 
+	, CASE 
+		WHEN p.RetailWeek % 2 = 0 THEN 'RE/BA/YT' 
+		ELSE 'ME' 
+	END PayType 
+	, CONVERT(VARCHAR(12),DATEADD(DAY, -14, p.RetailWeekEnd), 112) 'Prior PayDate' 
+	, CASE 
+		WHEN p.RetailPeriod = 1 THEN 'Forecast_000' 
+		WHEN p.RetailPeriod = 2 THEN 'Forecast_Jul' 
+		WHEN p.RetailPeriod = 3 THEN 'Forecast_Aug' 
+		WHEN p.RetailPeriod = 4 THEN 'Forecast_Sep' 
+		WHEN p.RetailPeriod = 5 THEN 'Forecast_Oct' 
+		WHEN p.RetailPeriod = 6 THEN 'Forecast_Nov' 
+		WHEN p.RetailPeriod = 7 THEN 'Forecast_Dec' 
+		WHEN p.RetailPeriod = 8 THEN 'Forecast_Jan' 
+		WHEN p.RetailPeriod = 9 THEN 'Forecast_Feb' 
+		WHEN p.RetailPeriod = 10 THEN 'Forecast_Mar' 
+		WHEN p.RetailPeriod = 11 THEN 'Forecast_Apr' 
+		WHEN p.RetailPeriod = 12 THEN 'Forecast_May'
+	END 'Retail Forecast Version'
+	, CASE 
+		WHEN p.RetailWeek % 2 = 0 THEN CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) + ' Q' + CONVERT(VARCHAR(2), p.FinancialQuarter) +'TD'
+		ELSE CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) + ' QTD'
+	END QTD	
+	, CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) + ' YTD' YTD
+FROM dbo.DimDate p 
+WHERE calendardate > '24-Jun-2018' 
+ORDER BY 2
+*/]]></query>
+      <alias_map>
+        <alias origin="AllPayDates">1</alias>
+        <alias origin="PayDate">2</alias>
+        <alias origin="DisplayDate">3</alias>
+        <alias origin="RetailPeriodValue">4</alias>
+        <alias origin="RetailWeek">5</alias>
+        <alias origin="RetailWeekValue">6</alias>
+        <alias origin="RetailYear">7</alias>
+        <alias origin="XLDate">8</alias>
+        <alias origin="PayType">9</alias>
+        <alias origin="Prior PayDate">10</alias>
+        <alias origin="Retail Forecast Version">11</alias>
+        <alias origin="QTD">12</alias>
+        <alias origin="YTD">13</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1531719681746" name="ex-DW PayDates by Year (Add Another Year)" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT DISTINCT 'PayDates by Year' Parent
+, p.RetailYear
+, CASE WHEN p.RetailPeriod < 5 THEN  CAST(p.RetailYear AS VARCHAR(4))+ '_Q1'
+       WHEN p.RetailPeriod > 4 AND p.RetailPeriod < 7 THEN  CAST(p.RetailYear AS VARCHAR(4))+ '_Q2'
+       WHEN p.RetailPeriod > 6 AND p.RetailPeriod < 10 THEN  CAST(p.RetailYear AS VARCHAR(4))+ '_Q3' 
+       WHEN p.RetailPeriod > 9 THEN  CAST(p.RetailYear AS VARCHAR(4))+ '_Q4'
+  END YrQtr
+, CAST(p.RetailYear AS VARCHAR(4))+ '_' + CAST(FORMAT(p.RetailPeriod,'\P00') AS VARCHAR(3)) YrQtrPd
+, CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) 'PayDate'
+FROM dbo.DimDate p 
+WHERE calendardate > '24-Jun-2018' 
+ORDER BY 2]]></query>
+      <alias_map>
+        <alias origin="Parent">1</alias>
+        <alias origin="RetailYear">2</alias>
+        <alias origin="YrQtr">3</alias>
+        <alias origin="YrQtrPd">4</alias>
+        <alias origin="PayDate">5</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1531719681746" name="ex-DW PayDates YTD by Year (Add Another Year)" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT DISTINCT
+  'PayDates YTD' LEVEL1
+--  ,p.RetailYear
+  ,CASE 
+    WHEN p.RetailWeek % 2 = 0 
+    THEN CONVERT(VARCHAR(4),p.RetailYear) + ' YTD RE/BA/YT' 
+  END LEVEL2
+  ,CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) + ' YTD' LEVEL3 
+  ,CONVERT(VARCHAR(12),Date1.PayDate, 112)LEVEL4
+FROM dbo.DimDate p 
+    INNER JOIN 
+    (
+      SELECT DISTINCT 
+      RetailYear
+      ,CONVERT(VARCHAR(12),RetailWeekEnd, 112)PayDate 
+      FROM dbo.DimDate 
+      WHERE calendardate > '30-Jun-2014' AND
+      RetailWeek % 2 = 0 
+    ) AS Date1 
+    ON Date1.PayDate <= p.RetailWeekEnd 
+    AND Date1.Retailyear = p.RetailYear
+WHERE calendardate > '30-Jun-2014' AND
+  p.RetailWeek % 2 = 0
+
+UNION ALL
+SELECT DISTINCT
+  'PayDates YTD' LEVEL1
+ -- ,p.RetailYear
+  ,CASE 
+    WHEN p.RetailWeek % 2 <> 0 
+    THEN CONVERT(VARCHAR(4),p.RetailYear) + ' YTD ME' 
+  END LEVEL2
+  ,CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) + ' YTD' LEVEL3 
+  ,CONVERT(VARCHAR(12),Date1.PayDate, 112)LEVEL4
+FROM dbo.DimDate p 
+    INNER JOIN 
+    (
+      SELECT DISTINCT 
+      RetailYear
+      ,CONVERT(VARCHAR(12),RetailWeekEnd, 112)PayDate 
+      FROM dbo.DimDate 
+      WHERE calendardate > '30-Jun-2014' AND
+      RetailWeek % 2 <> 0 
+    ) AS Date1 
+    ON Date1.PayDate <= p.RetailWeekEnd 
+    AND Date1.Retailyear = p.RetailYear
+WHERE calendardate > '30-Jun-2014' AND
+  p.RetailWeek % 2 <> 0 
+ORDER BY 1,2,3]]></query>
+      <alias_map>
+        <alias origin="LEVEL1">1</alias>
+        <alias origin="LEVEL2">2</alias>
+        <alias origin="LEVEL3">3</alias>
+        <alias origin="LEVEL4">4</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1531719681746" name="ex-DW PayDates QTD by Year (Add Another Year)" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT DISTINCT
+  'PayDates QTD' LEVEL1
+--  ,p.RetailYear
+  ,CASE 
+    WHEN p.RetailWeek % 2 = 0 
+    THEN CONVERT(VARCHAR(4),p.RetailYear) + ' QTD RE/BA/YT' 
+  END LEVEL2
+  ,CASE 
+    WHEN CONVERT(VARCHAR(2), p.RetailPeriod) < 4 THEN CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) + ' Q1TD' 
+    WHEN CONVERT(VARCHAR(2), p.RetailPeriod) >3 AND CONVERT(VARCHAR(2), p.RetailPeriod) <7 THEN CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) + ' Q2TD'
+    WHEN CONVERT(VARCHAR(2), p.RetailPeriod) >6 AND CONVERT(VARCHAR(2), p.RetailPeriod) <10 THEN CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) + ' Q3TD'
+    WHEN CONVERT(VARCHAR(2), p.RetailPeriod) >9 THEN CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) + ' Q4TD'    
+  END AS LEVEL3 
+  ,CONVERT(VARCHAR(12),Date1.PayDate, 112)LEVEL4
+FROM dbo.DimDate p 
+    INNER JOIN 
+    (
+      SELECT DISTINCT 
+      RetailYear
+      ,CONVERT(VARCHAR(12),RetailWeekEnd, 112)PayDate 
+      FROM dbo.DimDate 
+      WHERE calendardate > '30-Jun-2014' AND
+      RetailWeek % 2 = 0 
+    ) AS Date1 
+    ON Date1.PayDate <= p.RetailWeekEnd 
+    AND Date1.Retailyear = p.RetailYear
+WHERE calendardate > '30-Jun-2014' AND
+  p.RetailWeek % 2 = 0
+
+UNION ALL
+SELECT DISTINCT
+  'PayDates QTD' LEVEL1
+--  ,p.RetailYear
+  ,CASE 
+    WHEN p.RetailWeek % 2 <> 0 
+    THEN CONVERT(VARCHAR(4),p.RetailYear) + ' QTD ME' 
+  END LEVEL2
+  ,CASE 
+    WHEN CONVERT(VARCHAR(2), p.RetailPeriod) < 4 THEN CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) + ' Q1TD' 
+    WHEN CONVERT(VARCHAR(2), p.RetailPeriod) >3 AND CONVERT(VARCHAR(2), p.RetailPeriod) <7 THEN CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) + ' Q2TD'
+    WHEN CONVERT(VARCHAR(2), p.RetailPeriod) >6 AND CONVERT(VARCHAR(2), p.RetailPeriod) <10 THEN CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) + ' Q3TD'
+    WHEN CONVERT(VARCHAR(2), p.RetailPeriod) >9 THEN CONVERT(VARCHAR(12),p.RetailWeekEnd, 112) + ' Q4TD'    
+  END AS LEVEL3 
+  ,CONVERT(VARCHAR(12),Date1.PayDate, 112)LEVEL4
+FROM dbo.DimDate p 
+    INNER JOIN 
+    (
+      SELECT DISTINCT 
+      RetailYear
+      ,CONVERT(VARCHAR(12),RetailWeekEnd, 112)PayDate 
+      FROM dbo.DimDate 
+      WHERE calendardate > '30-Jun-2014' AND
+      RetailWeek % 2 <> 0 
+    ) AS Date1 
+    ON Date1.PayDate <= p.RetailWeekEnd 
+    AND Date1.Retailyear = p.RetailYear
+WHERE calendardate > '30-Jun-2014' AND
+  p.RetailWeek % 2 <> 0 
+ORDER BY 1,2,3,4]]></query>
+      <alias_map>
+        <alias origin="LEVEL1">1</alias>
+        <alias origin="LEVEL2">2</alias>
+        <alias origin="LEVEL3">3</alias>
+        <alias origin="LEVEL4">4</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1531719681746" name="ex-DW PayDates by LTM (Add Another Year)" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="DW" />
+      <query><![CDATA[DECLARE @MyCursor CURSOR 
+DECLARE @KeyDate INT, @BaseYear INT, @BasePeriod INT
+DECLARE @BaseTable TABLE (BasePeriodId INT, BaseYear INT, BasePeriod INT) 
+DECLARE @Result TABLE (KeyDate INT, BasePeriodId INT, BaseYear INT, BasePeriod INT, LTMRetailPeriodId INT,  LtmYear INT, LtmPeriod INT) 
+
+INSERT INTO @BaseTable
+SELECT DISTINCT RetailPeriodId,RetailYear, RetailPeriod 
+FROM DimDate 
+
+BEGIN 
+    SET @MyCursor = CURSOR 
+    FOR 
+    SELECT BasePeriodId, BaseYear, BasePeriod 
+    FROM @BaseTable 
+    WHERE BasePeriodId >= 98 
+    OPEN @MyCursor 
+    FETCH NEXT FROM @MyCursor INTO @KeyDate, @BaseYear, @BasePeriod
+    WHILE @@FETCH_STATUS = 0 
+
+    BEGIN 
+        INSERT 
+        INTO @Result 
+        SELECT TOP 12 @KeyDate
+          , ''
+          ,''
+          ,''
+          ,BasePeriodId As LtmRetailPeriodId
+          ,BaseYear AS LtmYear
+          ,BasePeriod AS LtmPeriod
+        FROM @BaseTable 
+        WHERE BasePeriodId <= @KeyDate 
+        ORDER BY BasePeriodId DESC 
+        FETCH NEXT FROM @MyCursor INTO @KeyDate, @BaseYear, @BasePeriod
+    END 
+    CLOSE @MyCursor 
+    DEALLOCATE @MyCursor 
+END
+
+Update ResultTable
+SET ResultTable.BasePeriodId = ResultTable.KeyDate
+,ResultTable.BaseYear = DimDate.RetailYear
+,ResultTable.BasePeriod = DimDate.RetailPeriod
+FROM @Result ResultTable
+INNER JOIN DimDate
+on DimDate.RetailPeriodId = ResultTable.KeyDate
+    
+SELECT DISTINCT CAST(BaseYear AS VARCHAR(4)) + '_LTM' LEVEL1
+, CAST(BaseYear AS VARCHAR(4)) + '_' + CAST(Format(BasePeriod, '\P00') AS VARCHAR(3)) + '_LTM' LEVEL2
+, CAST(LtmYear AS VARCHAR(4)) + '_' + CAST(Format(LtmPeriod, '\P00') AS VARCHAR(3)) LEVEL3
+, CONVERT(VARCHAR(12),DimDate.RetailWeekEnd, 112) LEVEL4
+FROM @Result ResultTable
+INNER JOIN DimDate on DimDate.RetailPeriodId = ResultTable.LtmRetailPeriodId
+ORDER BY LEVEL1,LEVEL2,3 DESC]]></query>
+      <alias_map>
+        <alias origin="LEVEL1">1</alias>
+        <alias origin="LEVEL2">2</alias>
+        <alias origin="LEVEL3">3</alias>
+        <alias origin="LEVEL4">4</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]: Retail Sales Daily (Net Sales - Budget)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="false" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Budget]]></condition>
+          </dimension>
+          <dimension name="Weekly Retail Measure">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Net Sales]]></condition>
+          </dimension>
+          <dimension name="Comp Type">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[CY - All Stores]]></condition>
+          </dimension>
+          <dimension name="Region">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[AUS]]></condition>
+          </dimension>
+          <dimension name="Dispatch Type">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[All Dispatch Types]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Retail (excl E-Comm)]]></condition>
+          </dimension>
+          <dimension name="Day">
+            <condition mode="onlyNodes" operator="like" type="accept"><![CDATA[.RE]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Daily" />
+      </query>
+    </extract>
+    <extract modified="1531719681746" name="PayDate Current Year" type="Dimension" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Day">
+          <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}R]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>none</attributesMode>
+    </extract>
+    <extract modified="1531719681746" name="ex-Jedox [Cube]:PayRoll Costing (Z-Out:Net Sales - Budget)" type="CubeSlice" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query mode="generateBases" randomPaths="false">
+        <dimensions>
+          <dimension name="PayDate">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${BudYear}]]></condition>
+          </dimension>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Budget]]></condition>
+          </dimension>
+          <dimension name="Payroll Cost Accounts">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Net Sales]]></condition>
+          </dimension>
+          <dimension name="Currency">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[AUD]]></condition>
+          </dimension>
+          <dimension name="Employee Type">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[EmployeeType NA]]></condition>
+          </dimension>
+          <dimension name="Region">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Regions]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Stores]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Payroll Costing Retail" />
+      </query>
+    </extract>
+  </extracts>
+  <transforms>
+    <transform modified="1563147055807" name="tf-FT [Cube]: Payroll Costing (Net Sales Load - Actual) Transf Days" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Daily (Net Sales - Actual)" />
+      </sources>
+      <functions>
+        <function name="TrfDay" type="SubString">
+          <inputs>
+            <input nameref="Day" />
+          </inputs>
+          <parameters>
+            <end>8</end>
+            <begin>1</begin>
+            <fromSide>left</fromSide>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Employee Type">
+            <input constant="EmployeeType NA" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="PayDate">
+            <input nameref="TrfDay" />
+          </coordinate>
+          <coordinate name="Payroll Cost Accounts">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FT [Cube]: Payroll Costing (Net Sales Load) - Forecast_MMM" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-FT [Cube]: Payroll Costing (Net Sales Load - Forecast_MMM) Transf Days" />
+      </sources>
+      <functions>
+        <function name="Retail Forecast Version" type="OlapData">
+          <inputs>
+            <input constant="Item" />
+            <input constant="Retail Forecast Version" />
+            <input constant="~" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>#_Parameter</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Retail Forecast Version" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Employee Type">
+            <input nameref="Employee Type" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="PayDate">
+            <input nameref="PayDate" />
+          </coordinate>
+          <coordinate name="Payroll Cost Accounts">
+            <input nameref="Payroll Cost Accounts" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-FT [Cube]: Payroll Costing (Net Sales Load - Forecast_MMM) Transf Days" type="FieldTransform" modified="1531719681746" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Daily (Net Sales - Forecast_MMM)" />
+      </sources>
+      <functions>
+        <function name="TrfDay" type="SubString">
+          <inputs>
+            <input nameref="Day" />
+          </inputs>
+          <parameters>
+            <fromSide>left</fromSide>
+            <end>8</end>
+            <begin>1</begin>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Employee Type">
+            <input constant="EmployeeType NA" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="PayDate">
+            <input nameref="TrfDay" />
+          </coordinate>
+          <coordinate name="Payroll Cost Accounts">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FT [Cube]: Payroll Costing (Net Sales Load) - Z-Out Forecast_MMM" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Daily (Z-Out Forecast_MMM)" />
+      </sources>
+      <functions>
+        <function name="Retail Forecast Version" type="OlapData">
+          <inputs>
+            <input constant="Item" />
+            <input constant="Retail Forecast Version" />
+            <input constant="~" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>#_Parameter</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Retail Forecast Version" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Employee Type">
+            <input nameref="Employee Type" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="PayDate">
+            <input nameref="PayDate" />
+          </coordinate>
+          <coordinate name="Payroll Cost Accounts">
+            <input nameref="Payroll Cost Accounts" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FT [Dim]: Payroll Costing (PayDate Extract)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source format="ea" nameref="PayDate Extract" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="PayDate">
+            <input nameref=":element" />
+          </coordinate>
+          <coordinate name="Display Date">
+            <input nameref="Display Date" />
+          </coordinate>
+          <coordinate name="Retail Period Value">
+            <input nameref="Retail Period Value" />
+          </coordinate>
+          <coordinate name="Retail Week">
+            <input nameref="Retail Week" />
+          </coordinate>
+          <coordinate name="Retail Week Value">
+            <input nameref="Retail Week Value" />
+          </coordinate>
+          <coordinate name="Retail Year">
+            <input nameref="Retail Year" />
+          </coordinate>
+          <coordinate name="XLDate">
+            <input nameref="XLDate" />
+          </coordinate>
+          <coordinate name="PayType">
+            <input nameref="PayType" />
+          </coordinate>
+          <coordinate name="Prior PayDate">
+            <input nameref="Prior PayDate" />
+          </coordinate>
+          <coordinate name="Retail Forecast Version">
+            <input nameref="Retail Forecast Version" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FT [Dim]: Payroll Costing (Actual PayDates)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: PayDate (Actual)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="PayDate">
+            <input nameref="PayDate" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-TJ [Cube]: Payroll Costing (Act2Forecast)" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]:Payroll Costing (Actual)" />
+        <source nameref="tf-FT [Dim]: Payroll Costing (Actual PayDates)" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]:Payroll Costing (Actual)">
+            <key nameref="PayDate" />
+          </left>
+          <right nameref="tf-FT [Dim]: Payroll Costing (Actual PayDates)">
+            <key nameref="PayDate" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1531719681746" name="tf-Ft [Cube]: Payroll Costing (Forecast PayDates)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: PayDate (Forecast)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="PayDate">
+            <input nameref="PayDate" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-Ft [Cube]: Payroll Costing - Forecast" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW-Payroll Cost Forecast Extract" />
+        <source nameref="tf-Ft [Cube]: Payroll Costing (Forecast PayDates)" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-DW-Payroll Cost Forecast Extract">
+            <key nameref="PayDate" />
+          </left>
+          <right nameref="tf-Ft [Cube]: Payroll Costing (Forecast PayDates)">
+            <key nameref="PayDate" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1531719681746" name="tf-Ft [Cube]: Payroll Costing (Act2Fcst)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube]: Payroll Costing (Act2Forecast)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Employee Type">
+            <input nameref="Employee Type" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Version">
+            <input constant="Forecast" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="PayDate">
+            <input nameref="PayDate" />
+          </coordinate>
+          <coordinate name="Payroll Cost Accounts">
+            <input nameref="Payroll Cost Accounts" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FT [Cube]: Payroll Costing - Forecast to Forecast_MMM" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]:Payroll Costing (Copy Forecast to Forecast_MMM)" />
+      </sources>
+      <functions>
+        <function name="Retail Forecast Version" type="OlapData">
+          <inputs>
+            <input constant="Item" />
+            <input constant="Retail Forecast Version" />
+            <input constant="~" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>#_Parameter</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Retail Forecast Version" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Employee Type">
+            <input nameref="Employee Type" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="PayDate">
+            <input nameref="PayDate" />
+          </coordinate>
+          <coordinate name="Payroll Cost Accounts">
+            <input nameref="Payroll Cost Accounts" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FT [Cube]: Payroll Costing (Net Sales Load - Target) Transf Days" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Daily (Net Sales - Target)" />
+      </sources>
+      <functions>
+        <function name="TrfDay" type="SubString">
+          <inputs>
+            <input nameref="Day" />
+          </inputs>
+          <parameters>
+            <end>8</end>
+            <begin>1</begin>
+            <fromSide>left</fromSide>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Employee Type">
+            <input constant="EmployeeType NA" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="PayDate">
+            <input nameref="TrfDay" />
+          </coordinate>
+          <coordinate name="Payroll Cost Accounts">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FT [Dim]: Area Manager" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW-Area Manager" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Area Manager Code">
+            <input nameref="AreaManagerCodeNum" />
+          </coordinate>
+          <coordinate name="Area Manager Name">
+            <input nameref="AreaManagerName" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FH [Dim]: Area Manager" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-FT [Dim]: Area Manager" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="Area Manager Name" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input nameref="Area Manager Code" />
+            <attributes>
+              <attribute name="Area Manager Name">
+                <input nameref="Area Manager Name" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FT [Cube]: Payroll Costing - Forecast to Target" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW-Payroll Cost Forecast Extract" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input constant="Target" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Employee Type">
+            <input nameref="EmployeeType" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="PayDate">
+            <input nameref="PayDate" />
+          </coordinate>
+          <coordinate name="Payroll Cost Accounts">
+            <input nameref="PayrollCostAccounts" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FH [Dim]: PayDates (Add New Year)" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW PayDates (Add Another Year)" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="Display Date" type="string" />
+          <attribute name="Retail Period Value" type="string" />
+          <attribute name="Retail Week" type="string" />
+          <attribute name="Retail Week Value" type="numeric" />
+          <attribute name="Retail Year" type="numeric" />
+          <attribute name="XLDate" type="numeric" />
+          <attribute name="PayType" type="string" />
+          <attribute name="Prior PayDate" type="string" />
+          <attribute name="Retail Forecast Version" type="string" />
+          <attribute name="QTD" type="string" />
+          <attribute name="YTD" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input nameref="AllPayDates" />
+          </level>
+          <level>
+            <input nameref="PayDate" />
+            <attributes>
+              <attribute name="Display Date">
+                <input nameref="DisplayDate" />
+              </attribute>
+              <attribute name="Retail Period Value">
+                <input nameref="RetailPeriodValue" />
+              </attribute>
+              <attribute name="Retail Week">
+                <input nameref="RetailWeek" />
+              </attribute>
+              <attribute name="Retail Week Value">
+                <input nameref="RetailWeekValue" />
+              </attribute>
+              <attribute name="Retail Year">
+                <input nameref="RetailYear" />
+              </attribute>
+              <attribute name="XLDate">
+                <input nameref="XLDate" />
+              </attribute>
+              <attribute name="PayType">
+                <input nameref="PayType" />
+              </attribute>
+              <attribute name="Prior PayDate">
+                <input nameref="Prior PayDate" />
+              </attribute>
+              <attribute name="Retail Forecast Version">
+                <input nameref="Retail Forecast Version" />
+              </attribute>
+              <attribute name="QTD">
+                <input nameref="QTD" />
+              </attribute>
+              <attribute name="YTD">
+                <input nameref="YTD" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FH [Dim]: PayDates by Year (Add New Year)" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW PayDates by Year (Add Another Year)" />
+      </sources>
+      <target>
+        <levels>
+          <level>
+            <input nameref="Parent" />
+          </level>
+          <level>
+            <input nameref="RetailYear" />
+          </level>
+          <level>
+            <input nameref="YrQtr" />
+          </level>
+          <level>
+            <input nameref="YrQtrPd" />
+          </level>
+          <level>
+            <input nameref="PayDate" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FH [Dim]: PayDates YTD by Year (Add New Year)" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW PayDates YTD by Year (Add Another Year)" />
+      </sources>
+      <target>
+        <levels>
+          <level>
+            <input nameref="LEVEL1" />
+          </level>
+          <level>
+            <input nameref="LEVEL2" />
+          </level>
+          <level>
+            <input nameref="LEVEL3" />
+          </level>
+          <level>
+            <input nameref="LEVEL4" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FH [Dim]: PayDates QTD by Year (Add New Year)" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW PayDates QTD by Year (Add Another Year)" />
+      </sources>
+      <target>
+        <levels>
+          <level>
+            <input nameref="LEVEL1" />
+          </level>
+          <level>
+            <input nameref="LEVEL2" />
+          </level>
+          <level>
+            <input nameref="LEVEL3" />
+          </level>
+          <level>
+            <input nameref="LEVEL4" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FH [Dim]: PayDates by LTM (Add New Year)" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW PayDates by LTM (Add Another Year)" />
+      </sources>
+      <target>
+        <levels>
+          <level>
+            <input nameref="LEVEL1" />
+          </level>
+          <level>
+            <input nameref="LEVEL2" />
+          </level>
+          <level>
+            <input nameref="LEVEL3" />
+          </level>
+          <level>
+            <input nameref="LEVEL4" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-FT [Cube]: Payroll Costing (Net Sales Load - Budget) Transf Days" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Daily (Net Sales - Budget)" />
+      </sources>
+      <functions>
+        <function name="TrfDay" type="SubString">
+          <inputs>
+            <input nameref="Day" />
+          </inputs>
+          <parameters>
+            <end>8</end>
+            <begin>1</begin>
+            <fromSide>left</fromSide>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Employee Type">
+            <input constant="EmployeeType NA" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="PayDate">
+            <input nameref="TrfDay" />
+          </coordinate>
+          <coordinate name="Payroll Cost Accounts">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1531719681746" name="tf-TJ [Cube]:Payroll Costing Budget Net Sales" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="PayDate Current Year" />
+        <source nameref="tf-FT [Cube]: Payroll Costing (Net Sales Load - Budget) Transf Days" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="PayDate Current Year">
+            <key nameref="level1" />
+          </left>
+          <right nameref="tf-FT [Cube]: Payroll Costing (Net Sales Load - Budget) Transf Days">
+            <key nameref="PayDate" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1531719681746" name="tf-FT [Cube]: Payroll Costing (Nets Sales Load - Budget)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube]:Payroll Costing Budget Net Sales" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Employee Type">
+            <input nameref="Employee Type" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="PayDate">
+            <input nameref="PayDate" />
+          </coordinate>
+          <coordinate name="Payroll Cost Accounts">
+            <input nameref="Payroll Cost Accounts" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+  </transforms>
+  <loads>
+    <load name="ld-Jedox [Cube]: Payroll Costing (Actual)" type="Cube" modified="1531719681746" modifiedBy="richardsADMIN">
+      <source nameref="ex-DW-Payroll Cost FACT Extract" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="EmployeeType" name="Employee Type" />
+          <dimension input="PayrollCostAccounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Payroll Costing (Z-Out Actual)" type="Cube" modified="1531719681746" modifiedBy="richardsADMIN">
+      <source nameref="ex-Jedox [Cube]:Payroll Costing (Z-Out: Actuals)" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Payroll Costing (Net Sales - Actual)" type="Cube" modified="1531719681746" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Payroll Costing (Net Sales Load - Actual) Transf Days" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Payroll Costing (Net Sales - Forecast_MMM)" type="Cube" modified="1531719681746" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Payroll Costing (Net Sales Load) - Forecast_MMM" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Payroll Costing (Z-Out Forecast_MMM)" type="Cube" modified="1531719681746" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Payroll Costing (Net Sales Load) - Z-Out Forecast_MMM" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Payroll Costing (Actual - Drill Thru)" type="Cube" modified="1531719681746" modifiedBy="richardsADMIN">
+      <source nameref="ex-DW-Payroll Cost FACT Extract" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+        <drillthrough directextract="ex-DW-Payroll Cost FACT Drill Thru" />
+      </cube>
+    </load>
+    <load modified="1531719681746" name="PayDate Lookup Table Load" type="Relational" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Dim]: Payroll Costing (PayDate Extract)" />
+      <connection nameref="Chris21 DWH" />
+      <mode>update</mode>
+      <table name="PayDateLookup" schema="dbo" />
+    </load>
+    <load modified="1531719681746" name="PayDate to File" type="File" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Payroll Costing (Net Sales Load) - Forecast_MMM" />
+      <connection nameref="ExportFile" />
+      <mode>create</mode>
+    </load>
+    <load modified="1531719681746" name="ld-Jedox [Cube]: Payroll Costing (Forecast)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-Ft [Cube]: Payroll Costing - Forecast" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="EmployeeType" name="Employee Type" />
+          <dimension input="PayrollCostAccounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1531719681746" name="ld-Jedox [Cube]: Payroll Costing (Z-Out Forecast)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="ex-Jedox [Cube]:Payroll Costing (Z-Out: Forecast)" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1531719681746" name="ld-Jedox [Cube]: Payroll Costing (Act2Fcst)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-Ft [Cube]: Payroll Costing (Act2Fcst)" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1531719681746" name="ld-Jedox [Cube]: Payroll Costing (Copy Forecast to Forecast_MMM)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Payroll Costing - Forecast to Forecast_MMM" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1531719681746" name="ld-Jedox [Cube]: Payroll Costing (Z-Out Target Net Sales)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="ex-Jedox [Cube]:Payroll Costing (Z-Out: Target Net Sales)" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1531719681746" name="ld-Jedox [Cube]: Payroll Costing (Net Sales - Target)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Payroll Costing (Net Sales Load - Target) Transf Days" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1531719681746" name="ld-Jedox [Dim]: Area Manager" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: Area Manager" />
+      <connection nameref="Jedox" />
+      <dimension name="Area Manager">
+        <elements mode="update" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load modified="1531719681746" name="ld-Jedox [Cube]: Payroll Costing (Z-Out Target)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="ex-Jedox [Cube]: Payroll Costing (Z-Out Target)" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1531719681746" name="ld-Jedox [Cube]: Payroll Costing (Load Target)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Payroll Costing - Forecast to Target" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1531719681746" name="ld-Jedox [Cube]: Payroll Costing (Budget)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="ex-DW-Payroll Cost Budget Extract" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="EmployeeType" name="Employee Type" />
+          <dimension input="PayrollCostAccounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1531719681746" name="ld-Jedox [Cube]: Payroll Costing (Z-Out Budget)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="ex-Jedox [Cube]:Payroll Costing (Z-Out: Budget)" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Payroll Costing Retail" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1531719681746" name="ld-[Dim]: PayDate (Add Year)" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: PayDates (Add New Year)" />
+      <connection nameref="Jedox" />
+      <dimension name="PayDate">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load modified="1531719681746" name="ld-[Dim]: PayDate by Year (Add Year)" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: PayDates by Year (Add New Year)" />
+      <connection nameref="Jedox" />
+      <dimension name="PayDate">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="inactive" />
+      </dimension>
+    </load>
+    <load modified="1531719681746" name="ld-[Dim]: PayDate YTD by Year (Add Year)" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: PayDates YTD by Year (Add New Year)" />
+      <connection nameref="Jedox" />
+      <dimension name="PayDate">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="inactive" />
+      </dimension>
+    </load>
+    <load modified="1531719681746" name="ld-[Dim]: PayDate QTD by Year (Add Year)" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: PayDates QTD by Year (Add New Year)" />
+      <connection nameref="Jedox" />
+      <dimension name="PayDate">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="inactive" />
+      </dimension>
+    </load>
+    <load modified="1531719681746" name="ld-[Dim]: PayDate by LTM (Add Year)" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: PayDates by LTM (Add New Year)" />
+      <connection nameref="Jedox" />
+      <dimension name="PayDate">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="inactive" />
+      </dimension>
+    </load>
+    <load modified="1531719681746" name="ld-Jedox [Cube]: Payroll Costing (Net Sales - Budget)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Payroll Costing (Nets Sales Load - Budget)" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <cube cubeLayoutChangeMode="noneWithDefaultWrite" name="Payroll Costing Retail" splash="disabled">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1531719681746" name="ld-Jedox [Cube]: Payroll Costing (Z-Out Budget - Net Sales)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="ex-Jedox [Cube]:PayRoll Costing (Z-Out:Net Sales - Budget)" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube cubeLayoutChangeMode="noneWithDefaultWrite" name="Payroll Costing Retail" splash="disabled">
+        <dimensions>
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Employee Type" name="Employee Type" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Store" name="Store" />
+          <dimension input="PayDate" name="PayDate" />
+          <dimension input="Payroll Cost Accounts" name="Payroll Cost Accounts" />
+        </dimensions>
+      </cube>
+    </load>
+  </loads>
+  <jobs>
+    <job modified="1531719681746" name="[00-01-01]-Payroll Costing Actual and Net Sales Update" type="Standard" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Z-Out Actual)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Actual)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Net Sales - Actual)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Z-Out Target Net Sales)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Net Sales - Target)" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1531719681746" name="[00-01-02]-Payroll Costing Forecast Load" type="Standard" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Z-Out Forecast)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Act2Fcst)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Forecast)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Z-Out Forecast_MMM)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Net Sales - Forecast_MMM)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Copy Forecast to Forecast_MMM)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Z-Out Target)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Load Target)" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1531719681746" name="[00-01-00] Payroll Costing Nightly Update" type="Standard" modifiedBy="richardsADMIN">
+      <comment><![CDATA[DO NOT RUN WITHOUT CHECKING VARIABLES
+
+DO NOT RUN WITHOUT CHECKING VARIABLES]]></comment>
+      <execution nameref="ld-Jedox [Dim]: Area Manager" type="load" />
+      <execution nameref="[00-01-01]-Payroll Costing Actual and Net Sales Update" type="job" />
+      <execution nameref="[00-01-02]-Payroll Costing Forecast Load" type="job" />
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1532906620430" name="[00-01-03]-Payroll Costing Budget Load" type="Standard" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Z-Out Budget)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Budget)" type="load" />
+      <execution nameref="[01-01-01]-Payroll Costing Budget - Net Sales" type="job" />
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1531719784165" name="[01-01-01]-Payroll Costing Budget - Net Sales" type="Standard" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Z-Out Budget - Net Sales)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Payroll Costing (Net Sales - Budget)" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+  </jobs>
+</project>

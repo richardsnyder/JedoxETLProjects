@@ -1,0 +1,2390 @@
+<project name="[10-00]-PAS-FINANCIALS [Wholesale]" version="7.3" modified="1587449274753" modifiedBy="ONEPAS\richards" olapId="p41">
+  <headers>
+    <header modified="1540876255446" name="comment" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Project description]]></comment>
+    </header>
+  </headers>
+  <variables>
+    <variable name="Period" modified="1539295877533" modifiedBy="richardsADMIN" />
+    <variable modified="1539295877533" name="FYear" modifiedBy="richardsADMIN">
+      <comment />
+      <default />
+    </variable>
+  </variables>
+  <connections>
+    <connection modified="1539295877533" name="Jets-DW" type="Sqlserver" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Connection to Data warehouse MTWSQL06]]></comment>
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>JetsDataWarehouse</database>
+      <parameters>
+        <parameter name="autoCommit">true</parameter>
+        <parameter name="integratedSecurity">true</parameter>
+      </parameters>
+    </connection>
+    <connection modified="1539295877533" name="Jedox" type="JedoxGlobal" modifiedBy="richardsADMIN">
+      <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
+      <globalReference>localhost</globalReference>
+      <database>PAS-Financials</database>
+      <ssl>off</ssl>
+    </connection>
+    <connection modified="1539295877533" name="PAS-DW" type="Sqlserver" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Connection to Data warehouse MTWSQL06]]></comment>
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DataWarehouse</database>
+      <parameters>
+        <parameter name="autoCommit">true</parameter>
+        <parameter name="integratedSecurity">true</parameter>
+      </parameters>
+    </connection>
+    <connection modified="1539295877533" name="PAS-DW RAW" type="Sqlserver" modifiedBy="richardsADMIN">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DataWarehouseRawData</database>
+      <parameters>
+        <parameter name="autoCommit">true</parameter>
+        <parameter name="integratedSecurity">true</parameter>
+      </parameters>
+    </connection>
+    <connection modified="1563257306875" name="Jets-DW RAW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>JetsDataWarehouseRawData</database>
+      <parameters>
+        <parameter name="autoCommit">true</parameter>
+        <parameter name="integratedSecurity">true</parameter>
+      </parameters>
+    </connection>
+  </connections>
+  <extracts>
+    <extract modified="1584501485425" name="Wholesale Customers" type="Relational" modifiedBy="ONEPAS\matthewl">
+      <comment><![CDATA[Extract wholesale customers from DimCustomer]]></comment>
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[SELECT DISTINCT 'Jets' AS Division 
+  ,'JETS - ' + COALESCE(MatCustomer.CustomerChannelName, 'CustomerChannel - NA') AS CustomerGroup 
+  ,MatCustomer.CustomerCode AS CustomerCode 
+  ,MatCustomer.Customername AS CustomerName 
+  ,MatCustomer.Customerid AS CustomerId 
+  ,MatCustomer.BillToCustomerId AS BillToCustomerId 
+  ,MatCustomer.SourceKey AS SourceKey 
+  ,MatCustomer.CustomerPaymentTypeCode AS CustomerPaymentType
+  ,MatCustomer.TerritoryName AS Territory
+  ,MatCustomer.SettlementDaysStatus AS SettlementDaysStatus
+  ,MatCustomer.AveragePaymentDays AS AveragePaymentDays
+  ,MatCustomer.DeliveryStatusName AS DeliveryStatus
+  ,CAST(MatCustomer.LastPaymentDate AS DATE) AS LastPaymentDate
+  ,CAST(MatCustomer.LastSaleDate AS DATE) AS LastSaleDate
+  ,CAST(MatCustomer.CustomerCreationDate AS DATE) AS CustomerCreationDate
+FROM JetsDataWarehouse.dbo.MatCustomer 
+WHERE MatCustomer.BillToCustomerId = MatCustomer.CustomerId 
+UNION ALL 
+SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS Division 
+  ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + MatCustomer.CustomerGroupName AS CustomerGroup 
+  ,MatCustomer.CustomerCode AS BaseCustomer 
+  ,MatCustomer.CustomerName AS CustomerName 
+  ,MatCustomer.CustomerId AS CustomerId 
+  ,MatCustomer.BillToCustomerId AS BillToCustomerId 
+  ,MatCustomer.SourceKey AS SourceKey
+  ,NULL AS CustomerPaymentType
+  ,MatCustomer.TerritoryName AS Territory
+  ,MatCustomer.SettlementDaysStatus AS SettlementDaysStatus
+  ,MatCustomer.AveragePaymentDays AS AveragePaymentDays
+  ,MatCustomer.DeliveryStatusName AS DeliveryStatus
+  ,CAST(MatCustomer.LastPaymentDate AS DATE) AS LastPaymentDate
+  ,CAST(MatCustomer.LastSaleDate AS DATE) AS LastSaleDate
+  ,CAST(MatCustomer.CustomerCreationDate AS DATE) AS CustomerCreationDate
+FROM DataWarehouse.dbo.MatCustomer 
+    INNER JOIN DataWarehouse.dbo.DimBusinessDivision 
+    ON DimBusinessDivision.Id = MatCustomer.BusinessDivisionId 
+WHERE MatCustomer.BillToCustomerId = MatCustomer.CustomerId 
+  AND MatCustomer.IsActive = 1 
+  AND MatCustomer.BusinessDivisionId <> 11 -- Metalicus
+ORDER BY Division 
+  ,CustomerGroup 
+  ,CustomerName
+/* Original Query20190430 
+SELECT DISTINCT 'Jets' AS Division 
+  ,'JETS - ' + COALESCE(MatCustomer.CustomerChannelName, 'CustomerChannel - NA') AS CustomerGroup 
+  ,MatCustomer.CustomerCode AS CustomerCode 
+  ,MatCustomer.Customername AS CustomerName 
+  ,MatCustomer.Customerid AS CustomerId 
+  ,MatCustomer.BillToCustomerId AS BillToCustomerId 
+  ,MatCustomer.SourceKey AS SourceKey 
+FROM JetsDataWarehouse.dbo.MatCustomer 
+WHERE MatCustomer.BillToCustomerId = MatCustomer.CustomerId 
+UNION ALL 
+SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS Division 
+  ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + MatCustomer.CustomerGroupName AS CustomerGroup 
+  ,MatCustomer.CustomerCode AS BaseCustomer 
+  ,MatCustomer.CustomerName AS CustomerName 
+  ,MatCustomer.CustomerId AS CustomerId 
+  ,MatCustomer.BillToCustomerId AS BillToCustomerId 
+  ,MatCustomer.SourceKey AS SourceKey 
+FROM DataWarehouse.dbo.MatCustomer 
+    INNER JOIN DataWarehouse.dbo.DimBusinessDivision 
+    ON DimBusinessDivision.Id = MatCustomer.BusinessDivisionId 
+WHERE MatCustomer.BillToCustomerId = MatCustomer.CustomerId 
+  AND MatCustomer.IsActive = 1 
+  AND MatCustomer.BusinessDivisionId <> 11 -- Metalicus
+ORDER BY Division 
+  ,CustomerGroup 
+  ,CustomerName
+*/]]></query>
+      <alias_map>
+        <alias origin="Division">1</alias>
+        <alias origin="CustomerGroup">2</alias>
+        <alias origin="CustomerCode">3</alias>
+        <alias origin="CustomerName">4</alias>
+        <alias origin="CustomerId">5</alias>
+        <alias origin="BillToCustomerId">6</alias>
+        <alias origin="SourceKey">7</alias>
+        <alias origin="CustomerPaymentType">8</alias>
+        <alias origin="Territory">9</alias>
+        <alias origin="SettlementDaysStatus">10</alias>
+        <alias origin="AveragePaymentDays">11</alias>
+        <alias origin="DeliveryStatus">12</alias>
+        <alias origin="LastPaymentDate">13</alias>
+        <alias origin="LastSaleDate">14</alias>
+        <alias origin="CustomerCreationDate">15</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1539295877533" name="Wholesale Products by Department" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract products from Jets and PAS data warehouses. The source table in both instances is MATPRODUCT]]></comment>
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[/* Jets product hierarchy is
+   Product Label = Department in PAS
+               |
+               Category = Caegory in PAS
+                      |
+                      Product Type = SubCategory in PAS
+*/
+SELECT DISTINCT 'Jets - by Department' AS 'Division' 
+  , ' Jets - ' + MatProduct.ProductLabelName 'Department'
+  , ' Jets - ' + MatProduct.ProductLabelName + ' - ' + COALESCE(matproduct.categoryname,'categoryna') AS 'Category' 
+  , ' Jets - ' + MatProduct.ProductLabelName + ' - ' + COALESCE(matproduct.categoryname,'categoryna') + ' - ' + COALESCE(matproduct.producttypename,'producttypena') AS 'Product'
+FROM JetsDatawarehouse.dbo.matproduct 
+WHERE matproduct.categoryname IS NOT NULL 
+  AND matproduct.producttypename IS NOT NULL 
+  AND matproduct.IsReported = 1 
+  AND matproduct.IsActive = 1 
+UNION ALL
+
+/* PAS Product 
+   Division
+          |
+          Category
+                 |
+                 SubCategory
+*/                 
+SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription + ' - by Department' AS'Division' 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + MatProduct.DepartmentName 'Department'
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' +MatProduct.DepartmentName + ' - ' + MatProduct.CategoryName AS 'Category' 
+  ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' +MatProduct.DepartmentName + ' - ' + MatProduct.CategoryName + ' - ' + MatProduct.SubCategoryName AS 'Subcategory'
+FROM Datawarehouse.dbo.MatProduct
+INNER JOIN DataWarehouse.dbo.DimBusinessDivision
+ON DimBusinessDivision.Id = MatProduct.BusinessDivisionId
+WHERE BusinessDivisionCode NOT IN (19) -- Metalicus 
+  AND MatProduct.DepartmentName IS NOT NULL 
+  AND MatProduct.CategoryName IS NOT NULL 
+  AND MatProduct.IsReported = 1 
+  AND MatProduct.IsActive = 1 
+ORDER BY Division, Department, Category, Product]]></query>
+      <alias_map>
+        <alias origin="Division">1</alias>
+        <alias origin="Department">2</alias>
+        <alias origin="Category">3</alias>
+        <alias origin="Product">4</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1539295877533" name="Season" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[SELECT DISTINCT DimSeason.Code 
+  ,DimSeason.Name
+  ,DimSeason.Id 
+  ,DimSeason.SourceKey 
+FROM JetsDatawarehouse.dbo.DimSeason 
+WHERE DimSeason.IsActive = 1 
+UNION 
+SELECT DISTINCT DimSeason.Code 
+  ,DimSeason.Name
+  ,DimSeason.Id 
+  ,DimSeason.SourceKey 
+FROM DataWarehouse.dbo.DimSeason 
+WHERE DimSeason.IsActive = 1 
+Union ALL
+Select 'SeasonNA', 'SeasonNA', 0,0
+ORDER BY Code]]></query>
+      <alias_map>
+        <alias origin="Code">1</alias>
+        <alias origin="Name">2</alias>
+        <alias origin="Id">3</alias>
+        <alias origin="SourceKey">4</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1539295877533" name="Wholesale Products By Category" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract products from Jets and PAS data warehouses. The source table in both instances is MATPRODUCT]]></comment>
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[SELECT DISTINCT 'Jets - by Category' AS 'Division' 
+,'JETS -  ' + COALESCE(matproduct.producttypename,'producttypena') AS 'Category'
+,'JETS - ' + MatProduct.ProductLabelName + ' - ' + COALESCE(matproduct.categoryname,'categoryna') + ' - ' + COALESCE(matproduct.producttypename,'producttypena') AS 'Product'
+FROM JetsDatawarehouse.dbo.matproduct 
+WHERE matproduct.categoryname IS NOT NULL 
+  AND matproduct.producttypename IS NOT NULL 
+  AND matproduct.IsReported = 1 
+  AND matproduct.IsActive = 1 
+
+UNION ALL
+
+SELECT DISTINCT  DimBusinessDivision.FinancialBusinessDivisionDescription + ' - by Category' AS'Division' 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' -  '  + MatProduct.CategoryName AS 'Category' 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + MatProduct.DepartmentName + ' - ' + MatProduct.CategoryName + ' - ' + MatProduct.SubCategoryName AS 'Product'
+FROM Datawarehouse.dbo.MatProduct 
+INNER JOIN DataWarehouse.dbo.DimBusinessDivision
+ON DimBusinessDivision.Id = MatProduct.BusinessDivisionId
+WHERE BusinessDivisionCode NOT IN (19) -- Metalicus 
+  AND  Matproduct.DepartmentName IS NOT NULL 
+  AND Matproduct.CategoryName IS NOT NULL 
+  AND Matproduct.IsReported = 1 
+  AND Matproduct.IsActive = 1 
+ORDER BY Division, Category, Product]]></query>
+      <alias_map>
+        <alias origin="Division">1</alias>
+        <alias origin="Category">2</alias>
+        <alias origin="Product">3</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1539295877533" name="Story" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[SELECT DISTINCT 'Jets' AS Division 
+  ,'Jets - ' + COALESCE(MatProduct.StoryCode, 'StoryNA') StoryCode 
+  ,'Jets - ' + COALESCE(MatProduct.StoryName, 'StoryNameNA') StoryName 
+  ,MatProduct.StoryId 
+FROM JetsDatawarehouse.dbo.MatProduct 
+WHERE MatProduct.IsActive = 1 
+  AND MatProduct.IsReported = 1 
+UNION 
+SELECT 'Jets' 
+  , 'StoryNA' 
+  , 'StoryNameNA' 
+  , 0 
+UNION 
+SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS Division 
+  ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.StoryCode, 'StoryNA') StoryCode 
+  ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.StoryName, 'StoryNameNA') StoryName 
+  ,MatProduct.StoryId 
+FROM DataWarehouse.dbo.MatProduct 
+    INNER JOIN DataWarehouse.dbo.DimBusinessDivision 
+    ON DimBusinessDivision.Id = MatProduct.BusinessDivisionId 
+WHERE MatProduct.IsActive = 1 
+  AND MatProduct.IsReported = 1 
+  AND DimBusinessDivision.Id != 11 -- Metalicus
+ORDER BY Division 
+  , StoryCode]]></query>
+      <alias_map>
+        <alias origin="Division">1</alias>
+        <alias origin="StoryCode">2</alias>
+        <alias origin="StoryName">3</alias>
+        <alias origin="StoryId">4</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1539295877533" name="Colour" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[SELECT DISTINCT 'Jets' AS 'BusinessDivision' 
+  ,' Jets' + ' - ' + COALESCE(MatProduct.ColourName, 'Colour - NA') AS 'Colour' 
+FROM JetsDataWarehouse.dbo.MatProduct 
+WHERE IsActive = 1 AND MatProduct.ColourName != '' 
+--
+UNION ALL
+--
+SELECT DISTINCT 'Jets' AS 'BusinessDivision' 
+  ,'Jets' + ' - ' + 'Colour - NA' AS 'Colour' 
+  --
+  UNION ALL
+  --
+  SELECT DISTINCT 'Jets' AS 'BusinessDivision' 
+    ,'Jets' + ' - ' + 'Generic' AS 'Colour' 
+--
+UNION ALL
+--
+SELECT DISTINCT MatProduct.BusinessDivisionName AS 'BusinessDivision' 
+ , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.ColourTypeName, 'Colour - NA') AS 'Colour' 
+FROM DataWarehouse.dbo.MatProduct
+INNER JOIN DataWarehouse.dbo.DimBusinessDivision on DimBusinessDivision.Id = MatProduct.BusinessDivisionId
+WHERE MatProduct.IsActive = 1 AND MatProduct.IsReported = 1 AND MatProduct.ColourTypeName != '' AND MatProduct.BusinessDivisionId <> 11 -- Metalicus
+--
+UNION ALL
+--
+SELECT DISTINCT MatProduct.BusinessDivisionName AS 'BusinessDivision' 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + 'Colour - NA' AS 'Colour' 
+FROM DataWarehouse.dbo.MatProduct
+INNER JOIN DataWarehouse.dbo.DimBusinessDivision on DimBusinessDivision.Id = MatProduct.BusinessDivisionId
+WHERE MatProduct.IsActive = 1 AND MatProduct.IsReported = 1 AND MatProduct.ColourTypeName != '' AND MatProduct.BusinessDivisionId <> 11 -- Metalicus
+ORDER BY BusinessDivision
+  ,Colour]]></query>
+      <alias_map>
+        <alias origin="BusinessDivision">1</alias>
+        <alias origin="Colour">2</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1539295877533" name="Size" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[SELECT DISTINCT 'Jets' AS 'Division' 
+  ,'Jets - ' + COALESCE(NULLIF(MatProduct.SizeRange,'') ,'Size - NA') AS 'SizeRange' 
+FROM JetsDataWarehouse.dbo.MatProduct 
+
+UNION ALL
+
+SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS 'Division' 
+  ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(NULLIF(MatProduct.SizeRange,''), 'Size - NA') AS 'SizeRange' 
+FROM DataWarehouse.dbo.MatProduct 
+    LEFT JOIN DataWarehouse.dbo.DimBusinessDivision 
+    ON DimBusinessDivision.Id = MatProduct.BusinessDivisionId 
+WHERE DimBusinessDivision.Id != 11 -- Metalicus
+ORDER BY Division, SizeRange]]></query>
+      <alias_map>
+        <alias origin="Division">1</alias>
+        <alias origin="SizeRange">2</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1587449274753" name="Wholesale Invoices" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[IF OBJECT_ID('tempdb..#CurrencyMap') IS NOT NULL 
+DROP TABLE #CurrencyMap
+
+DECLARE @PriorPeriodStart DATE
+       ,@CurrentPeriodEnd DATE
+
+-- SET @PriorPeriodStart = (select cast('01-Jul-2017' as date)) 
+-- SET @CurrentPeriodEnd = (select cast('31-Jul-2017' as date))
+
+SET @PriorPeriodStart = (SELECT DISTINCT
+    FinancialMonthStart
+  FROM dbo.DimDate
+  WHERE FinancialMonth = (SELECT
+      CASE
+        WHEN ConfigurationValue = 1 THEN 12
+        ELSE ConfigurationValue - 1
+      END
+    FROM SysConfiguration
+    WHERE ConfigurationKey = 'ReportingFinancialMonth')
+  AND FinancialYear = (SELECT
+      CASE
+        WHEN (SELECT
+              ConfigurationValue
+            FROM SysConfiguration
+            WHERE ConfigurationKey = 'ReportingFinancialMonth')
+          = 1 THEN ConfigurationValue - 1
+        ELSE ConfigurationValue
+      END
+    FROM SysConfiguration
+    WHERE ConfigurationKey = 'ReportingFinancialYear'))
+
+
+SET @CurrentPeriodEnd = (SELECT DISTINCT
+    FinancialMonthEnd
+  FROM DataWarehouse.dbo.DimDate
+  WHERE FinancialMonth = (SELECT
+      ConfigurationValue
+    FROM SysConfiguration
+    WHERE ConfigurationKey = 'ReportingFinancialMonth')
+  AND FinancialYear = (SELECT
+      ConfigurationValue
+    FROM SysConfiguration
+    WHERE ConfigurationKey = 'ReportingFinancialYear'))
+
+PRINT @PriorPeriodStart
+PRINT @CurrentPeriodEnd
+/* 
+  Create a mapping table that maps the 
+   customer currency code to the Finance Currency Code
+*/
+SELECT id 
+  , code 
+  ,
+  CASE 
+    WHEN charindex('-', code) != 0 
+    THEN SUBSTRING(code,charindex('-', code) +1, Len(Code)) 
+    WHEN charindex('-', code) = 0 
+    THEN code 
+  END JedoxCurrency 
+INTO #CurrencyMap
+FROM DataWarehouse.dbo.DimCurrency 
+WHERE IsActive = 1
+
+
+SELECT  BusinessDivision 
+  , 'Actual' AS Version 
+  , Customer 
+  , Region 
+  , FYear
+  , Period 
+  , SalesStatus 
+  , Story 
+  , Colour 
+  , Size 
+  , SubCategory
+  ,CASE WHEN [CurrencyValue] LIKE '%Foreign' THEN 'AUD'
+        WHEN [CurrencyValue] LIKE '%Local' AND CurrencyValue = 'QuantityLocal' AND Currency != 'AUD' THEN Currency
+        WHEN [CurrencyValue] LIKE '%Local' AND Currency != 'AUD' THEN Currency
+   END AS 'Currency'  
+  , CASE WHEN (CurrencyValue = 'DiscountExcludingTaxLocal' OR CurrencyValue = 'DiscountExcludingTaxForeign') THEN 'Discounts' 
+         WHEN (CurrencyValue = 'GrossSalesExcludingTaxLocal' OR CurrencyValue = 'GrossSalesExcludingTaxForeign') THEN 'Gross Sales'
+--         WHEN (CurrencyValue = 'NetSalesExcludingTaxLocal' OR CurrencyValue = 'NetSalesExcludingTaxForeign') THEN 'Net Sales' 
+         WHEN (CurrencyValue = 'CostExcludingTaxLocal' OR CurrencyValue = 'CostExcludingTaxForeign') THEN 'COS' 
+         WHEN (CurrencyValue = 'QuantityLocal' OR CurrencyValue = 'QuantityForeign') THEN 'Units'
+    END 'Wholesale Measures'
+  , [#Value]
+FROM (
+SELECT FinBusinessDivision.Code AS BusinessDivision 
+  ,MatCustomer.BillToCustomerCode AS 'Customer'  
+  , CASE 
+   WHEN MatCustomer.DeliveryCountry LIKE 'NZ%' OR MatCustomer.DeliveryCountry LIKE 'new%land%' OR MatCustomer.DeliveryCountry LIKE 'new%l%n%' THEN 'NZ' 
+   WHEN MatCustomer.DeliveryState IN ('ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA') THEN MatCustomer.DeliveryState 
+   WHEN MatCustomer.DeliveryState IS NULL AND MatCustomer.DeliveryCountry IN ('AU','AUS', 'Australia', 'ACT') THEN 'Domestic NA' 
+   WHEN MatCustomer.DeliveryState IS NULL AND MatCustomer.DeliveryCountry NOT IN ('AU', 'AUS', 'Australia', 'ACT') THEN 'INT' 
+   WHEN MatCustomer.DeliveryState IS NOT NULL AND MatCustomer.DeliveryCountry IN ('AU', 'AUS', 'Australia', 'ACT') THEN 'Domestic NA' 
+   ELSE 'Int'
+ END AS 'Region'
+  ,MatCustomer.DeliveryCountry as 'Country'
+  ,DimDate.FinancialYear AS FYear 
+  ,Format(DimDate.FinancialMonth, '\P00') AS Period 
+  ,'SI - ' + DimSalesOrderType.Code AS 'SalesStatus'  
+  ,ProductBusinessDivision.FinancialBusinessDivisionDescription  +  ' - ' + COALESCE(MatProduct.StoryCode, 'StoryNA') AS Story 
+  ,ProductBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.ColourTypeName, 'Colour - NA') AS Colour 
+  ,ProductBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(NULLIF(MatProduct.SizeRange,''), 'Size - NA') AS 'Size'
+  ,CurrencyMap.JedoxCurrency AS 'Currency'
+  ,ProductBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + MatProduct.DepartmentName + ' - ' + MatProduct.CategoryName + ' - ' + MatProduct.SubCategoryName AS 'SubCategory' 
+  ,CAST(SUM(FactWholesaleInvoices.DiscountExcludingTaxLocal) AS NUMERIC(16 ,2)) AS DiscountExcludingTaxLocal 
+  ,CAST(SUM(FactWholesaleInvoices.DiscountExcludingTaxForeign) AS NUMERIC(16 ,2)) AS DiscountExcludingTaxForeign 
+  ,CAST(SUM(FactWholesaleInvoices.GrossSalesExcludingTaxLocal) AS NUMERIC(16 ,2)) AS GrossSalesExcludingTaxLocal 
+  ,CAST(SUM(FactWholesaleInvoices.GrossSalesExcludingTaxForeign) AS NUMERIC(16 ,2)) AS GrossSalesExcludingTaxForeign 
+--  ,CAST(SUM(FactWholesaleInvoices.NetSalesExcludingTaxLocal) AS NUMERIC(16 ,2)) AS NetSalesExcludingTaxLocal 
+--  ,CAST(SUM(FactWholesaleInvoices.NetSalesExcludingTaxForeign) AS NUMERIC(16 ,2)) AS NetSalesExcludingTaxForeign 
+  ,CAST(SUM(FactWholesaleInvoices.CostExcludingTaxLocal) AS NUMERIC(16 ,2)) AS CostExcludingTaxLocal 
+  ,CAST(SUM(FactWholesaleInvoices.CostExcludingTaxForeign) AS NUMERIC(16 ,2)) AS CostExcludingTaxForeign 
+  ,CAST(SUM(FactWholesaleInvoices.Quantity) AS NUMERIC(16 ,2)) AS QuantityLocal
+  ,CAST(SUM(FactWholesaleInvoices.Quantity) AS NUMERIC(16 ,2)) AS QuantityForeign
+FROM DataWarehouse.dbo.FactWholesaleInvoices 
+    INNER JOIN DataWarehouse.dbo.DimDate 
+    ON DimDate.CalendarDate = FactWholesaleInvoices.PostedDate 
+    LEFT JOIN DataWarehouse.dbo.MatCustomer 
+    ON MatCustomer.CustomerId = FactWholesaleInvoices.CustomerId
+    INNER JOIN DataWarehouse.dbo.DimBusinessDivision
+    ON DimBusinessDivision.Id = MatCustomer.BusinessDivisionId
+    INNER JOIN DataWarehouse.dbo.DimBusinessDivision FinBusinessDivision
+    ON FinBusinessDivision.Id = DimBusinessDivision.FinancialBusinessDivisionId
+    LEFT JOIN DataWarehouse.dbo.MatProduct 
+    ON MatProduct.ProductId = FactWholesaleInvoices.ProductId
+    INNER JOIN DataWarehouse.dbo.DimBusinessDivision ProductBusinessDivision
+    ON ProductBusinessDivision.Id = MatProduct.BusinessDivisionId
+    LEFT JOIN #CurrencyMap CurrencyMap
+    ON CurrencyMap.Id = MatCustomer.CurrencyId
+     LEFT JOIN Datawarehouse.dbo.DimSalesOrderType
+    ON DimSalesOrderType.Id = FactWholesaleInvoices.SalesOrderTypeId
+WHERE 1=1
+and FactWholesaleInvoices.PostedDate BETWEEN @PriorPeriodStart AND @CurrentPeriodEnd
+and MatProduct.IsReported = 1
+GROUP BY FinBusinessDivision.Code
+  ,DimBusinessDivision.FinancialBusinessDivisionDescription
+  ,ProductBusinessDivision.FinancialBusinessDivisionDescription
+  ,MatCustomer.BillToCustomerCode
+  ,MatCustomer.DeliveryState
+  ,MatCustomer.DeliveryCountry
+  ,DimDate.FinancialYear
+  ,DimDate.FinancialMonth
+  ,DimSalesOrderType.Code     
+  ,MatProduct.BusinessDivisionName
+  ,MatProduct.DepartmentName
+  ,MatProduct.CategoryName
+  ,MatProduct.SubCategoryName
+  ,MatProduct.StoryCode 
+  ,MatProduct.ColourTypeName 
+  ,MatProduct.ColourCode
+  ,MatProduct.ColourName
+  ,MatProduct.SizeRange
+  ,MatProduct.SizeRange + ' - ' + MatProduct.SizeCode
+  ,CurrencyMap.JedoxCurrency
+  ,MatProduct.DepartmentName + ' - ' + MatProduct.CategoryName + ' - ' + MatProduct.SubCategoryName) Driver
+  UNPIVOT ( [#Value] FOR CurrencyValue IN ( DiscountExcludingTaxForeign 
+  , DiscountExcludingTaxLocal 
+  , GrossSalesExcludingTaxLocal 
+  , GrossSalesExcludingTaxForeign
+--  , NetSalesExcludingTaxLocal 
+--  , NetSalesExcludingTaxForeign
+  , CostExcludingTaxLocal
+  , CostExcludingTaxForeign
+  , QuantityLocal
+  , QuantityForeign )) Unpvt 
+  
+  WHERE 1=1
+  AND [#Value] != 0
+  AND CASE WHEN [CurrencyValue] LIKE '%Foreign' THEN 'AUD'
+              WHEN [CurrencyValue] LIKE '%Local' AND CurrencyValue = 'QuantityLocal' AND Currency != 'AUD' THEN Currency
+              WHEN [CurrencyValue] LIKE '%Local' AND Currency != 'AUD' THEN Currency
+         END  IS NOT NULL
+    
+  
+UNION ALL
+
+SELECT BusinessDivision 
+  , 'Actual' AS Version 
+  , Customer 
+  , Region 
+  , FYear 
+  , Period 
+  , SalesStatus 
+  , Story 
+  , Colour 
+  , Size 
+  , SubCategory 
+  ,CASE WHEN [CurrencyValue] LIKE '%Foreign' THEN 'AUD'
+        WHEN [CurrencyValue] LIKE '%Local' AND CurrencyValue = 'QuantityLocal' AND Currency != 'AUD' THEN Currency
+        WHEN [CurrencyValue] LIKE '%Local' AND Currency != 'AUD' THEN Currency
+   END AS 'Currency'  
+  , CASE WHEN (CurrencyValue = 'DiscountExcludingTaxLocal' OR CurrencyValue = 'DiscountExcludingTaxForeign') THEN 'Discounts' 
+         WHEN (CurrencyValue = 'GrossSalesExcludingTaxLocal' OR CurrencyValue = 'GrossSalesExcludingTaxForeign') THEN 'Gross Sales' 
+--         WHEN (CurrencyValue = 'NetSalesExcludingTaxLocal' OR CurrencyValue = 'NetSalesExcludingTaxForeign') THEN 'Net Sales' 
+         WHEN (CurrencyValue = 'CostExcludingTaxLocal' OR CurrencyValue = 'CostExcludingTaxForeign') THEN 'COS' 
+         WHEN (CurrencyValue = 'QuantityLocal' OR CurrencyValue = 'QuantityForeign') THEN 'Units' 
+    END 'Wholesale Measures' 
+  , [#Value] 
+FROM (
+SELECT  '37' AS 'BusinessDivision' 
+        ,MatCustomer.BillToCustomerCode AS 'Customer' 
+        , 
+        CASE 
+         WHEN MatCustomer.DeliveryCountry LIKE 'NZ%' OR MatCustomer.DeliveryCountry LIKE 'new%land%' OR MatCustomer.DeliveryCountry LIKE 'new%l%n%' THEN 'NZ' 
+         WHEN MatCustomer.DeliveryState IN ('ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA') THEN MatCustomer.DeliveryState 
+         WHEN MatCustomer.DeliveryState IS NULL AND MatCustomer.DeliveryCountry IN ('AU','AUS', 'Australia', 'ACT') THEN 'Domestic NA' 
+         WHEN MatCustomer.DeliveryState IS NULL AND MatCustomer.DeliveryCountry NOT IN ('AU', 'AUS', 'Australia', 'ACT') THEN 'INT' 
+         WHEN MatCustomer.DeliveryState IS NOT NULL AND MatCustomer.DeliveryCountry IN ('AU', 'AUS', 'Australia', 'ACT') THEN 'Domestic NA' 
+         ELSE 'Int'
+       END AS 'Region'
+        ,DimDate.FinancialYear AS 'FYear' 
+        ,Format(DimDate.FinancialMonth, '\P00') AS 'Period' 
+        ,'SI - ' + CASE WHEN DimSalesOrderType.Code = 'SA' THEN 'INDENT' ELSE COALESCE(NULLIF(DimSalesOrderType.Code,''),'SalesOrderType - NA') END AS 'SalesStatus' 
+        ,'Jets - ' + COALESCE(MatProduct.StoryCode, 'StoryNA') AS 'Story'
+        --        ,'37 - Jets' + ' - ' + COALESCE(MatProduct.ColourName, 'Colour - NA') AS 'Colour' 
+        ,'Jets' + ' - Generic' AS 'Colour' 
+        ,'Jets - ' + COALESCE(NULLIF(MatProduct.SizeRange,'' ) ,'Size - NA') AS 'Size' 
+        ,MatCustomer.CurrencyCode AS 'Currency' 
+        , 'Jets - ' + MatProduct.ProductLabelName + ' - ' + COALESCE(matproduct.categoryname,'categoryna') + ' - ' + COALESCE(matproduct.producttypename,'producttypena') AS 'SubCategory' 
+        , CAST(SUM(FactWholesaleInvoices.DiscountExcludingTaxLocal) AS NUMERIC(16,2)) AS DiscountExcludingTaxLocal 
+        , CAST(SUM(FactWholesaleInvoices.DiscountExcludingTaxAud) AS NUMERIC(16,2)) AS DiscountExcludingTaxForeign 
+        , CAST(SUM(FactWholesaleInvoices.GrossSalesExcludingTaxLocal) AS NUMERIC(16,2)) AS GrossSalesExcludingTaxLocal 
+        , CAST(SUM(FactWholesaleInvoices.GrossSalesExcludingTaxAud) AS NUMERIC(16,2)) AS GrossSalesExcludingTaxForeign 
+--        , CAST(SUM(FactWholesaleInvoices.NetSalesExcludingTaxLocal)AS NUMERIC(16,2)) AS NetSalesExcludingTaxLocal 
+--        , CAST(SUM(FactWholesaleInvoices.NetSalesExcludingTaxForeign) AS NUMERIC(16,2)) AS NetSalesExcludingTaxForeign
+        , CAST(SUM(FactWholesaleInvoices.CostExcludingTaxLocal)AS NUMERIC(16,2)) AS CostExcludingTaxLocal 
+        , CAST(SUM(FactWholesaleInvoices.CostExcludingTaxAud)AS NUMERIC(16,2)) AS CostExcludingTaxForeign 
+        , CAST(SUM(FactWholesaleInvoices.Quantity)AS NUMERIC(16,2)) AS QuantityLocal
+        , CAST(SUM(FactWholesaleInvoices.Quantity)AS NUMERIC(16,2)) AS QuantityForeign        
+      FROM JetsDataWarehouse.dbo.FactWholesaleInvoices 
+        INNER JOIN JetsDataWarehouse.dbo.DimDate 
+        ON DimDate.CalendarDate = FactWholesaleInvoices.PostedDate 
+        LEFT JOIN JetsDataWarehouse.dbo.MatCustomer 
+        ON MatCustomer.CustomerId = FactWholesaleInvoices.CustomerId 
+        LEFT JOIN JetsDataWarehouse.dbo.MatProduct 
+        ON MatProduct.ProductId = FactWholesaleInvoices.ProductId
+        LEFT JOIN JetsDataWarehouse.dbo.DimSalesOrderType
+       ON DimSalesOrderType.Id = FactWholesaleInvoices.SalesOrderTypeId
+      WHERE 1=1
+      and MatProduct.IsReported = 1
+      and FactWholesaleInvoices.PostedDate BETWEEN @PriorPeriodStart AND @CurrentPeriodEnd
+      GROUP BY MatCustomer.BillToCustomerCode 
+        ,MatCustomer.DeliveryState 
+        ,MatCustomer.DeliveryCountry 
+        ,DimDate.FinancialMonth 
+        ,DimDate.FinancialYear
+        ,DimSalesOrderType.Code
+        ,MatProduct.StoryCode
+        --        ,MatProduct.ColourName 
+        ,MatProduct.SizeRange 
+        ,MatProduct.SizeCode 
+        ,MatCustomer.CurrencyCode 
+        ,'Jets - ' + MatProduct.ProductLabelName + ' - ' + COALESCE(matproduct.categoryname,'categoryna') + ' - ' + COALESCE(matproduct.producttypename,'producttypena')) Driver 
+  UNPIVOT ( [#Value] FOR CurrencyValue IN ( DiscountExcludingTaxLocal
+  , DiscountExcludingTaxForeign 
+  , GrossSalesExcludingTaxLocal 
+  , GrossSalesExcludingTaxForeign 
+--  , NetSalesExcludingTaxLocal 
+--  , NetSalesExcludingTaxForeign
+  , CostExcludingTaxLocal 
+  , CostExcludingTaxForeign
+  , QuantityLocal
+  , QuantityForeign)) Unpvt 
+WHERE 1=1
+AND [#Value] != 0
+ AND CASE WHEN [CurrencyValue] LIKE '%Foreign' THEN 'AUD'
+              WHEN [CurrencyValue] LIKE '%Local' AND CurrencyValue = 'QuantityLocal' AND Currency != 'AUD' THEN Currency
+              WHEN [CurrencyValue] LIKE '%Local' AND Currency != 'AUD' THEN Currency
+         END  IS NOT NULL
+  
+ORDER BY BusinessDivision, FYear, Period
+
+DROP TABLE #CurrencyMap]]></query>
+      <alias_map>
+        <alias origin="BusinessDivision">1</alias>
+        <alias origin="Version">2</alias>
+        <alias origin="Customer">3</alias>
+        <alias origin="Region">4</alias>
+        <alias origin="FYear">5</alias>
+        <alias origin="Period">6</alias>
+        <alias origin="SalesStatus">7</alias>
+        <alias origin="Story">8</alias>
+        <alias origin="Colour">9</alias>
+        <alias origin="Size">10</alias>
+        <alias origin="SubCategory">11</alias>
+        <alias origin="Currency">12</alias>
+        <alias origin="Wholesale Measures">13</alias>
+        <alias origin="#Value">14</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1539295877533" name="Wholesale Orders" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[IF OBJECT_ID('tempdb..#CurrencyMap') IS NOT NULL 
+DROP TABLE #CurrencyMap
+
+DECLARE @CurrentFinYearStart DATE 
+, @CurrentFinYearEnd DATE
+, @YesterdaySnapshotDate DATE
+
+SET @CurrentFinYearStart = (SELECT DISTINCT FinancialYearStart 
+                            FROM DataWarehouse.dbo.DimDate 
+                            WHERE CalendarDate = CAST(GetDate() AS DATE)) 
+SET @CurrentFinYearEnd = (SELECT DISTINCT FinancialYearEnd 
+                          FROM DataWarehouse.dbo.DimDate 
+                          WHERE CalendarDate = CAST(GetDate() AS DATE))
+
+SET @YesterdaySnapshotDate = (SELECT DATEADD(d, -1, CAST(getdate() AS DATE)))
+                          
+print @CurrentFinYearStart
+print @CurrentFinYearEnd
+print @YesterdaySnapshotDate
+
+/* Create a mapping table that maps the 
+   customer currency code to the Finance Currency Code
+*/
+SELECT id 
+  , code 
+  ,
+  CASE 
+    WHEN charindex('-', code) != 0 
+    THEN SUBSTRING(code,charindex('-', code) +1, Len(Code)) 
+    WHEN charindex('-', code) = 0 
+    THEN code 
+  END JedoxCurrency 
+INTO #CurrencyMap
+FROM DataWarehouse.dbo.DimCurrency 
+WHERE IsActive = 1
+
+SELECT BusinessDivision 
+  , 'Actual' AS Version 
+  , Customer 
+  , Region 
+  , FYear
+  , Period 
+  , SalesStatus 
+  , Story 
+  , Colour 
+  , Size 
+  , SubCategory
+  ,CASE WHEN [CurrencyValue] LIKE '%Foreign' THEN 'AUD'
+        WHEN [CurrencyValue] LIKE '%Local' AND CurrencyValue = 'SalesOrderQuantityLocal' AND Currency != 'AUD' THEN Currency
+        WHEN [CurrencyValue] LIKE '%Local' AND Currency != 'AUD' THEN Currency
+   END AS 'Currency'  
+  , CASE WHEN (CurrencyValue = 'SalesOrderDiscountExcludingTaxLocal' OR CurrencyValue = 'SalesOrderDiscountExcludingTaxForeign') THEN 'Discounts' 
+         WHEN (CurrencyValue = 'SalesOrderGrossSalesExcludingTaxLocal' OR CurrencyValue = 'SalesOrderGrossSalesExcludingTaxForeign') THEN 'Gross Sales'
+--         WHEN (CurrencyValue = 'SalesOrderNetSalesExcludingTaxLocal' OR CurrencyValue = 'SalesOrderNetSalesExcludingTaxForeign') THEN 'Net Sales' 
+         WHEN (CurrencyValue = 'SalesOrderCostExcludingTaxLocal' OR CurrencyValue = 'SalesOrderCostExcludingTaxForeign') THEN 'COS' 
+         WHEN (CurrencyValue = 'SalesOrderQuantityLocal' OR CurrencyValue = 'SalesOrderQuantityForeign') THEN 'Units'
+    END 'Wholesale Measures'
+  , [#Value]
+FROM (
+SELECT  FinBusinessDivision.Code AS BusinessDivision
+  ,MatCustomer.BillToCustomerCode AS 'Customer'  
+  , CASE 
+   WHEN MatCustomer.DeliveryCountry LIKE 'NZ%' OR MatCustomer.DeliveryCountry LIKE 'new%land%' OR MatCustomer.DeliveryCountry LIKE 'new%l%n%' THEN 'NZ' 
+   WHEN MatCustomer.DeliveryState IN ('ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA') THEN MatCustomer.DeliveryState 
+   WHEN MatCustomer.DeliveryState IS NULL AND MatCustomer.DeliveryCountry IN ('AU','AUS', 'Australia', 'ACT') THEN 'Domestic NA' 
+   WHEN MatCustomer.DeliveryState IS NULL AND MatCustomer.DeliveryCountry NOT IN ('AU', 'AUS', 'Australia', 'ACT') THEN 'INT' 
+   WHEN MatCustomer.DeliveryState IS NOT NULL AND MatCustomer.DeliveryCountry IN ('AU', 'AUS', 'Australia', 'ACT') THEN 'Domestic NA' 
+   ELSE 'Int'
+ END AS 'Region'
+  ,MatCustomer.DeliveryCountry as 'Country'
+  ,DimDate.FinancialYear AS FYear 
+  ,Format(DimDate.FinancialMonth, '\P00') AS Period 
+  ,'SO - ' + DimSalesOrderType.Code AS 'SalesStatus'  
+  ,ProductBusinessDivision.FinancialBusinessDivisionDescription  +  ' - ' + COALESCE(MatProduct.StoryCode, 'StoryNA') AS Story 
+  ,ProductBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.ColourTypeName, 'Colour - NA') AS Colour 
+  ,ProductBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(NULLIF(MatProduct.SizeRange,''), 'Size - NA') AS 'Size'
+  ,CurrencyMap.JedoxCurrency AS 'Currency'
+  ,ProductBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + MatProduct.DepartmentName + ' - ' + MatProduct.CategoryName + ' - ' + MatProduct.SubCategoryName AS 'SubCategory' 
+  ,CAST(SUM(FactWholesaleOrders.SalesOrderDiscountExcludingTaxLocal + FactWholesaleOrders.PackedDiscountExcludingTaxLocal) AS NUMERIC(16 ,2)) AS SalesOrderDiscountExcludingTaxLocal 
+  ,CAST(SUM(FactWholesaleOrders.SalesOrderDiscountExcludingTaxForeign + FactWholesaleOrders.PackedDiscountExcludingTaxForeign) AS NUMERIC(16 ,2)) AS SalesOrderDiscountExcludingTaxForeign 
+  ,CAST(SUM(FactWholesaleOrders.SalesOrderGrossSalesExcludingTaxLocal + FactWholesaleOrders.PackedGrossSalesExcludingTaxLocal) AS NUMERIC(16 ,2)) AS SalesOrderGrossSalesExcludingTaxLocal 
+  ,CAST(SUM(FactWholesaleOrders.SalesOrderGrossSalesExcludingTaxForeign + FactWholesaleOrders.PackedGrossSalesExcludingTaxForeign) AS NUMERIC(16 ,2)) AS SalesOrderGrossSalesExcludingTaxForeign 
+--  ,CAST(SUM(FactWholesaleOrders.SalesOrderNetSalesExcludingTaxLocal + FactWholesaleOrders.PackedNetSalesExcludingTaxLocal) AS NUMERIC(16 ,2)) AS SalesOrderNetSalesExcludingTaxLocal 
+--  ,CAST(SUM(FactWholesaleOrders.SalesOrderNetSalesExcludingTaxForeign + FactWholesaleOrders.PackedNetSalesExcludingTaxForeign) AS NUMERIC(16 ,2)) AS SalesOrderNetSalesExcludingTaxForeign 
+  ,CAST(SUM(FactWholesaleOrders.SalesOrderCostExcludingTaxLocal + FactWholesaleOrders.PackedCostExcludingTaxLocal) AS NUMERIC(16 ,2)) AS SalesOrderCostExcludingTaxLocal 
+  ,CAST(SUM(FactWholesaleOrders.SalesOrderCostExcludingTaxForeign + FactWholesaleOrders.PackedCostExcludingTaxForeign) AS NUMERIC(16 ,2)) AS SalesOrderCostExcludingTaxForeign 
+  ,CAST(SUM(FactWholesaleOrders.SalesOrderQuantity + FactWholesaleOrders.PackedQuantity) AS NUMERIC(16 ,2)) AS SalesOrderQuantityLocal
+  ,CAST(SUM(FactWholesaleOrders.SalesOrderQuantity + FactWholesaleOrders.PackedQuantity) AS NUMERIC(16 ,2)) AS SalesOrderQuantityForeign
+FROM DataWarehouse.dbo.FactWholesaleOrders 
+    INNER JOIN DataWarehouse.dbo.DimDate 
+    ON DimDate.CalendarDate = FactWholesaleOrders.DueDate 
+    
+    LEFT JOIN DataWarehouse.dbo.MatCustomer 
+    ON MatCustomer.CustomerId = FactWholesaleOrders.CustomerId
+    INNER JOIN DataWarehouse.dbo.DimBusinessDivision
+    ON DimBusinessDivision.Id = MatCustomer.BusinessDivisionId
+    INNER JOIN DataWarehouse.dbo.DimBusinessDivision FinBusinessDivision
+    ON FinBusinessDivision.Id = DimBusinessDivision.FinancialBusinessDivisionId    
+    
+    LEFT JOIN DataWarehouse.dbo.MatProduct 
+    ON MatProduct.ProductId = FactWholesaleOrders.ProductId
+    INNER JOIN DataWarehouse.dbo.DimBusinessDivision ProductBusinessDivision
+    ON ProductBusinessDivision.Id = Matproduct.BusinessDivisionId
+    
+    LEFT JOIN Datawarehouse.dbo.DimSalesOrderType
+    ON DimSalesOrderType.Id = FactWholesaleOrders.SalesOrderTypeId
+    LEFT JOIN #CurrencyMap CurrencyMap
+    ON CurrencyMap.Id = MatCustomer.CurrencyId
+WHERE 1=1
+  AND FactWholesaleOrders.SnapshotDate = @YesterdaySnapshotDate -- AND factwholesaleorders.DueDate >= @CurrentFinYearStart
+GROUP BY FinBusinessDivision.Code
+  ,ProductBusinessDivision.FinancialBusinessDivisionDescription
+  ,MatCustomer.BusinessDivisionName 
+  ,MatCustomer.BillToCustomerCode
+  ,MatCustomer.DeliveryState
+  ,MatCustomer.DeliveryCountry
+  ,DimDate.FinancialYear
+  ,DimDate.FinancialMonth   
+  ,DimSalesOrderType.Code
+  ,MatProduct.BusinessDivisionName
+  ,MatProduct.DepartmentName
+  ,MatProduct.CategoryName
+  ,MatProduct.SubCategoryName
+  ,MatProduct.StoryCode 
+  ,MatProduct.ColourTypeName 
+  ,MatProduct.ColourCode
+  ,MatProduct.ColourName
+  ,MatProduct.SizeRange
+  ,MatProduct.SizeCode 
+  ,MatProduct.SizeRange + ' - ' + MatProduct.SizeCode
+  ,CurrencyMap.JedoxCurrency
+  ,MatProduct.DepartmentName + ' - ' + MatProduct.CategoryName + ' - ' + MatProduct.SubCategoryName) Driver 
+  UNPIVOT ( [#Value] FOR CurrencyValue IN ( SalesOrderDiscountExcludingTaxForeign 
+  , SalesOrderDiscountExcludingTaxLocal 
+  , SalesOrderGrossSalesExcludingTaxLocal 
+  , SalesOrderGrossSalesExcludingTaxForeign
+--  , SalesOrderNetSalesExcludingTaxLocal 
+--  , SalesOrderNetSalesExcludingTaxForeign
+  , SalesOrderCostExcludingTaxLocal
+  , SalesOrderCostExcludingTaxForeign
+  , SalesOrderQuantityLocal
+  , SalesOrderQuantityForeign )) Unpvt 
+WHERE 1=1
+  AND  CASE WHEN [CurrencyValue] LIKE '%Foreign' THEN 'AUD'
+              WHEN [CurrencyValue] LIKE '%Local' AND CurrencyValue = 'SalesOrderQuantityLocal' AND Currency != 'AUD' THEN Currency
+              WHEN [CurrencyValue] LIKE '%Local' AND Currency != 'AUD' THEN Currency
+         END  IS NOT NULL 
+  AND [#Value] != 0   
+  
+UNION ALL
+
+SELECT BusinessDivision 
+  , 'Actual' AS Version 
+  , Customer 
+  , Region 
+  , FYear 
+  , Period 
+  , SalesStatus 
+  , Story 
+  , Colour 
+  , Size 
+  , SubCategory 
+  ,CASE WHEN [CurrencyValue] LIKE '%Foreign' THEN 'AUD'
+        WHEN [CurrencyValue] LIKE '%Local' AND CurrencyValue = 'SalesOrderQuantityLocal' AND Currency != 'AUD' THEN Currency
+        WHEN [CurrencyValue] LIKE '%Local' AND Currency != 'AUD' THEN Currency
+   END AS 'Currency'  
+  , CASE WHEN (CurrencyValue = 'SalesOrderDiscountExcludingTaxLocal' OR CurrencyValue = 'SalesOrderDiscountExcludingTaxForeign') THEN 'Discounts' 
+         WHEN (CurrencyValue = 'SalesOrderGrossSalesExcludingTaxLocal' OR CurrencyValue = 'SalesOrderGrossSalesExcludingTaxForeign') THEN 'Gross Sales' 
+--         WHEN (CurrencyValue = 'SalesOrderNetSalesExcludingTaxLocal' OR CurrencyValue = 'SalesOrderNetSalesExcludingTaxForeign') THEN 'Net Sales' 
+         WHEN (CurrencyValue = 'SalesOrderCostExcludingTaxLocal' OR CurrencyValue = 'SalesOrderCostExcludingTaxForeign') THEN 'COS' 
+         WHEN (CurrencyValue = 'SalesOrderQuantityLocal' OR CurrencyValue = 'SalesOrderQuantityForeign') THEN 'Units' 
+    END 'Wholesale Measures' 
+  , [#Value] 
+FROM (
+SELECT '37' AS 'BusinessDivision' 
+        ,MatCustomer.BillToCustomerCode AS 'Customer' 
+        , 
+        CASE 
+         WHEN MatCustomer.DeliveryCountry LIKE 'NZ%' OR MatCustomer.DeliveryCountry LIKE 'new%land%' OR MatCustomer.DeliveryCountry LIKE 'new%l%n%' THEN 'NZ' 
+         WHEN MatCustomer.DeliveryState IN ('ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA') THEN MatCustomer.DeliveryState 
+         WHEN MatCustomer.DeliveryState IS NULL AND MatCustomer.DeliveryCountry IN ('AU','AUS', 'Australia', 'ACT') THEN 'Domestic NA' 
+         WHEN MatCustomer.DeliveryState IS NULL AND MatCustomer.DeliveryCountry NOT IN ('AU', 'AUS', 'Australia', 'ACT') THEN 'INT' 
+         WHEN MatCustomer.DeliveryState IS NOT NULL AND MatCustomer.DeliveryCountry IN ('AU', 'AUS', 'Australia', 'ACT') THEN 'Domestic NA' 
+         ELSE 'Int'
+       END AS 'Region'
+        ,DimDate.FinancialYear AS 'FYear' 
+        ,Format(DimDate.FinancialMonth, '\P00') AS 'Period' 
+        ,'SO - ' + CASE WHEN DimSalesOrderType.Code = 'SA' THEN 'INDENT' ELSE DimSalesOrderType.Code END AS 'SalesStatus' 
+        ,'Jets - ' + COALESCE(MatProduct.StoryCode, 'StoryNA') AS 'Story'
+        --        ,'37 - Jets' + ' - ' + COALESCE(MatProduct.ColourName, 'Colour - NA') AS 'Colour' 
+        ,'Jets' + ' - Generic' AS 'Colour' 
+        ,'Jets - ' + COALESCE(NULLIF(MatProduct.SizeRange,'' ) ,'Size - NA') AS 'Size' 
+        ,MatCustomer.CurrencyCode AS 'Currency' 
+        , 'Jets - ' + MatProduct.ProductLabelName + ' - ' + COALESCE(matproduct.categoryname,'categoryna') + ' - ' + COALESCE(matproduct.producttypename,'producttypena') AS 'SubCategory' 
+        , CAST(SUM(FactWholesaleOrders.SalesOrderDiscountExcludingTaxLocal + FactWholesaleOrders.PackedDiscountExcludingTaxLocal) AS NUMERIC(16,2)) AS SalesOrderDiscountExcludingTaxLocal 
+        , CAST(SUM(FactWholesaleOrders.SalesOrderDiscountExcludingTaxAud + FactWholesaleOrders.PackedDiscountExcludingTaxAud) AS NUMERIC(16,2)) AS SalesOrderDiscountExcludingTaxForeign 
+        , CAST(SUM(FactWholesaleOrders.SalesOrderGrossSalesExcludingTaxLocal + FactWholesaleOrders.PackedGrossSalesExcludingTaxLocal) AS NUMERIC(16,2)) AS SalesOrderGrossSalesExcludingTaxLocal 
+        , CAST(SUM(FactWholesaleOrders.SalesOrderGrossSalesExcludingTaxAud + FactWholesaleOrders.PackedGrossSalesExcludingTaxAud) AS NUMERIC(16,2)) AS SalesOrderGrossSalesExcludingTaxForeign 
+--        , CAST(SUM(FactWholesaleOrders.SalesOrderNetSalesExcludingTaxLocal + FactWholesaleOrders.PackedNetSalesExcludingTaxLocal)AS NUMERIC(16,2)) AS SalesOrderNetSalesExcludingTaxLocal 
+--        , CAST(SUM(FactWholesaleOrders.SalesOrderNetSalesExcludingTaxForeign + FactWholesaleOrders.PackedNetSalesExcludingTaxForeign) AS NUMERIC(16,2)) AS SalesOrderNetSalesExcludingTaxForeign
+        , CAST(SUM(FactWholesaleOrders.SalesOrderCostExcludingTaxLocal + FactWholesaleOrders.PackedCostExcludingTaxLocal)AS NUMERIC(16,2)) AS SalesOrderCostExcludingTaxLocal 
+        , CAST(SUM(FactWholesaleOrders.SalesOrderCostExcludingTaxAud + FactWholesaleOrders.PackedCostExcludingTaxAud)AS NUMERIC(16,2)) AS SalesOrderCostExcludingTaxForeign 
+        , CAST(SUM(FactWholesaleOrders.SalesOrderQuantity + FactWholesaleOrders.PackedQuantity)AS NUMERIC(16,2)) AS SalesOrderQuantityLocal
+        , CAST(SUM(FactWholesaleOrders.SalesOrderQuantity + FactWholesaleOrders.PackedQuantity)AS NUMERIC(16,2)) AS SalesOrderQuantityForeign        
+      FROM JetsDataWarehouse.dbo.FactWholesaleOrders 
+        INNER JOIN JetsDataWarehouse.dbo.DimDate 
+        ON DimDate.CalendarDate = FactWholesaleOrders.DueDate 
+        LEFT JOIN JetsDataWarehouse.dbo.DimSalesOrderType 
+        ON DimSalesOrderType.Id = FactWholesaleOrders.SalesOrderTypeId 
+        LEFT JOIN JetsDataWarehouse.dbo.MatCustomer 
+        ON MatCustomer.CustomerId = FactWholesaleOrders.CustomerId 
+        LEFT JOIN JetsDataWarehouse.dbo.MatProduct 
+        ON MatProduct.ProductId = FactWholesaleOrders.ProductId 
+      WHERE 1=1
+      GROUP BY MatCustomer.BillToCustomerCode 
+        ,MatCustomer.DeliveryState 
+        ,MatCustomer.DeliveryCountry 
+        ,DimDate.FinancialMonth 
+        ,DimSalesOrderType.Code 
+        ,DimDate.FinancialYear 
+        ,MatProduct.StoryCode
+        --        ,MatProduct.ColourName 
+        ,MatProduct.SizeRange 
+        ,MatProduct.SizeCode 
+        ,MatCustomer.CurrencyCode 
+        ,'Jets - ' + MatProduct.ProductLabelName + ' - ' + COALESCE(matproduct.categoryname,'categoryna') + ' - ' + COALESCE(matproduct.producttypename,'producttypena')) Driver 
+  UNPIVOT ( [#Value] FOR CurrencyValue IN ( SalesOrderDiscountExcludingTaxLocal
+  , SalesOrderDiscountExcludingTaxForeign 
+  , SalesOrderGrossSalesExcludingTaxLocal 
+  , SalesOrderGrossSalesExcludingTaxForeign 
+--  , SalesOrderNetSalesExcludingTaxLocal 
+--  , SalesOrderNetSalesExcludingTaxForeign
+  , SalesOrderCostExcludingTaxLocal 
+  , SalesOrderCostExcludingTaxForeign
+  , SalesOrderQuantityLocal
+  , SalesOrderQuantityForeign)) Unpvt 
+WHERE 1=1
+  AND  CASE WHEN [CurrencyValue] LIKE '%Foreign' THEN 'AUD'
+              WHEN [CurrencyValue] LIKE '%Local' AND CurrencyValue = 'SalesOrderQuantityLocal' AND Currency != 'AUD' THEN Currency
+              WHEN [CurrencyValue] LIKE '%Local' AND Currency != 'AUD' THEN Currency
+         END  IS NOT NULL 
+  AND [#Value] != 0   
+ORDER BY BusinessDivision, FYear, Period]]></query>
+      <alias_map>
+        <alias origin="BusinessDivision">1</alias>
+        <alias origin="Version">2</alias>
+        <alias origin="Customer">3</alias>
+        <alias origin="Region">4</alias>
+        <alias origin="FYear">5</alias>
+        <alias origin="Period">6</alias>
+        <alias origin="SalesStatus">7</alias>
+        <alias origin="Story">8</alias>
+        <alias origin="Colour">9</alias>
+        <alias origin="Size">10</alias>
+        <alias origin="SubCategory">11</alias>
+        <alias origin="Currency">12</alias>
+        <alias origin="Wholesale Measures">13</alias>
+        <alias origin="#Value">14</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1539295877533" name="ex-Jedox [Cube Slice]: Sales Order (Actual) Z-Out" type="CubeSlice" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query mode="exclude" randomPaths="false">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual]]></condition>
+          </dimension>
+          <dimension name="Sales Status">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Sales Order]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Wholesale" />
+      </query>
+    </extract>
+    <extract modified="1539295877533" name="ex-[Parameter] - CurrYearETL" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Financial Year ETL]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract modified="1539295877533" name="ex-[Parameter] - Current Period ETL" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Current Period ETL]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract modified="1539295877533" name="ex-Jedox [Cube Slice]: Sales Invoice (Actual) Z-Out" type="CubeSlice" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query mode="exclude" randomPaths="false">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual]]></condition>
+          </dimension>
+          <dimension name="Sales Status">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Sales Invoice]]></condition>
+          </dimension>
+          <dimension name="Period">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${Period}]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${FYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Wholesale" />
+      </query>
+    </extract>
+    <extract modified="1539295877533" name="ex-[Parameter] - Prior Period ETL" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Prior Period ETL]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract modified="1539295877533" name="ex-[Parameter] - Prior Period Year ETL" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Prior Period Year ETL]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract modified="1539295877533" name="ex-Jedox [Attr]: Period (Actual)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Is Used to:
+1- Copy Act 2 Fcst
+2- Fcst Z-Out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmptyAndZero">
+        <dimensions>
+          <dimension name="#_Period_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual Period]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Period" />
+      </query>
+    </extract>
+    <extract modified="1539295877533" name="ex-Jedox [Cube]: (Forecast)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[1- Source to back up current forecast before applying actuals
+2- Source to Fcst Z-Out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Wholesale" />
+      </query>
+    </extract>
+    <extract modified="1539295877533" name="ex-Jedox [Attr]: Parameters (CurrYear)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Is used to extract the FYear(CurrYear) for following :
+1- Forecast]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[CurrYear]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract modified="1548022004882" name="ex-Jedox [Cube]: WSale(Actual)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[1- Source to zero out before loading
+2- Source to Copy (Act 2 Fcst)]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual Incl Wholesale Adjustments]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Wholesale" />
+      </query>
+    </extract>
+    <extract modified="1539295877533" name="ex-Jedox [Attr]: Parameters (Forecast_Mmm)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Is used to extract the Version (Forecast_Mmm) to facilitate copying of Current Forecast.]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[FMth]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract modified="1539295877533" name="ex-Jedox [Cube]: Fin (Forecast_Mmm Z-Out)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Source to zero out forecast backup before replacing with current forecast
+${ForecastYr}
+Forecast_Mmm = e.g. Forecast_Jul]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="like" type="accept"><![CDATA[Forecast_]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Wholesale" />
+      </query>
+    </extract>
+    <extract modified="1539295877533" name="ex-Jedox [Cube]: (Forecast Fcst To Fcst_mmm)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[1- Source to back up current forecast before applying actuals
+2- Source to Fcst Z-Out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Wholesale" />
+      </query>
+    </extract>
+    <extract modified="1539295877533" name="Duplicate of ex-Jedox [Cube]: (Forecast Z-Out)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[1- Source to back up current forecast before applying actuals
+2- Source to Fcst Z-Out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Wholesale" />
+      </query>
+    </extract>
+    <extract modified="1539295877533" name="Wholesale Customer Manually Managed" type="Dimension" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Wholesale Customer">
+          <condition mode="rootToBases" operator="equal" type="accept"><![CDATA[Manually Managed Consolidations]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>none</attributesMode>
+    </extract>
+    <extract modified="1539295877533" name="Wholesale Customers Alt Hierarchy" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="PAS-DW RAW" />
+      <query><![CDATA[SELECT [level1], [level2], [level3], [level4], [level5], [level6] 
+FROM [dbo].[JEDOX_WHOLESALE_CUSTOMER_ALTERNATE]]]></query>
+      <alias_map>
+        <alias origin="level1">1</alias>
+        <alias origin="level2">2</alias>
+        <alias origin="level3">3</alias>
+        <alias origin="level4">4</alias>
+        <alias origin="level5">5</alias>
+        <alias origin="level6">6</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1563262250963" name="ex-[Parameter] - BudYearETL" type="Cube" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[BudYearETL]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract modified="1563760273898" name="ex-Jedox [Cube]: (Budget)" type="Cube" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[1- Source to back up current forecast before applying actuals
+2- Source to Fcst Z-Out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Budget]]></condition>
+          </dimension>
+          <dimension name="Wholesale Measures">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Sales Orders $]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Wholesale" />
+      </query>
+    </extract>
+    <extract modified="1563763394543" name="ex-Jedox [Cube]: (Forecast_ForReport)" type="Cube" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[1- Source to back up current forecast before applying actuals
+2- Source to Fcst Z-Out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+          <dimension name="Wholesale Measures">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Sales Orders $]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Wholesale" />
+      </query>
+    </extract>
+  </extracts>
+  <transforms>
+    <transform modified="1584501658297" name="tf-FH [Dim]: Customer" type="TreeFH" modifiedBy="ONEPAS\matthewl">
+      <sources>
+        <source nameref="Wholesale Customers" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="Customer Name" type="string" />
+          <attribute name="CustomerId" type="numeric" />
+          <attribute name="BillToCustomerId" type="numeric" />
+          <attribute name="SourceKey" type="numeric" />
+          <attribute name="CustomerPaymentType" type="string" />
+          <attribute name="Territory" type="string" />
+          <attribute name="SettlementDaysStatus" type="string" />
+          <attribute name="AveragePaymentDays" type="numeric" />
+          <attribute name="DeliveryStatus" type="string" />
+          <attribute name="LastPaymentDate" type="string" />
+          <attribute name="LastSaleDate" type="string" />
+          <attribute name="CustomerCreationDate" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="All Customers" />
+          </level>
+          <level>
+            <input nameref="Division" />
+          </level>
+          <level>
+            <input nameref="CustomerGroup" />
+          </level>
+          <level>
+            <input nameref="CustomerCode" />
+            <attributes>
+              <attribute name="Customer Name">
+                <input nameref="CustomerName" />
+              </attribute>
+              <attribute name="CustomerId">
+                <input nameref="CustomerId" />
+              </attribute>
+              <attribute name="BillToCustomerId">
+                <input nameref="BillToCustomerId" />
+              </attribute>
+              <attribute name="SourceKey">
+                <input nameref="SourceKey" />
+              </attribute>
+              <attribute name="CustomerPaymentType">
+                <input nameref="CustomerPaymentType" />
+              </attribute>
+              <attribute name="Territory">
+                <input nameref="Territory" />
+              </attribute>
+              <attribute name="SettlementDaysStatus">
+                <input nameref="SettlementDaysStatus" />
+              </attribute>
+              <attribute name="AveragePaymentDays">
+                <input nameref="AveragePaymentDays" />
+              </attribute>
+              <attribute name="DeliveryStatus">
+                <input nameref="DeliveryStatus" />
+              </attribute>
+              <attribute name="LastPaymentDate">
+                <input nameref="LastPaymentDate" />
+              </attribute>
+              <attribute name="LastSaleDate">
+                <input nameref="LastSaleDate" />
+              </attribute>
+              <attribute name="CustomerCreationDate">
+                <input nameref="CustomerCreationDate" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tf-FH [Dim]: Product by Department" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="Wholesale Products by Department" />
+      </sources>
+      <target>
+        <levels>
+          <level>
+            <input constant="TotalProduct - By Department" />
+          </level>
+          <level>
+            <input nameref="Division" />
+          </level>
+          <level>
+            <input nameref="Department" />
+          </level>
+          <level>
+            <input nameref="Category" />
+          </level>
+          <level>
+            <input nameref="Product" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tf-FH [Dim]: Season" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="Season" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="Name" type="string" />
+          <attribute name="ID" type="numeric" />
+          <attribute name="SourceKey" type="numeric" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="TotalSeason" />
+          </level>
+          <level>
+            <input nameref="Code" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="Name" />
+              </attribute>
+              <attribute name="ID">
+                <input nameref="Id" />
+              </attribute>
+              <attribute name="SourceKey">
+                <input nameref="SourceKey" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tf-FH [Dim]: Product By Category" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tr-FT [Product By Category] - UpperLower Case" />
+      </sources>
+      <target>
+        <levels>
+          <level>
+            <input constant="TotalProduct - By Category" />
+          </level>
+          <level>
+            <input nameref="Division" />
+          </level>
+          <level>
+            <input nameref="Category" />
+          </level>
+          <level>
+            <input nameref="Product" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tf-FH [Dim]: Story" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="Story" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="StoryName" type="string" />
+          <attribute name="StoryId" type="numeric" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="TotalStory" />
+          </level>
+          <level>
+            <input nameref="Division" />
+          </level>
+          <level>
+            <input nameref="StoryCode" />
+            <attributes>
+              <attribute name="StoryName">
+                <input nameref="StoryName" />
+              </attribute>
+              <attribute name="StoryId">
+                <input nameref="StoryId" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tf-FH [Dim]: Colour" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="Colour" />
+      </sources>
+      <target>
+        <levels>
+          <level>
+            <input constant="TotalColour" />
+          </level>
+          <level>
+            <input nameref="BusinessDivision" />
+          </level>
+          <level>
+            <input nameref="Colour" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tf-FH [Dim]: Size" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="Size" />
+      </sources>
+      <target>
+        <levels>
+          <level>
+            <input constant="Total Size" />
+          </level>
+          <level>
+            <input nameref="Division" />
+          </level>
+          <level>
+            <input nameref="SizeRange" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tr-FT [Wholesale Invoice Load] - Actual" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="Wholesale Invoices" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="BusinessDivision" />
+          </coordinate>
+          <coordinate name="Wholesale Measures">
+            <input nameref="Wholesale Measures" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Sales Status">
+            <input nameref="SalesStatus" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Size">
+            <input nameref="Size" />
+          </coordinate>
+          <coordinate name="Colour">
+            <input nameref="Colour" />
+          </coordinate>
+          <coordinate name="Product">
+            <input nameref="SubCategory" />
+          </coordinate>
+          <coordinate name="Story">
+            <input nameref="Story" />
+          </coordinate>
+          <coordinate name="WholesaleCustomer">
+            <input nameref="Customer" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tr-FT [Wholesale Order Load] - Actual" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="Wholesale Orders" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="BusinessDivision" />
+          </coordinate>
+          <coordinate name="Wholesale Measures">
+            <input nameref="Wholesale Measures" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Sales Status">
+            <input nameref="SalesStatus" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Size">
+            <input nameref="Size" />
+          </coordinate>
+          <coordinate name="Colour">
+            <input nameref="Colour" />
+          </coordinate>
+          <coordinate name="Product">
+            <input nameref="SubCategory" />
+          </coordinate>
+          <coordinate name="Story">
+            <input nameref="Story" />
+          </coordinate>
+          <coordinate name="WholesaleCustomer">
+            <input nameref="Customer" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tr-FT [Wholesale Invoce Z-Out] - #Parameters CurrYearETL" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-[Parameter] - CurrYearETL" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="FYear">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tr-FT [Wholesale Invoce Z-Out] - #Parameters Current Period ETL" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-[Parameter] - Current Period ETL" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Period">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tr-TJ [Wholesale Invoice Z-Out] - Join Current Year and Period" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tr-FT [Wholesale Invoce Z-Out] - #Parameters Current Period ETL" />
+        <source nameref="tr-FT [Wholesale Invoce Z-Out] - #Parameters CurrYearETL" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="cross" unique="false">
+          <left nameref="tr-FT [Wholesale Invoce Z-Out] - #Parameters Current Period ETL" />
+          <right nameref="tr-FT [Wholesale Invoce Z-Out] - #Parameters CurrYearETL" />
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1539295877533" name="tr-TJ [Wholesale Invoice Z-Out] - Join Prior Year and Period" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tr-FT [Wholesale Invoce Z-Out] - #Parameters Prior Period ETL" />
+        <source nameref="tr-FT [Wholesale Invoce Z-Out] - #Parameters Prior Period Year ETL" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="cross" unique="false">
+          <left nameref="tr-FT [Wholesale Invoce Z-Out] - #Parameters Prior Period ETL" />
+          <right nameref="tr-FT [Wholesale Invoce Z-Out] - #Parameters Prior Period Year ETL" />
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1539295877533" name="tr-FT [Wholesale Invoce Z-Out] - #Parameters Prior Period ETL" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-[Parameter] - Prior Period ETL" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Period">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tr-FT [Wholesale Invoce Z-Out] - #Parameters Prior Period Year ETL" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-[Parameter] - Prior Period Year ETL" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="FYear">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tr-FT [Product By Category] - UpperLower Case" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="Wholesale Products By Category" />
+      </sources>
+      <functions>
+        <function name="Trf-Category" type="UpperLower">
+          <comment><![CDATA[Transforms uppercase to whatever the first record case is.]]></comment>
+          <inputs>
+            <input nameref="Category" />
+          </inputs>
+          <parameters>
+            <case>firstcase</case>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Division">
+            <input nameref="Division" />
+          </coordinate>
+          <coordinate name="Category">
+            <input nameref="Trf-Category" />
+          </coordinate>
+          <coordinate name="Product">
+            <input nameref="Product" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tf-FT [Cube]: (Fcst Z-Out) 2" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube]: (Fcst Z-Out) 1" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Wholesale Measures">
+            <input nameref="Wholesale Measures" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Sales Status">
+            <input nameref="Sales Status" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Size">
+            <input nameref="Size" />
+          </coordinate>
+          <coordinate name="Colour">
+            <input nameref="Colour" />
+          </coordinate>
+          <coordinate name="Product">
+            <input nameref="Product" />
+          </coordinate>
+          <coordinate name="Story">
+            <input nameref="Story" />
+          </coordinate>
+          <coordinate name="Wholesale Customer">
+            <input nameref="Wholesale Customer" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tf-TJ [Cube]: (Fcst Z-Out) 1" type="TableJoin" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Zero out Actuals Months]]></comment>
+      <sources>
+        <source nameref="tf-TJ [Cube]: (Forecast)" />
+        <source nameref="tf-FT [Attr]: Period (Actual)" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="tf-TJ [Cube]: (Forecast)">
+            <key nameref="Period" />
+          </left>
+          <right nameref="tf-FT [Attr]: Period (Actual)">
+            <key nameref="AttrPeriod" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1539295877533" name="tf-TJ [Cube]: (Forecast)" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: (Forecast)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (CurrYear)" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="ex-Jedox [Cube]: (Forecast)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (CurrYear)">
+            <key nameref="#Value" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1539295877533" name="tf-FT [Attr]: Period (Actual)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Rename the fields so the ensuing join does not give a warninng]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Attr]: Period (Actual)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Attr#_Period_">
+            <input nameref="#_Period_" />
+          </coordinate>
+          <coordinate name="AttrPeriod">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Attr#Value">
+            <input nameref="#Value" />
+          </coordinate>
+          <coordinate name="~">
+            <input nameref="#_LANGUAGE" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tf-FT [Cube]: (Act 2 Fcst) 2" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube]: (Act 2 Fcst) 1" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Wholesale Measures">
+            <input nameref="Wholesale Measures" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input constant="Forecast" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Sales Status">
+            <input nameref="Sales Status" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Size">
+            <input nameref="Size" />
+          </coordinate>
+          <coordinate name="Colour">
+            <input nameref="Colour" />
+          </coordinate>
+          <coordinate name="Product">
+            <input nameref="Product" />
+          </coordinate>
+          <coordinate name="Story">
+            <input nameref="Story" />
+          </coordinate>
+          <coordinate name="Wholesale Customer">
+            <input nameref="Wholesale Customer" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-TJ [Cube]: (Actual)" type="TableJoin" modified="1539295877533" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: WSale(Actual)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (CurrYear)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: WSale(Actual)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (CurrYear)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-TJ [Cube]: (Act 2 Fcst) 1" type="TableJoin" modified="1539295877533" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube]: (Actual)" />
+        <source nameref="tf-FT [Attr]: Period (Actual)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="tf-TJ [Cube]: (Actual)">
+            <key nameref="Period" />
+          </left>
+          <right nameref="tf-FT [Attr]: Period (Actual)">
+            <key nameref="AttrPeriod" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-TJ [Cube]: Fin (Fcst_Mmm Z-Out) 0" type="TableJoin" modified="1539295877533" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Source:
+1- Fcst_Mmm Z-Out]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Fin (Forecast_Mmm Z-Out)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (CurrYear)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Fin (Forecast_Mmm Z-Out)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (CurrYear)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-FT [Attr]: Version (Forecast_Mmm)" type="FieldTransform" modified="1539295877533" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Rename the fields so the ensuing join does not give a warninng]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Attr]: Parameters (Forecast_Mmm)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Attr#_Parameter_">
+            <input nameref="#_Parameter_" />
+          </coordinate>
+          <coordinate name="AttrVersion">
+            <input nameref="Parameter" />
+          </coordinate>
+          <coordinate name="Attr#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-TJ [Cube]: Fin (Fcst_mmm Z-Out) 1" type="TableJoin" modified="1539295877533" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Zero out Actuals Months]]></comment>
+      <sources>
+        <source nameref="tf-TJ [Cube]: Fin (Fcst_Mmm Z-Out) 0" />
+        <source nameref="tf-FT [Attr]: Version (Forecast_Mmm)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="tf-TJ [Cube]: Fin (Fcst_Mmm Z-Out) 0">
+            <key nameref="Version" />
+          </left>
+          <right nameref="tf-FT [Attr]: Version (Forecast_Mmm)">
+            <key nameref="Attr#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1539295877533" name="tf-TJ [Cube]: Fin (Forecast)" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: (Forecast Fcst To Fcst_mmm)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (CurrYear)" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="ex-Jedox [Cube]: (Forecast Fcst To Fcst_mmm)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (CurrYear)">
+            <key nameref="#Value" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1539295877533" name="tf-FT [Cube]: (Fcst 2 Fcst_Mmm)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube]: Fin (Forecast)" />
+      </sources>
+      <functions>
+        <function name="ForecastVersion" type="OlapData">
+          <inputs>
+            <input constant="Item" />
+            <input constant="FMth" />
+            <input constant="~" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>#_Parameter</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Wholesale Measures">
+            <input nameref="Wholesale Measures" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input nameref="ForecastVersion" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Sales Status">
+            <input nameref="Sales Status" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Size">
+            <input nameref="Size" />
+          </coordinate>
+          <coordinate name="Colour">
+            <input nameref="Colour" />
+          </coordinate>
+          <coordinate name="Product">
+            <input nameref="Product" />
+          </coordinate>
+          <coordinate name="Story">
+            <input nameref="Story" />
+          </coordinate>
+          <coordinate name="Wholesale Customer">
+            <input nameref="Wholesale Customer" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tf-FT [Cube]: (Fcst to Fcst_mmm) 2" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube]: Fin (Fcst_mmm Z-Out) 1" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Wholesale Measures">
+            <input nameref="Wholesale Measures" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Sales Status">
+            <input nameref="Sales Status" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Size">
+            <input nameref="Size" />
+          </coordinate>
+          <coordinate name="Colour">
+            <input nameref="Colour" />
+          </coordinate>
+          <coordinate name="Product">
+            <input nameref="Product" />
+          </coordinate>
+          <coordinate name="Story">
+            <input nameref="Story" />
+          </coordinate>
+          <coordinate name="Wholesale Customer">
+            <input nameref="Wholesale Customer" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1539295877533" name="tf-FH [Dim]: Customer - Alt Hierarchy" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="Wholesale Customers Alt Hierarchy" />
+      </sources>
+      <target>
+        <levels>
+          <level>
+            <input nameref="level1" />
+          </level>
+          <level>
+            <input nameref="level2" />
+          </level>
+          <level>
+            <input nameref="level3" />
+          </level>
+          <level>
+            <input nameref="level4" />
+          </level>
+          <level>
+            <input nameref="level5" />
+          </level>
+          <level>
+            <input nameref="level6" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform modified="1563255983535" name="tf-TJ - [Cube]:(Budget Extract)" type="TableJoin" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: (Budget)" />
+        <source nameref="ex-[Parameter] - BudYearETL" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="ex-Jedox [Cube]: (Budget)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-[Parameter] - BudYearETL">
+            <key nameref="#Value" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1563258124184" name="tr-FT [Wholesale Budget Extract]" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="tf-TJ - [Cube]:(Budget Extract)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="WholesaleCustomer">
+            <input nameref="Wholesale Customer" />
+          </coordinate>
+          <coordinate name="OrderType">
+            <input nameref="Sales Status" />
+          </coordinate>
+          <coordinate name="Measure">
+            <input nameref="Wholesale Measures" />
+          </coordinate>
+          <coordinate name="Amount_AUD">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1563763505256" name="tr-FT [Wholesale Forecast Extract]" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="tf-TJ [Cube]: (Forecast_ForReport)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="WholesaleCustomer">
+            <input nameref="Wholesale Customer" />
+          </coordinate>
+          <coordinate name="OrderType">
+            <input nameref="Sales Status" />
+          </coordinate>
+          <coordinate name="Measure">
+            <input nameref="Wholesale Measures" />
+          </coordinate>
+          <coordinate name="Amount_AUD">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1563762810744" name="tf-TJ - [Cube]:(Forecast Extract)" type="TableJoin" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: (Budget)" />
+        <source nameref="ex-[Parameter] - BudYearETL" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="ex-Jedox [Cube]: (Budget)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-[Parameter] - BudYearETL">
+            <key nameref="#Value" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1563763482526" name="tf-TJ [Cube]: (Forecast_ForReport)" type="TableJoin" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: (Forecast_ForReport)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (CurrYear)" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="ex-Jedox [Cube]: (Forecast_ForReport)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (CurrYear)">
+            <key nameref="#Value" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+  </transforms>
+  <loads>
+    <load modified="1540876126464" name="ld-Jedox [Dim]: WholesaleCustomer" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: Customer" />
+      <connection nameref="Jedox" />
+      <dimension name="Wholesale Customer">
+        <elements mode="add" />
+        <consolidations mode="insertParallel" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load modified="1539295877533" name="ld-Jedox [Dim]: ProductByDepartment" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: Product by Department" />
+      <connection nameref="Jedox" />
+      <dimension name="Product">
+        <elements mode="insert" />
+        <consolidations mode="add" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+    <load modified="1539295877533" name="ld-Jedox [Dim]: Season" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: Season" />
+      <connection nameref="Jedox" />
+      <dimension name="Season">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load modified="1539295877533" name="ld-Jedox [Dim]: ProductByCategory" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: Product By Category" />
+      <connection nameref="Jedox" />
+      <dimension name="Product">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="inactive" />
+      </dimension>
+    </load>
+    <load modified="1539295877533" name="ld-Jedox [Dim]: Story" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: Story" />
+      <connection nameref="Jedox" />
+      <dimension name="Story">
+        <elements mode="insert" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load modified="1539295877533" name="ld-Jedox [Dim]: Colour" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: Colour" />
+      <connection nameref="Jedox" />
+      <dimension name="Colour">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="inactive" />
+      </dimension>
+    </load>
+    <load modified="1539295877533" name="ld-Jedox [Dim]: Size" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: Size" />
+      <connection nameref="Jedox" />
+      <dimension name="Size">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+    <load modified="1539295877533" name="ld-Jedox[Wholesale]:Invoices-Actual" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tr-FT [Wholesale Invoice Load] - Actual" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Wholesale" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Wholesale Measures" name="Wholesale Measures" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Sales Status" name="Sales Status" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Size" name="Size" />
+          <dimension input="Colour" name="Colour" />
+          <dimension input="Product" name="Product" />
+          <dimension input="Story" name="Story" />
+          <dimension input="WholesaleCustomer" name="Wholesale Customer" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1539295877533" name="ld-Jedox[Wholesale]:Orders-Actual" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tr-FT [Wholesale Order Load] - Actual" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Wholesale" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Wholesale Measures" name="Wholesale Measures" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Sales Status" name="Sales Status" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Size" name="Size" />
+          <dimension input="Colour" name="Colour" />
+          <dimension input="Product" name="Product" />
+          <dimension input="Story" name="Story" />
+          <dimension input="WholesaleCustomer" name="Wholesale Customer" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1539295877533" name="ld-Jedox [Cube]: Sales Orders Z-Out (Actual)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="ex-Jedox [Cube Slice]: Sales Order (Actual) Z-Out" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Wholesale" splash="default" cubeLayoutChangeMode="noneWithDefaultWrite" />
+    </load>
+    <load modified="1539295877533" name="ld-Jedox [Cube]: Sales Invoice Z-Out (Actual)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="ex-Jedox [Cube Slice]: Sales Invoice (Actual) Z-Out" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube cubeLayoutChangeMode="none" name="Wholesale" splash="default" />
+    </load>
+    <load modified="1539295877533" name="ld-Jedox [Cube]: (Fcst Z-Out)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Zero out Actual months for the current Forecast]]></comment>
+      <source nameref="tf-FT [Cube]: (Fcst Z-Out) 2" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube cubeLayoutChangeMode="noneWithDefaultWrite" name="Wholesale" splash="disabled">
+        <dimensions>
+          <dimension input="Wholesale Measures" name="Wholesale Measures" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Sales Status" name="Sales Status" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Size" name="Size" />
+          <dimension input="Colour" name="Colour" />
+          <dimension input="Product" name="Product" />
+          <dimension input="Story" name="Story" />
+          <dimension input="Wholesale Customer" name="Wholesale Customer" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1539295877533" name="ld-Jedox [Cube]: (Act 2  Fcst)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Backup current forecast into Forecast_Mmm]]></comment>
+      <source nameref="tf-FT [Cube]: (Act 2 Fcst) 2" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube cubeLayoutChangeMode="noneWithDefaultWrite" name="Wholesale" splash="disabled" />
+    </load>
+    <load modified="1539295877533" name="ld-Jedox [Cube]: (Fcst_Mmm Z-Out)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Forecast_Mmm = e.g. Forecast_Jul]]></comment>
+      <source nameref="tf-FT [Cube]: (Fcst to Fcst_mmm) 2" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube cubeLayoutChangeMode="noneWithDefaultWrite" name="Wholesale" splash="disabled">
+        <dimensions>
+          <dimension input="Wholesale Measures" name="Wholesale Measures" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Sales Status" name="Sales Status" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Size" name="Size" />
+          <dimension input="Colour" name="Colour" />
+          <dimension input="Product" name="Product" />
+          <dimension input="Story" name="Story" />
+          <dimension input="Wholesale Customer" name="Wholesale Customer" />
+          <dimension input="#Value" />
+          <dimension input="#_Parameter_" />
+          <dimension input="Parameter" />
+          <dimension input="#_LANGUAGE" />
+          <dimension input="Attr#_Parameter_" />
+          <dimension input="AttrVersion" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1539295877533" name="ld-Jedox [Cube]: (Fcst 2 Fcst_Mmm)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Backup current forecast into Forecast_Mmm]]></comment>
+      <source nameref="tf-FT [Cube]: (Fcst 2 Fcst_Mmm)" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube cubeLayoutChangeMode="noneWithDefaultWrite" name="Wholesale" splash="disabled" />
+    </load>
+    <load modified="1539295877533" name="ld-DW [Dim]: Wholesale Customers - Alternate Hierarchy" type="Relational" modifiedBy="richardsADMIN">
+      <source format="fh" nameref="Wholesale Customer Manually Managed" />
+      <connection nameref="PAS-DW RAW" />
+      <mode>create</mode>
+      <table name="JEDOX_WHOLESALE_CUSTOMER_ALTERNATE" schema="dbo" />
+    </load>
+    <load modified="1539295877533" name="ld-Jedox [Dim]: WholesaleCustomer - Alt Hierarchy" type="Dimension" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: Customer - Alt Hierarchy" />
+      <connection nameref="Jedox" />
+      <dimension name="Wholesale Customer">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load modified="1563257985906" name="ld-DW [Fact]: Wholesale Budget Extract" type="Relational" modifiedBy="ONEPAS\richards">
+      <source nameref="tr-FT [Wholesale Budget Extract]" />
+      <connection nameref="Jets-DW RAW" />
+      <mode>create</mode>
+      <table name="WholesaleBudgetRaw" schema="dbo" />
+    </load>
+    <load modified="1563763546445" name="ld-DW [Fact]: Wholesale Forecast Extract" type="Relational" modifiedBy="ONEPAS\richards">
+      <source nameref="tr-FT [Wholesale Forecast Extract]" />
+      <connection nameref="Jets-DW RAW" />
+      <mode>create</mode>
+      <table name="WholesaleForecastRaw" schema="dbo" />
+    </load>
+  </loads>
+  <jobs>
+    <job modified="1540876267920" name="Wholesale Dimension Load" type="Parallel" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Dim]: ProductByDepartment" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim]: ProductByCategory" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim]: WholesaleCustomer" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim]: Colour" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim]: Season" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim]: Size" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim]: Story" parallel="false" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1539295877533" name="load[Cube]:Wholesale - Sales Invoice (Z-Out) - Current Period - Year" type="Loop" modifiedBy="richardsADMIN">
+      <loops>
+        <loop nameref="tr-TJ [Wholesale Invoice Z-Out] - Join Current Year and Period" />
+      </loops>
+      <execution nameref="ld-Jedox [Cube]: Sales Invoice Z-Out (Actual)" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1539295877533" name="load[Cube]:Wholesale - Sales Invoice (Z-Out) - Prior Period - Year" type="Loop" modifiedBy="richardsADMIN">
+      <loops>
+        <loop nameref="tr-TJ [Wholesale Invoice Z-Out] - Join Prior Year and Period" />
+      </loops>
+      <execution nameref="ld-Jedox [Cube]: Sales Invoice Z-Out (Actual)" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1563763804424" name="Wholesale Nightly Load" type="Standard" modifiedBy="ONEPAS\richards">
+      <execution nameref="ld-Jedox [Cube]: Sales Orders Z-Out (Actual)" type="load" />
+      <execution nameref="load[Cube]:Wholesale - Sales Invoice (Z-Out) - Prior Period - Year" type="job" />
+      <execution nameref="load[Cube]:Wholesale - Sales Invoice (Z-Out) - Current Period - Year" type="job" />
+      <execution nameref="Wholesale Dimension Load" type="job" />
+      <execution nameref="ld-Jedox[Wholesale]:Orders-Actual" type="load" />
+      <execution nameref="ld-Jedox[Wholesale]:Invoices-Actual" type="load" />
+      <execution nameref="Forecast Load" type="job" />
+      <execution nameref="ld-DW [Fact]: Wholesale Budget Extract" type="load" />
+      <execution nameref="ld-DW [Fact]: Wholesale Forecast Extract" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1539295877533" name="Forecast Load" type="Standard" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: (Fcst Z-Out)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: (Act 2  Fcst)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: (Fcst_Mmm Z-Out)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: (Fcst 2 Fcst_Mmm)" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+  </jobs>
+</project>
