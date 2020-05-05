@@ -1,0 +1,2757 @@
+<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="7.3" modified="1588631938640" modifiedBy="ONEPAS\richards" olapId="p47">
+  <headers>
+    <header name="comment" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Project description]]></comment>
+    </header>
+  </headers>
+  <variables />
+  <connections>
+    <connection modified="1588293563456" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DataWarehouse</database>
+      <parameters>
+        <parameter name="integratedSecurity">true</parameter>
+        <parameter name="autoCommit">true</parameter>
+      </parameters>
+    </connection>
+    <connection modified="1588293563456" name="DW Raw" type="Sqlserver" modifiedBy="ONEPAS\richards">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DataWarehouseRawData</database>
+      <parameters>
+        <parameter name="integratedSecurity">true</parameter>
+        <parameter name="autoCommit">true</parameter>
+      </parameters>
+    </connection>
+    <connection modified="1588293563456" name="Jedox" type="JedoxGlobal" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
+      <globalReference>localhost</globalReference>
+      <database>PAS-Financials</database>
+      <ssl>off</ssl>
+    </connection>
+    <connection modified="1588293563456" name="PAS-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Connection to Data warehouse MTWSQL06]]></comment>
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DataWarehouse</database>
+      <parameters>
+        <parameter name="autoCommit">true</parameter>
+        <parameter name="integratedSecurity">true</parameter>
+      </parameters>
+    </connection>
+  </connections>
+  <extracts>
+    <extract modified="1588293563456" name="ex-DW [Dim]: Accounts (BaseLevel)" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Accounts to only update the base level account. The parent hierarchy is manually build and not to be touched by etl.]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT 
+ DimGeneralLedgerAccountGroup.Name AS [AccountGroup]
+ , DimGeneralLedgerAccount.[Code] AS [Accounts]
+ , '' AS [Weight]
+ , DimGeneralLedgerAccount.[Name] AS [AccountDescAtt]
+  FROM DataWarehouse.dbo.DimGeneralLedgerAccount DimGeneralLedgerAccount
+  LEFT OUTER JOIN DataWarehouse.dbo.DimGeneralLedgerAccountGroup  DimGeneralLedgerAccountGroup on DimGeneralLedgerAccount.GeneralLedgerAccountGroupId = DimGeneralLedgerAccountGroup.Id
+  --ORDER BY DimGeneralLedgerAccount.[Code]]]></query>
+      <alias_map>
+        <alias name=":parent" origin="AccountGroup">1</alias>
+        <alias name=":child" origin="Accounts">2</alias>
+        <alias name="weight" origin="weight">3</alias>
+        <alias name="AccDescAtt" origin="AccountDescAtt">4</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1588293563456" name="ex-DW [Dim]: Accounts (All Levels)" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW Raw" />
+      <query><![CDATA[SELECT
+    [:parent]
+   ,[:child]
+   ,[:weight]
+   ,CASE
+        WHEN JEDOX_ACCOUNTS_ATTRIBUTES.Name = '' THEN [:child]
+        WHEN DimGeneralLedgerAccount.Name <> JEDOX_ACCOUNTS_ATTRIBUTES.Name THEN DimGeneralLedgerAccount.Name
+        ELSE JEDOX_ACCOUNTS_ATTRIBUTES.Name
+    END Name
+FROM DataWarehouseRawData.dbo.JEDOX_ACCOUNTS_ATTRIBUTES
+LEFT OUTER JOIN  DataWarehouse.dbo.DimGeneralLedgerAccount on DimGeneralLedgerAccount.Code = JEDOX_ACCOUNTS_ATTRIBUTES.[:Child]
+
+/* Original query superceded 2017-07-17
+Select [:parent]
+,[:child]
+,[:weight]
+,case when [Name]='' then [:child] else [Name] end Name
+From DataWarehouseRawData.dbo.JEDOX_ACCOUNTS_ATTRIBUTES
+*/]]></query>
+      <alias_map>
+        <alias origin=":parent">1</alias>
+        <alias origin=":child">2</alias>
+        <alias origin=":weight">3</alias>
+        <alias origin="Name">4</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1588293563456" name="ex-DW [Dim]: BusDiv" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT DISTINCT 
+--, DimBusinessDivision2.id 
+'All Business Divisions' AS AllBus
+, DimBusinessDivision2.code AS BusDiv
+, DimBusinessDivision2.FinancialBusinessDivisionDescription AS Description
+FROM Datawarehouse.dbo.DimBusinessDivision DimBusinessDivision
+INNER JOIN DimBusinessDivision DimBusinessDivision2 ON DimBusinessDivision.FinancialBusinessDivisionId = DimBusinessDivision2.Id
+ORDER BY DimBusinessDivision2.code]]></query>
+      <alias_map>
+        <alias origin="AllBus">1</alias>
+        <alias origin="BusDiv">2</alias>
+        <alias origin="description">3</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1588293563456" name="ex-DW [Dim]: Company" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Uncomplete - Build [Dim]:Company]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT  'All AP21 B Companies' AS AllCo
+, DimLegalEntity.Code as LegalEnt
+, DimLegalEntity.Name as Description
+FROM Datawarehouse.dbo.DimLegalEntity
+ORDER BY DimLegalEntity.Code]]></query>
+      <alias_map>
+        <alias origin="AllCo">1</alias>
+        <alias origin="LegalEnt">2</alias>
+        <alias origin="Description">3</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1588293563456" name="ex-DW [Dim]: Currency" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
+      <query><![CDATA[/* Currency Dimension */
+SELECT DISTINCT
+ Currency
+, DimCurrency.Name
+FROM (
+  /* Balances */
+  SELECT
+    COALESCE(BusinessDivisionFinancialCurrency.Code, BalanceCurrency.Code) AS Currency,
+    FactGeneralLedgerBalance.FinancialYear AS [Year],
+    'P00' AS Period,
+    COALESCE(FinancialBusinessDivision.Code, DimBusinessDivision.Code) AS [Business Division],
+    DimLegalEntity.Code AS [Company],
+    DimProfitCentre.Code AS [Profit Cost Centre],
+    DimGeneralLedgerAccount.Code AS [Account],
+    FactGeneralLedgerBalance.BalanceAmount * DimGeneralLedgerAccount.LoadFactor AS [Balance Movement],
+    DimGeneralLedgerAccount.LoadFactor AS [LoadFactor]
+  FROM
+    dbo.FactGeneralLedgerBalance
+  INNER JOIN
+    dbo.DimGeneralLedgerChart ON
+    DimGeneralLedgerChart.Id = FactGeneralLedgerBalance.GeneralLedgerChartId
+  INNER JOIN
+    dbo.DimBusinessDivision ON
+    DimBusinessDivision.Id = DimGeneralLedgerChart.BusinessDivisionId
+  INNER JOIN
+    dbo.DimBusinessDivision AS FinancialBusinessDivision ON
+    FinancialBusinessDivision.Id = DimBusinessDivision.FinancialBusinessDivisionId
+  INNER JOIN
+    dbo.DimGeneralLedgerAccount ON
+    DimGeneralLedgerAccount.Id = DimGeneralLedgerChart.GeneralLedgerAccountId
+  INNER JOIN
+    dbo.DimCurrency AS BalanceCurrency ON
+    BalanceCurrency.Id = FactGeneralLedgerBalance.CurrencyId
+  INNER JOIN
+    dbo.DimCurrency AS BusinessDivisionFinancialCurrency ON
+    BusinessDivisionFinancialCurrency.Id = DimBusinessDivision.FinancialCurrencyId
+  INNER JOIN
+    dbo.DimLegalEntity ON
+    DimLegalEntity.Id = DimGeneralLedgerChart.LegalEntityId
+  INNER JOIN
+    dbo.DimProfitCentre ON
+    DimProfitCentre.Id = DimGeneralLedgerChart.ProfitCentreId
+
+  UNION ALL
+
+  /* Balance Movements */
+  SELECT
+    COALESCE(BusinessDivisionFinancialCurrency.Code, BalanceCurrency.Code) AS Currency,
+    FactGeneralLedgerBalanceMovement.FinancialYear AS [Year],
+    'P' + FORMAT(FactGeneralLedgerBalanceMovement.FinancialMonth, '00') AS Period,
+    COALESCE(FinancialBusinessDivision.Code, DimBusinessDivision.Code) AS [Business Division],
+    DimLegalEntity.Code AS [Company],
+    DimProfitCentre.Code AS [Profit Cost Centre],
+    DimGeneralLedgerAccount.Code AS [Account],
+    FactGeneralLedgerBalanceMovement.BalanceAmount * DimGeneralLedgerAccount.LoadFactor AS [Balance Movement],
+    DimGeneralLedgerAccount.LoadFactor AS [LoadFactor]
+  FROM
+    dbo.FactGeneralLedgerBalanceMovement
+  INNER JOIN
+    dbo.DimGeneralLedgerChart ON
+    DimGeneralLedgerChart.Id = FactGeneralLedgerBalanceMovement.GeneralLedgerChartId
+  INNER JOIN
+    dbo.DimBusinessDivision ON
+    DimBusinessDivision.Id = DimGeneralLedgerChart.BusinessDivisionId
+  INNER JOIN
+    dbo.DimBusinessDivision AS FinancialBusinessDivision ON
+    FinancialBusinessDivision.Id = DimBusinessDivision.FinancialBusinessDivisionId
+  INNER JOIN
+    dbo.DimGeneralLedgerAccount ON
+    DimGeneralLedgerAccount.Id = DimGeneralLedgerChart.GeneralLedgerAccountId
+  INNER JOIN
+    dbo.DimCurrency AS BalanceCurrency ON
+    BalanceCurrency.Id = FactGeneralLedgerBalanceMovement.CurrencyId
+  INNER JOIN
+    dbo.DimCurrency AS BusinessDivisionFinancialCurrency ON
+    BusinessDivisionFinancialCurrency.Id = DimBusinessDivision.FinancialCurrencyId
+  INNER JOIN
+    dbo.DimLegalEntity ON
+    DimLegalEntity.Id = DimGeneralLedgerChart.LegalEntityId
+  INNER JOIN
+    dbo.DimProfitCentre ON
+    DimProfitCentre.Id = DimGeneralLedgerChart.ProfitCentreId
+  WHERE
+    FactGeneralLedgerBalanceMovement.FinancialYear > '2013'
+) GLBalance_GLMovement
+INNER JOIN DimCurrency on GLBalance_GLMovement.Currency = DimCurrency.Code]]></query>
+    </extract>
+    <extract modified="1588293563456" name="ex-DW [Dim]: ProfCen (Retail)" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[NOT COMPLETE - requires update from DW
+Build two hierarchies:
+1. ProfCen Ty by BusDiv
+2. BusDiv by ProfCen Ty
+
+Also the [Attr] is loaded from here]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT DISTINCT
+	DimLegalentity.Name AS [LegalEntityDesc]
+	,DimLegalEntity.Code AS [CurrLegalEnt]
+	,DimProfitCentre.[State]
+	,DimProfitCentre.[Country]
+	,CONVERT(INT, DimProfitCentre.[AreaInSquareMeters]) AS [Area]
+	,CASE
+		WHEN DimProfitCentre.[ProfitCentreType] IN ('WH', 'SU') THEN ''
+		ELSE DimProfitCentre.[ProfitCentreType]
+	END AS [StoreType]
+	,DimProfitCentre.[StartupCapitalExpenditure] AS [SCapex]
+	,DimProfitCentre.[StoreGrading] AS [Grading]
+	,DimProfitCentre.ConcessionStoreGrade AS [ConcessionStoreGrade]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[OpenDate], 112) AS [OpenDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[CloseDate], 112) AS [CloseDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishStartDate], 112) AS [RefStartDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishEndDate], 112) AS [RefEndDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[BudgetOpenDate], 112) AS [BOpenDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[BudgetCloseDate], 112) AS [BCloseDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[BudgetOpenDateCurrentYear], 112) AS [BOpenDateCY]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[BudgetCloseDateCurrentYear], 112) AS [BCloseDateCY]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishStartDateBudget], 112) AS [BRefStartDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishEndDateBudget], 112) AS [BRefEndDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishStartDateBudgetCurrentYear], 112) AS [BRefStartDateCY]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishEndDateBudgetCurrentYear], 112) AS [BRefEndDateCY]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[ForecastOpenDate], 112) AS [FOpenDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[ForecastCloseDate], 112) AS [FCloseDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishStartDateForecast], 112) AS [FRefStartDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishEndDateForecast], 112) AS [FRefEndDate]
+	,DimProfitCentre.[ProfitCentreType] AS [ProfitCenterTy]
+	,DimProfitCentre.[Code] AS [ProfitCenter]
+	,DimProfitCentre.[Name] AS [ProfCenDesc]
+	,DimBusinessDivision.[Code] AS [BusDevCode]
+	,DimBusinessDivision.[FinancialBusinessDivisionDescription] AS [BusDevDesc]
+	,CASE
+		WHEN (CHARINDEX('Legacy', DimProfitCentre.[Name]) <> 0 OR
+			SUBSTRING(CAST(DimProfitCentre.[Code] AS VARCHAR(10)), 1, 2) = '86') THEN 0
+		ELSE 1
+	END AS NonLegacy
+	,DimProfitCentre.[Code] + ' - ' + DimProfitCentre.[Name] AS [ProfitCentreLongDesc]
+	,DimAreaManager.Name AS [AreaManager]
+	,CASE
+		WHEN DimProfitCentre.HasPeopleCounter = 1 THEN 'Y'
+		ELSE 'N'
+	END AS [PeopleCounter]
+	,DimProfitCentre.Latitude
+	,DimProfitCentre.Longitude
+	,DimGeographyZone.Code AS GeographyZone
+	,DimProfitCentre.FloorCapacity
+	,DimExternalSalesPartner.Name AS ExternalPartner
+FROM DataWarehouse.dbo.DimProfitCentre DimProfitCentre
+LEFT JOIN DataWarehouse.dbo.DimLegalEntity DimLegalentity
+	ON DimProfitCentre.CurrentLegalEntityId = DimLegalentity.Id
+LEFT JOIN DataWarehouse.dbo.DimBusinessDivision DimBusinessDivision
+	ON DimProfitCentre.CurrentBusinessDivisionId = DimBusinessDivision.Id
+LEFT JOIN DataWarehouse.dbo.DimWarehouse DimWarehouse
+	ON DimProfitCentre.Id = DimWarehouse.ProfitCentreId
+		AND DimWarehouse.Code != 'REEDUMMSG'
+		AND DimWarehouse.Code != 'zzRESBUR'
+LEFT JOIN DataWarehouse.dbo.DimAreaManager DimAreaManager
+	ON DimWarehouse.AreaManagerId = DimAreaManager.Id
+LEFT JOIN DataWarehouse.dbo.DimGeographyZone
+	ON DimGeographyZone.Id = DimProfitCentre.GeographyZoneId
+LEFT JOIN DimExternalSalesPartner
+	ON DimProfitCentre.ExternalSalesPartnerId = DimExternalSalesPartner.Id
+WHERE (DimProfitCentre.ProfitCentreType = 'RT'
+OR DimProfitCentre.ProfitCentreType = 'CO'
+OR DimProfitCentre.ProfitCentreType = 'OU'
+OR DimProfitCentre.ProfitCentreType = 'RH'
+OR DimProfitCentre.ProfitCentreType = 'EC')
+AND DimProfitCentre.Code not in (1998)
+ORDER BY DimProfitCentre.[Code]]]></query>
+      <alias_map>
+        <alias origin="LegalEntityDesc">1</alias>
+        <alias origin="CurrLegalEnt">2</alias>
+        <alias origin="State">3</alias>
+        <alias origin="Country">4</alias>
+        <alias origin="Area">5</alias>
+        <alias origin="StoreType">6</alias>
+        <alias origin="SCapex">7</alias>
+        <alias origin="Grading">8</alias>
+        <alias origin="ConcessionStoreGrade">9</alias>
+        <alias origin="OpenDate">10</alias>
+        <alias origin="CloseDate">11</alias>
+        <alias origin="RefStartDate">12</alias>
+        <alias origin="RefEndDate">13</alias>
+        <alias origin="BOpenDate">14</alias>
+        <alias origin="BCloseDate">15</alias>
+        <alias origin="BOpenDateCY">16</alias>
+        <alias origin="BCloseDateCY">17</alias>
+        <alias origin="BRefStartDate">18</alias>
+        <alias origin="BRefEndDate">19</alias>
+        <alias origin="BRefStartDateCY">20</alias>
+        <alias origin="BRefEndDateCY">21</alias>
+        <alias origin="FOpenDate">22</alias>
+        <alias origin="FCloseDate">23</alias>
+        <alias origin="FRefStartDate">24</alias>
+        <alias origin="FRefEndDate">25</alias>
+        <alias origin="ProfitCenterTy">26</alias>
+        <alias origin="ProfitCenter">27</alias>
+        <alias origin="ProfCenDesc">28</alias>
+        <alias origin="BusDevCode">29</alias>
+        <alias origin="BusDevDesc">30</alias>
+        <alias origin="NonLegacy">31</alias>
+        <alias origin="ProfitCentreLongDesc">32</alias>
+        <alias origin="AreaManager">33</alias>
+        <alias origin="PeopleCounter">34</alias>
+        <alias origin="Latitude">35</alias>
+        <alias origin="Longitude">36</alias>
+        <alias origin="GeographyZone">37</alias>
+        <alias origin="FloorCapacity">38</alias>
+        <alias origin="ExternalPartner">39</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1588293563456" name="ex-Jedox [Attr]: (ProfCenType) Excl-OutLets and Ecomm" type="ConstantTree" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Load only NonLegacyStore attribute = 1]]></comment>
+      <data>
+        <header>
+          <value>:level</value>
+          <value>:element</value>
+          <value>:weight</value>
+          <value>:nodetype</value>
+        </header>
+        <row>
+          <value>1</value>
+          <value>CO</value>
+          <value>1</value>
+          <value>S</value>
+        </row>
+        <row>
+          <value>1</value>
+          <value>RH</value>
+          <value>1</value>
+          <value>S</value>
+        </row>
+        <row>
+          <value>1</value>
+          <value>RT</value>
+          <value>1</value>
+          <value>S</value>
+        </row>
+      </data>
+    </extract>
+    <extract modified="1588293563456" name="ex-Jedox [Attr]: (ProfCenType) Ecomm" type="ConstantTree" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Load only NonLegacyStore attribute = 1]]></comment>
+      <data>
+        <header>
+          <value>:level</value>
+          <value>:element</value>
+          <value>:weight</value>
+          <value>:nodetype</value>
+        </header>
+        <row>
+          <value>1</value>
+          <value>EC</value>
+          <value>1</value>
+          <value>S</value>
+        </row>
+      </data>
+    </extract>
+    <extract modified="1588293563456" name="ex-Jedox [Attr]: (ProfCenType) OutLets" type="ConstantTree" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Load only NonLegacyStore attribute = 1]]></comment>
+      <data>
+        <header>
+          <value>:level</value>
+          <value>:element</value>
+          <value>:weight</value>
+          <value>:nodetype</value>
+        </header>
+        <row>
+          <value>1</value>
+          <value>OU</value>
+          <value>1</value>
+          <value>S</value>
+        </row>
+      </data>
+    </extract>
+    <extract modified="1588293563456" name="ex-DW [Dim]: ProfCen (Non-Retail)" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[NOT COMPLETE - requires update from DW
+Build two hierarchies:
+1. ProfCen Ty by BusDiv
+2. BusDiv by ProfCen Ty
+
+Also the [Attr] is loaded from here]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT DISTINCT
+ DimProfitCentre.ProfitCentreType AS [ProfCenType]
+ , DimProfitCentre.[Code] AS [ProfCenCode]
+ , DimProfitCentre.[Name] AS [ProfCenDesc]
+ , DimProfitCentre.[Code] + ' - ' + DimProfitCentre.[Name] AS [ProfCenLongDesc]
+ , DimBusinessDivision.[Code] AS [BusDevCode]
+ , DimBusinessDivision.[FinancialBusinessDivisionDescription] AS [BusDevDesc]
+FROM DataWarehouse.dbo.DimProfitCentre DimProfitCentre
+LEFT JOIN DataWarehouse.dbo.DimBusinessDivision DimBusinessDivision on DimProfitCentre.CurrentBusinessDivisionId = DimBusinessDivision.Id
+WHERE (DimProfitCentre.ProfitCentreType = 'WS' OR DimProfitCentre.ProfitCentreType = 'SU' OR DimProfitCentre.ProfitCentreType = 'UN')
+and DimProfitCentre.Code != 9450
+ORDER BY DimProfitCentre.[Code]]]></query>
+      <alias_map>
+        <alias origin="ProfCenType">1</alias>
+        <alias origin="ProfCenCode">2</alias>
+        <alias origin="ProfCenDesc">3</alias>
+        <alias origin="ProfCenLongDesc">4</alias>
+        <alias origin="BusDevCode">5</alias>
+        <alias origin="BusDevDesc">6</alias>
+      </alias_map>
+    </extract>
+    <extract name="ex-Jedox [Dim]: Store (Hierarchy1)" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Profit-Cost Centre">
+          <condition operator="equal" mode="nodesToBases" type="accept"><![CDATA[Retail]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>defaultLanguage</attributesMode>
+    </extract>
+    <extract name="ex-Jedox [Dim]: Store (Hierarchy2)" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Profit-Cost Centre">
+          <condition operator="equal" mode="rootToBases" type="accept"><![CDATA[Total Retail (by BusinessDiv)]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>defaultLanguage</attributesMode>
+    </extract>
+    <extract name="ex-Jedox [Dim]: Store (Hierarchy3)" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Profit-Cost Centre">
+          <condition mode="rootToBases" operator="equal" type="accept"><![CDATA[Reporting Consolidations]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>defaultLanguage</attributesMode>
+    </extract>
+    <extract modified="1588293563456" name="Store [By Area Manager]" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
+      <query><![CDATA[DECLARE @ReportingRetailWeek INT = (SELECT ConfigurationValue from DataWarehouse.dbo.SysConfiguration WHERE ConfigurationKey = 'ReportingRetailWeek')
+DECLARE @ReportingRetailYear INT = (SELECT ConfigurationValue from DataWarehouse.dbo.SysConfiguration Where ConfigurationKey ='ReportingRetailYear')
+DECLARE @ReportingRetailPeriodId INT = (SELECT DISTINCT RetailPeriodId from Datawarehouse.dbo.DimDate where RetailWeek = (Select ConfigurationValue from DataWarehouse.dbo.SysConfiguration Where ConfigurationKey = 'ReportingRetailWeek' and RetailYear = @ReportingRetailYear))
+
+DECLARE @ReportingPeriodEnd DATE = (SELECT DISTINCT RetailPeriodEnd from Datawarehouse.dbo.DimDate where RetailPeriodId = @ReportingRetailPeriodId -1)
+
+SELECT DISTINCT 'Manually Managed Consolidations' AS Level1 
+  , 'Reporting Consolidations' AS Level2 
+  , 'Payroll Reporting Consolidations' AS Level3 
+  , 'Store By AreaManager' AS Level4 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - Total' AS Level5 
+  , 
+  CASE 
+    WHEN DimAreaManager.Code IS NULL 
+    THEN CAST(DimBusinessDivision.Code AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+    ELSE DimAreaManager.Code 
+  END AS Level6 
+
+  , DimProfitCentre.Code AS Level7 
+  , 
+  CASE 
+    WHEN MatWarehouse.AreaManagerName IS NULL 
+    THEN CAST(DimBusinessDivision.Code AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+    ELSE MatWarehouse.AreaManagerName 
+  END AS 'Name' 
+  , matwarehouse.tradingstatus
+  , DimProfitCentre.OpenDate
+  , DimProfitCentre.CloseDate
+FROM DimProfitCentre 
+    INNER JOIN DimBusinessDivision 
+    ON DimBusinessDivision.id = DimProfitCentre.CurrentBusinessDivisionId 
+--    LEFT OUTER JOIN MatWarehouse 
+    INNER JOIN MatWarehouse 
+    ON MatWArehouse.ProfitCentreId = DimProfitCentre.Id 
+--    LEFT OUTER JOIN dbo.DimAreaManager 
+    INNER JOIN dbo.DimAreaManager 
+    ON DimAreaManager.Id = MatWarehouse.AreaManagerId
+WHERE DimAreaManager.Code != 'RENA'
+  AND DimProfitCentre.IsActive = 1 
+  AND DimProfitCentre.OpenDate IS NOT NULL
+  AND (DimProfitCentre.CloseDate IS NULL OR DimProfitCentre.CloseDate >= @ReportingPeriodEnd)
+  OR DimProfitCentre.Code LIKE '85%'
+  OR DimProfitCentre.Code = 1992  
+  AND DimBusinessDivision.id != 11 
+
+
+/*
+DECLARE @ReportingRetailWeek INT = (SELECT ConfigurationValue from DataWarehouse.dbo.SysConfiguration WHERE ConfigurationKey = 'ReportingRetailWeek')
+DECLARE @ReportingRetailYear INT = (SELECT ConfigurationValue from DataWarehouse.dbo.SysConfiguration Where ConfigurationKey ='ReportingRetailYear')
+DECLARE @ReportingRetailPeriodId INT = (SELECT DISTINCT RetailPeriodId from Datawarehouse.dbo.DimDate where RetailWeek = (Select ConfigurationValue from DataWarehouse.dbo.SysConfiguration Where ConfigurationKey = 'ReportingRetailWeek' and RetailYear = @ReportingRetailYear))
+
+DECLARE @ReportingPeriodEnd DATE = (SELECT DISTINCT RetailPeriodEnd from Datawarehouse.dbo.DimDate where RetailPeriodId = @ReportingRetailPeriodId -1)
+
+SELECT DISTINCT 'Manually Managed Consolidations' AS Level1 
+  , 'Reporting Consolidations' AS Level2 
+  , 'Payroll Reporting Consolidations' AS Level3 
+  , 'Store By AreaManager' AS Level4 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - Total' AS Level5 
+  , 
+  CASE 
+    WHEN DimAreaManager.Code IS NULL 
+    THEN CAST(DimBusinessDivision.Code AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+    ELSE DimAreaManager.Code 
+  END AS Level6 
+  , DimProfitCentre.Code AS Level7 
+  , 
+  CASE 
+    WHEN MatWarehouse.AreaManagerName IS NULL 
+    THEN CAST(DimBusinessDivision.Code AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+    ELSE MatWarehouse.AreaManagerName 
+  END AS 'Name' 
+  , matwarehouse.tradingstatus
+  , DimProfitCentre.OpenDate
+  , DimProfitCentre.CloseDate
+FROM DimProfitCentre 
+    INNER JOIN DimBusinessDivision 
+    ON DimBusinessDivision.id = DimProfitCentre.CurrentBusinessDivisionId 
+    LEFT OUTER JOIN MatWarehouse 
+    ON MatWArehouse.ProfitCentreId = DimProfitCentre.Id 
+    LEFT OUTER JOIN dbo.DimAreaManager 
+    ON DimAreaManager.Id = MatWarehouse.AreaManagerId
+WHERE DimProfitCentre.IsActive = 1 
+  AND DimProfitCentre.OpenDate IS NOT NULL
+  AND (DimProfitCentre.CloseDate IS NULL OR DimProfitCentre.CloseDate >= @ReportingPeriodEnd)
+  OR DimProfitCentre.Code LIKE '85%'
+  AND DimBusinessDivision.id != 11 
+  and DimArea
+*/  
+  
+/* 2018-01-09 Changed the query below to drive from DimProfitCentre to pick up Jets/Bondi Bather etc
+SELECT 'Manually Managed Consolidations' AS Level1 
+  , 'Reporting Consolidations' AS Level2 
+  , 'Payroll Reporting Consolidations' AS Level3 
+  , 'Store By AreaManager' AS Level4 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - Total' AS Level5 
+    , 
+    CASE 
+      WHEN DimAreaManager.Code IS NULL 
+      THEN CAST(MatWarehouse.BusinessDivisionCode AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+      ELSE DimAreaManager.Code 
+    END AS Level6 
+  , MatWarehouse.ProfitCentreCode AS Level7 
+  ,
+    CASE 
+      WHEN MatWarehouse.AreaManagerName IS NULL 
+      THEN CAST(MatWarehouse.BusinessDivisionCode AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+      ELSE MatWarehouse.AreaManagerName 
+    END AS 'Name' 
+  , matwarehouse.tradingstatus 
+FROM dbo.MatWarehouse
+LEFT JOIN dbo.DimAreaManager on DimAreaManager.Id = MatWarehouse.AreaManagerId
+INNER JOIN dbo.DimBusinessDivision on DimBusinessDivision.Id = MatWarehouse.BusinessDivisionId
+WHERE 1=1 -- MatWarehouse.AreaManagerId IS NOT NULL
+  AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+  AND MatWarehouse.IsPlanningWarehouse = 1 
+  AND MatWarehouse.TradingStatus <> 'Closed' 
+ORDER BY DimBusinessDivision.FinancialBusinessDivisionDescription
+  ,MatWarehouse.AreaManagerName
+  , MatWarehouse.ProfitCentreCode
+*/
+/* Original Query changed for Area Manager Report 2018-01-08 */
+/*
+SELECT 'Manually Managed Consolidations' AS Level1
+  , 'Reporting Consolidations' AS Level2
+  , 'Payroll Reporting Consolidations' AS Level3
+  , 'Store By AreaManager' AS Level4
+  , CASE 
+      WHEN MatWarehouse.AreaManagerName IS NULL THEN 'No Area Manager Assigned' 
+	  ELSE MatWarehouse.AreaManagerName 
+	END AS Level5
+  , MatWarehouse.ProfitCentreCode AS Level6
+  , matwarehouse.tradingstatus
+FROM dbo.MatWarehouse 
+WHERE 1=1 -- MatWarehouse.AreaManagerId IS NOT NULL
+AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+AND MatWarehouse.IsPlanningWarehouse = 1
+AND MatWarehouse.TradingStatus <> 'Closed'
+ORDER BY MatWarehouse.AreaManagerName, MatWarehouse.ProfitCentreCode
+*/  
+/* 2018-01-09 Changed the query below to drive from DimProfitCentre to pick up Jets/Bondi Bather etc
+SELECT 'Manually Managed Consolidations' AS Level1 
+  , 'Reporting Consolidations' AS Level2 
+  , 'Payroll Reporting Consolidations' AS Level3 
+  , 'Store By AreaManager' AS Level4 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - Total' AS Level5 
+    , 
+    CASE 
+      WHEN DimAreaManager.Code IS NULL 
+      THEN CAST(MatWarehouse.BusinessDivisionCode AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+      ELSE DimAreaManager.Code 
+    END AS Level6 
+  , MatWarehouse.ProfitCentreCode AS Level7 
+  ,
+    CASE 
+      WHEN MatWarehouse.AreaManagerName IS NULL 
+      THEN CAST(MatWarehouse.BusinessDivisionCode AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+      ELSE MatWarehouse.AreaManagerName 
+    END AS 'Name' 
+  , matwarehouse.tradingstatus 
+FROM dbo.MatWarehouse
+LEFT JOIN dbo.DimAreaManager on DimAreaManager.Id = MatWarehouse.AreaManagerId
+INNER JOIN dbo.DimBusinessDivision on DimBusinessDivision.Id = MatWarehouse.BusinessDivisionId
+WHERE 1=1 -- MatWarehouse.AreaManagerId IS NOT NULL
+  AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+  AND MatWarehouse.IsPlanningWarehouse = 1 
+  AND MatWarehouse.TradingStatus <> 'Closed' 
+ORDER BY DimBusinessDivision.FinancialBusinessDivisionDescription
+  ,MatWarehouse.AreaManagerName
+  , MatWarehouse.ProfitCentreCode
+*/
+/* Original Query changed for Area Manager Report 2018-01-08 */
+/*
+SELECT 'Manually Managed Consolidations' AS Level1
+  , 'Reporting Consolidations' AS Level2
+  , 'Payroll Reporting Consolidations' AS Level3
+  , 'Store By AreaManager' AS Level4
+  , CASE 
+      WHEN MatWarehouse.AreaManagerName IS NULL THEN 'No Area Manager Assigned' 
+	  ELSE MatWarehouse.AreaManagerName 
+	END AS Level5
+  , MatWarehouse.ProfitCentreCode AS Level6
+  , matwarehouse.tradingstatus
+FROM dbo.MatWarehouse 
+WHERE 1=1 -- MatWarehouse.AreaManagerId IS NOT NULL
+AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+AND MatWarehouse.IsPlanningWarehouse = 1
+AND MatWarehouse.TradingStatus <> 'Closed'
+ORDER BY MatWarehouse.AreaManagerName, MatWarehouse.ProfitCentreCode
+*/
+/* 20180209 Changed the query to include closed stores from the prior period.
+
+SELECT 'Manually Managed Consolidations' AS Level1 
+  , 'Reporting Consolidations' AS Level2 
+  , 'Payroll Reporting Consolidations' AS Level3 
+  , 'Store By AreaManager' AS Level4 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - Total' AS Level5 
+  , 
+  CASE 
+    WHEN DimAreaManager.Code IS NULL 
+    THEN CAST(DimBusinessDivision.Code AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+    ELSE DimAreaManager.Code 
+  END AS Level6 
+  , DimProfitCentre.Code AS Level7 
+  , 
+  CASE 
+    WHEN MatWarehouse.AreaManagerName IS NULL 
+    THEN CAST(DimBusinessDivision.Code AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+    ELSE MatWarehouse.AreaManagerName 
+  END AS 'Name' 
+  , matwarehouse.tradingstatus 
+FROM DimProfitCentre 
+    INNER JOIN DimBusinessDivision 
+    ON DimBusinessDivision.id = DimProfitCentre.CurrentBusinessDivisionId 
+    LEFT OUTER JOIN MatWarehouse 
+    ON MatWArehouse.ProfitCentreId = DimProfitCentre.Id 
+    LEFT OUTER JOIN dbo.DimAreaManager 
+    ON DimAreaManager.Id = MatWarehouse.AreaManagerId 
+WHERE DimProfitCentre.IsActive = 1 
+  AND DimProfitCentre.OpenDate IS NOT NULL 
+  AND DimProfitCentre.CloseDate IS NULL
+  OR DimProfitCentre.Code LIKE '85%'
+  AND DimBusinessDivision.id != 11 
+ */ 
+  
+/* 2018-01-09 Changed the query below to drive from DimProfitCentre to pick up Jets/Bondi Bather etc
+SELECT 'Manually Managed Consolidations' AS Level1 
+  , 'Reporting Consolidations' AS Level2 
+  , 'Payroll Reporting Consolidations' AS Level3 
+  , 'Store By AreaManager' AS Level4 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - Total' AS Level5 
+    , 
+    CASE 
+      WHEN DimAreaManager.Code IS NULL 
+      THEN CAST(MatWarehouse.BusinessDivisionCode AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+      ELSE DimAreaManager.Code 
+    END AS Level6 
+  , MatWarehouse.ProfitCentreCode AS Level7 
+  ,
+    CASE 
+      WHEN MatWarehouse.AreaManagerName IS NULL 
+      THEN CAST(MatWarehouse.BusinessDivisionCode AS VARCHAR(4)) + ' - ' + 'No Area Manager Assigned' 
+      ELSE MatWarehouse.AreaManagerName 
+    END AS 'Name' 
+  , matwarehouse.tradingstatus 
+FROM dbo.MatWarehouse
+LEFT JOIN dbo.DimAreaManager on DimAreaManager.Id = MatWarehouse.AreaManagerId
+INNER JOIN dbo.DimBusinessDivision on DimBusinessDivision.Id = MatWarehouse.BusinessDivisionId
+WHERE 1=1 -- MatWarehouse.AreaManagerId IS NOT NULL
+  AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+  AND MatWarehouse.IsPlanningWarehouse = 1 
+  AND MatWarehouse.TradingStatus <> 'Closed' 
+ORDER BY DimBusinessDivision.FinancialBusinessDivisionDescription
+  ,MatWarehouse.AreaManagerName
+  , MatWarehouse.ProfitCentreCode
+*/
+/* Original Query changed for Area Manager Report 2018-01-08 */
+/*
+SELECT 'Manually Managed Consolidations' AS Level1
+  , 'Reporting Consolidations' AS Level2
+  , 'Payroll Reporting Consolidations' AS Level3
+  , 'Store By AreaManager' AS Level4
+  , CASE 
+      WHEN MatWarehouse.AreaManagerName IS NULL THEN 'No Area Manager Assigned' 
+	  ELSE MatWarehouse.AreaManagerName 
+	END AS Level5
+  , MatWarehouse.ProfitCentreCode AS Level6
+  , matwarehouse.tradingstatus
+FROM dbo.MatWarehouse 
+WHERE 1=1 -- MatWarehouse.AreaManagerId IS NOT NULL
+AND MatWarehouse.BusinessDivisionId != 11 -- Metalicus
+AND MatWarehouse.IsPlanningWarehouse = 1
+AND MatWarehouse.TradingStatus <> 'Closed'
+ORDER BY MatWarehouse.AreaManagerName, MatWarehouse.ProfitCentreCode
+*/]]></query>
+      <alias_map>
+        <alias origin="Level1">1</alias>
+        <alias origin="Level2">2</alias>
+        <alias origin="Level3">3</alias>
+        <alias origin="Level4">4</alias>
+        <alias origin="Level5">5</alias>
+        <alias origin="Level6">6</alias>
+        <alias origin="Level7">7</alias>
+        <alias origin="Name">8</alias>
+        <alias origin="tradingstatus">9</alias>
+        <alias origin="OpenDate">10</alias>
+        <alias origin="CloseDate">11</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1588293563456" name="ex-Jedox [Cube]: Period LTM Calendar" type="Cube" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <query celltype="only_string" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Period Dates">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Period LTM]]></condition>
+          </dimension>
+          <dimension name="Period">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Base Periods]]></condition>
+            <condition mode="onlyBases" operator="equal" type="deny"><![CDATA[P00]]></condition>
+            <condition mode="onlyBases" operator="equal" type="deny"><![CDATA[Please select a period]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="rootToBases" operator="equal" type="deny"><![CDATA[Variances]]></condition>
+            <condition mode="onlyBases" operator="equal" type="deny"><![CDATA[Please select a year]]></condition>
+            <condition mode="onlyBases" operator="equal" type="deny"><![CDATA[2005]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Period Calender" />
+      </query>
+    </extract>
+    <extract modified="1588293563456" name="Wholesale Products By Category" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Extract products from Jets and PAS data warehouses. The source table in both instances is MATPRODUCT]]></comment>
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[SELECT DISTINCT 'Jets - by Category' AS 'Division' 
+,'JETS -  ' + COALESCE(matproduct.producttypename,'producttypena') AS 'Category'
+,'JETS - ' + MatProduct.ProductLabelName + ' - ' + COALESCE(matproduct.categoryname,'categoryna') + ' - ' + COALESCE(matproduct.producttypename,'producttypena') AS 'Product'
+FROM JetsDatawarehouse.dbo.matproduct 
+WHERE matproduct.categoryname IS NOT NULL 
+  AND matproduct.producttypename IS NOT NULL 
+  AND matproduct.IsReported = 1 
+  AND matproduct.IsActive = 1 
+
+UNION ALL
+
+SELECT DISTINCT  DimBusinessDivision.FinancialBusinessDivisionDescription + ' - by Category' AS'Division' 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' -  '  + MatProduct.CategoryName AS 'Category' 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + MatProduct.DepartmentName + ' - ' + MatProduct.CategoryName + ' - ' + MatProduct.SubCategoryName AS 'Product'
+FROM Datawarehouse.dbo.MatProduct 
+INNER JOIN DataWarehouse.dbo.DimBusinessDivision
+ON DimBusinessDivision.Id = MatProduct.BusinessDivisionId
+WHERE BusinessDivisionCode NOT IN (19) -- Metalicus 
+  AND  Matproduct.DepartmentName IS NOT NULL 
+  AND Matproduct.CategoryName IS NOT NULL 
+  AND Matproduct.IsReported = 1 
+  AND Matproduct.IsActive = 1 
+ORDER BY Division, Category, Product]]></query>
+      <alias_map>
+        <alias origin="Division">1</alias>
+        <alias origin="Category">2</alias>
+        <alias origin="Product">3</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1588293563456" name="Season" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[SELECT DISTINCT DimSeason.Code 
+  ,DimSeason.Name
+  ,DimSeason.Id 
+  ,DimSeason.SourceKey 
+FROM JetsDatawarehouse.dbo.DimSeason 
+WHERE DimSeason.IsActive = 1 
+UNION 
+SELECT DISTINCT DimSeason.Code 
+  ,DimSeason.Name
+  ,DimSeason.Id 
+  ,DimSeason.SourceKey 
+FROM DataWarehouse.dbo.DimSeason 
+WHERE DimSeason.IsActive = 1 
+Union ALL
+Select 'SeasonNA', 'SeasonNA', 0,0
+ORDER BY Code]]></query>
+      <alias_map>
+        <alias origin="Code">1</alias>
+        <alias origin="Name">2</alias>
+        <alias origin="Id">3</alias>
+        <alias origin="SourceKey">4</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1588293563456" name="Size" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[SELECT DISTINCT 'Jets' AS 'Division' 
+  ,'Jets - ' + COALESCE(NULLIF(MatProduct.SizeRange,'') ,'Size - NA') AS 'SizeRange' 
+FROM JetsDataWarehouse.dbo.MatProduct 
+
+UNION ALL
+
+SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS 'Division' 
+  ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(NULLIF(MatProduct.SizeRange,''), 'Size - NA') AS 'SizeRange' 
+FROM DataWarehouse.dbo.MatProduct 
+    LEFT JOIN DataWarehouse.dbo.DimBusinessDivision 
+    ON DimBusinessDivision.Id = MatProduct.BusinessDivisionId 
+WHERE DimBusinessDivision.Id != 11 -- Metalicus
+ORDER BY Division, SizeRange]]></query>
+      <alias_map>
+        <alias origin="Division">1</alias>
+        <alias origin="SizeRange">2</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1588293563456" name="Story" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[SELECT DISTINCT 'Jets' AS Division 
+  ,'Jets - ' + COALESCE(MatProduct.StoryCode, 'StoryNA') StoryCode 
+  ,'Jets - ' + COALESCE(MatProduct.StoryName, 'StoryNameNA') StoryName 
+  ,MatProduct.StoryId 
+FROM JetsDatawarehouse.dbo.MatProduct 
+WHERE MatProduct.IsActive = 1 
+  AND MatProduct.IsReported = 1 
+UNION 
+SELECT 'Jets' 
+  , 'StoryNA' 
+  , 'StoryNameNA' 
+  , 0 
+UNION 
+SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS Division 
+  ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.StoryCode, 'StoryNA') StoryCode 
+  ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.StoryName, 'StoryNameNA') StoryName 
+  ,MatProduct.StoryId 
+FROM DataWarehouse.dbo.MatProduct 
+    INNER JOIN DataWarehouse.dbo.DimBusinessDivision 
+    ON DimBusinessDivision.Id = MatProduct.BusinessDivisionId 
+WHERE MatProduct.IsActive = 1 
+  AND MatProduct.IsReported = 1 
+  AND DimBusinessDivision.Id != 11 -- Metalicus
+ORDER BY Division 
+  , StoryCode]]></query>
+      <alias_map>
+        <alias origin="Division">1</alias>
+        <alias origin="StoryCode">2</alias>
+        <alias origin="StoryName">3</alias>
+        <alias origin="StoryId">4</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1588293563456" name="Wholesale Products by Department" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Extract products from Jets and PAS data warehouses. The source table in both instances is MATPRODUCT]]></comment>
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[/* Jets product hierarchy is
+   Product Label = Department in PAS
+               |
+               Category = Caegory in PAS
+                      |
+                      Product Type = SubCategory in PAS
+*/
+SELECT DISTINCT 'Jets - by Department' AS 'Division' 
+  , ' Jets - ' + MatProduct.ProductLabelName 'Department'
+  , ' Jets - ' + MatProduct.ProductLabelName + ' - ' + COALESCE(matproduct.categoryname,'categoryna') AS 'Category' 
+  , ' Jets - ' + MatProduct.ProductLabelName + ' - ' + COALESCE(matproduct.categoryname,'categoryna') + ' - ' + COALESCE(matproduct.producttypename,'producttypena') AS 'Product'
+FROM JetsDatawarehouse.dbo.matproduct 
+WHERE matproduct.categoryname IS NOT NULL 
+  AND matproduct.producttypename IS NOT NULL 
+  AND matproduct.IsReported = 1 
+  AND matproduct.IsActive = 1 
+UNION ALL
+
+/* PAS Product 
+   Division
+          |
+          Category
+                 |
+                 SubCategory
+*/                 
+SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription + ' - by Department' AS'Division' 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + MatProduct.DepartmentName 'Department'
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' +MatProduct.DepartmentName + ' - ' + MatProduct.CategoryName AS 'Category' 
+  ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' +MatProduct.DepartmentName + ' - ' + MatProduct.CategoryName + ' - ' + MatProduct.SubCategoryName AS 'Subcategory'
+FROM Datawarehouse.dbo.MatProduct
+INNER JOIN DataWarehouse.dbo.DimBusinessDivision
+ON DimBusinessDivision.Id = MatProduct.BusinessDivisionId
+WHERE BusinessDivisionCode NOT IN (19) -- Metalicus 
+  AND MatProduct.DepartmentName IS NOT NULL 
+  AND MatProduct.CategoryName IS NOT NULL 
+  AND MatProduct.IsReported = 1 
+  AND MatProduct.IsActive = 1 
+ORDER BY Division, Department, Category, Product]]></query>
+      <alias_map>
+        <alias origin="Division">1</alias>
+        <alias origin="Department">2</alias>
+        <alias origin="Category">3</alias>
+        <alias origin="Product">4</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1588293563456" name="Colour" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[SELECT DISTINCT 'Jets' AS 'BusinessDivision' 
+  ,' Jets' + ' - ' + COALESCE(MatProduct.ColourName, 'Colour - NA') AS 'Colour' 
+FROM JetsDataWarehouse.dbo.MatProduct 
+WHERE IsActive = 1 AND MatProduct.ColourName != '' 
+--
+UNION ALL
+--
+SELECT DISTINCT 'Jets' AS 'BusinessDivision' 
+  ,'Jets' + ' - ' + 'Colour - NA' AS 'Colour' 
+  --
+  UNION ALL
+  --
+  SELECT DISTINCT 'Jets' AS 'BusinessDivision' 
+    ,'Jets' + ' - ' + 'Generic' AS 'Colour' 
+--
+UNION ALL
+--
+SELECT DISTINCT MatProduct.BusinessDivisionName AS 'BusinessDivision' 
+ , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.ColourTypeName, 'Colour - NA') AS 'Colour' 
+FROM DataWarehouse.dbo.MatProduct
+INNER JOIN DataWarehouse.dbo.DimBusinessDivision on DimBusinessDivision.Id = MatProduct.BusinessDivisionId
+WHERE MatProduct.IsActive = 1 AND MatProduct.IsReported = 1 AND MatProduct.ColourTypeName != '' AND MatProduct.BusinessDivisionId <> 11 -- Metalicus
+--
+UNION ALL
+--
+SELECT DISTINCT MatProduct.BusinessDivisionName AS 'BusinessDivision' 
+  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + 'Colour - NA' AS 'Colour' 
+FROM DataWarehouse.dbo.MatProduct
+INNER JOIN DataWarehouse.dbo.DimBusinessDivision on DimBusinessDivision.Id = MatProduct.BusinessDivisionId
+WHERE MatProduct.IsActive = 1 AND MatProduct.IsReported = 1 AND MatProduct.ColourTypeName != '' AND MatProduct.BusinessDivisionId <> 11 -- Metalicus
+ORDER BY BusinessDivision
+  ,Colour]]></query>
+      <alias_map>
+        <alias origin="BusinessDivision">1</alias>
+        <alias origin="Colour">2</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1588293563456" name="Wholesale Customers" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Extract wholesale customers from DimCustomer]]></comment>
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[SELECT DISTINCT 'Jets' AS Division 
+  ,'JETS - ' + COALESCE(MatCustomer.CustomerChannelName, 'CustomerChannel - NA') AS CustomerGroup 
+  ,MatCustomer.CustomerCode AS CustomerCode 
+  ,MatCustomer.Customername AS CustomerName 
+  ,MatCustomer.Customerid AS CustomerId 
+  ,MatCustomer.BillToCustomerId AS BillToCustomerId 
+  ,MatCustomer.SourceKey AS SourceKey 
+  ,MatCustomer.CustomerPaymentTypeCode AS CustomerPaymentType
+  ,MatCustomer.TerritoryName AS Territory
+  ,MatCustomer.SettlementDaysStatus AS SettlementDaysStatus
+  ,MatCustomer.AveragePaymentDays AS AveragePaymentDays
+  ,MatCustomer.DeliveryStatusName AS DeliveryStatus
+  ,CAST(MatCustomer.LastPaymentDate AS DATE) AS LastPaymentDate
+  ,CAST(MatCustomer.LastSaleDate AS DATE) AS LastSaleDate
+  ,CAST(MatCustomer.CustomerCreationDate AS DATE) AS CustomerCreationDate
+FROM JetsDataWarehouse.dbo.MatCustomer 
+WHERE MatCustomer.BillToCustomerId = MatCustomer.CustomerId 
+UNION ALL 
+SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS Division 
+  ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + MatCustomer.CustomerGroupName AS CustomerGroup 
+  ,MatCustomer.CustomerCode AS BaseCustomer 
+  ,MatCustomer.CustomerName AS CustomerName 
+  ,MatCustomer.CustomerId AS CustomerId 
+  ,MatCustomer.BillToCustomerId AS BillToCustomerId 
+  ,MatCustomer.SourceKey AS SourceKey
+  ,NULL AS CustomerPaymentType
+  ,MatCustomer.TerritoryName AS Territory
+  ,MatCustomer.SettlementDaysStatus AS SettlementDaysStatus
+  ,MatCustomer.AveragePaymentDays AS AveragePaymentDays
+  ,MatCustomer.DeliveryStatusName AS DeliveryStatus
+  ,CAST(MatCustomer.LastPaymentDate AS DATE) AS LastPaymentDate
+  ,CAST(MatCustomer.LastSaleDate AS DATE) AS LastSaleDate
+  ,CAST(MatCustomer.CustomerCreationDate AS DATE) AS CustomerCreationDate
+FROM DataWarehouse.dbo.MatCustomer 
+    INNER JOIN DataWarehouse.dbo.DimBusinessDivision 
+    ON DimBusinessDivision.Id = MatCustomer.BusinessDivisionId 
+WHERE MatCustomer.BillToCustomerId = MatCustomer.CustomerId 
+  AND MatCustomer.IsActive = 1 
+  AND MatCustomer.BusinessDivisionId <> 11 -- Metalicus
+ORDER BY Division 
+  ,CustomerGroup 
+  ,CustomerName
+/* Original Query20190430 
+SELECT DISTINCT 'Jets' AS Division 
+  ,'JETS - ' + COALESCE(MatCustomer.CustomerChannelName, 'CustomerChannel - NA') AS CustomerGroup 
+  ,MatCustomer.CustomerCode AS CustomerCode 
+  ,MatCustomer.Customername AS CustomerName 
+  ,MatCustomer.Customerid AS CustomerId 
+  ,MatCustomer.BillToCustomerId AS BillToCustomerId 
+  ,MatCustomer.SourceKey AS SourceKey 
+FROM JetsDataWarehouse.dbo.MatCustomer 
+WHERE MatCustomer.BillToCustomerId = MatCustomer.CustomerId 
+UNION ALL 
+SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS Division 
+  ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + MatCustomer.CustomerGroupName AS CustomerGroup 
+  ,MatCustomer.CustomerCode AS BaseCustomer 
+  ,MatCustomer.CustomerName AS CustomerName 
+  ,MatCustomer.CustomerId AS CustomerId 
+  ,MatCustomer.BillToCustomerId AS BillToCustomerId 
+  ,MatCustomer.SourceKey AS SourceKey 
+FROM DataWarehouse.dbo.MatCustomer 
+    INNER JOIN DataWarehouse.dbo.DimBusinessDivision 
+    ON DimBusinessDivision.Id = MatCustomer.BusinessDivisionId 
+WHERE MatCustomer.BillToCustomerId = MatCustomer.CustomerId 
+  AND MatCustomer.IsActive = 1 
+  AND MatCustomer.BusinessDivisionId <> 11 -- Metalicus
+ORDER BY Division 
+  ,CustomerGroup 
+  ,CustomerName
+*/]]></query>
+      <alias_map>
+        <alias origin="Division">1</alias>
+        <alias origin="CustomerGroup">2</alias>
+        <alias origin="CustomerCode">3</alias>
+        <alias origin="CustomerName">4</alias>
+        <alias origin="CustomerId">5</alias>
+        <alias origin="BillToCustomerId">6</alias>
+        <alias origin="SourceKey">7</alias>
+        <alias origin="CustomerPaymentType">8</alias>
+        <alias origin="Territory">9</alias>
+        <alias origin="SettlementDaysStatus">10</alias>
+        <alias origin="AveragePaymentDays">11</alias>
+        <alias origin="DeliveryStatus">12</alias>
+        <alias origin="LastPaymentDate">13</alias>
+        <alias origin="LastSaleDate">14</alias>
+        <alias origin="CustomerCreationDate">15</alias>
+      </alias_map>
+    </extract>
+    <extract name="ex-Jedox [Dim]: Accounts (Jedox - Main Hierarchies To ConsLevel)" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Extract from root to consolidations and not base level.
+This is for the "main" hierarchy of Balance Sheet and P&L]]></comment>
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Account">
+          <condition operator="equal" mode="rootToConsolidates" type="accept"><![CDATA[Balance Sheet]]></condition>
+          <condition operator="equal" mode="rootToConsolidates" type="accept"><![CDATA[P&L]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>defaultLanguage</attributesMode>
+    </extract>
+    <extract name="ex-Jedox [Dim]: Accounts (Jedox - Alternate Hierarchies)" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Extract from root to consolidations only not base level]]></comment>
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Account">
+          <condition operator="equal" mode="nodesToBases" type="accept"><![CDATA[Stat PL Profit / (loss) for the Year]]></condition>
+          <condition operator="equal" mode="nodesToBases" type="accept"><![CDATA[Base P&L Accounts]]></condition>
+          <condition operator="equal" mode="nodesToBases" type="accept"><![CDATA[Manual Hierarchies]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>defaultLanguage</attributesMode>
+    </extract>
+  </extracts>
+  <transforms>
+    <transform name="tr-PC [Dim]:Accounts (AllLevels)" type="TreePC" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="tr-TU [Dim]:Accounts (All Levels)" />
+      </sources>
+      <target>
+        <parent>
+          <input nameref=":parent" />
+        </parent>
+        <child>
+          <input nameref=":child" />
+        </child>
+        <weight>
+          <input nameref=":weight" />
+        </weight>
+        <attributes>
+          <attribute name="Name" type="string">
+            <input nameref="Name" />
+          </attribute>
+        </attributes>
+      </target>
+    </transform>
+    <transform name="tf-PC [Dim]: Account (BaseLevel)" type="TreePC" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[preparing the raw extract from DW into a PC format.]]></comment>
+      <sources>
+        <source nameref="ex-DW [Dim]: Accounts (BaseLevel)" />
+      </sources>
+      <target>
+        <parent>
+          <input nameref=":parent" />
+        </parent>
+        <child>
+          <input nameref=":child" />
+        </child>
+        <weight>
+          <input nameref="weight" />
+        </weight>
+        <attributes>
+          <attribute name="Name" type="string">
+            <input nameref="AccDescAtt" />
+          </attribute>
+        </attributes>
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tr-TU [Dim]:Accounts (All Levels)" type="TableUnion" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Join two account extracts. 1-Consolidations From the manually built [Dim]:Accounts , 2-Baselevels From the auto updating DW]]></comment>
+      <sources>
+        <source nameref="tf-PC [Dim]: Account (BaseLevel)" />
+        <source nameref="ex-DW [Dim]: Accounts (All Levels)" />
+      </sources>
+    </transform>
+    <transform modified="1588293563456" name="tf-FH [Dim]: BusDiv" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-DW [Dim]: BusDiv" />
+      </sources>
+      <target type="numeric">
+        <attributes>
+          <attribute name="Name" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input nameref="AllBus" />
+          </level>
+          <level>
+            <input nameref="BusDiv" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="Description" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform name="tf-FH [Dim]: Company" type="TreeFH" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Define the hierarchy of the [Dim]: Company]]></comment>
+      <sources>
+        <source nameref="ex-DW [Dim]: Company" />
+      </sources>
+      <target type="numeric" skipEmpty="false">
+        <levels>
+          <level>
+            <input nameref="AllCo" />
+          </level>
+          <level>
+            <weight constant="0" />
+            <input nameref="LegalEnt" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="Description" />
+              </attribute>
+              <attribute name="Source">
+                <input constant="AP21" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+        <attributes>
+          <attribute name="Name" type="string" />
+          <attribute name="Source" type="string" />
+        </attributes>
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tf-FH [Dim]: Currency" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-DW [Dim]: Currency" />
+      </sources>
+      <target type="numeric">
+        <attributes>
+          <attribute name="Name" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input nameref="Currency" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="Name" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform name="tf-TJ [Attr]: ProfCenType Excl-Outlets and Ecomm" type="TableJoin" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-DW [Dim]: ProfCen (Retail)" />
+        <source nameref="ex-Jedox [Attr]: (ProfCenType) Excl-OutLets and Ecomm" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="ex-DW [Dim]: ProfCen (Retail)">
+            <key nameref="ProfitCenterTy" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: (ProfCenType) Excl-OutLets and Ecomm">
+            <key nameref="level1" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-TJ [Attr]: ProfCenType Outlets" type="TableJoin" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-DW [Dim]: ProfCen (Retail)" />
+        <source nameref="ex-Jedox [Attr]: (ProfCenType) OutLets" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="ex-DW [Dim]: ProfCen (Retail)">
+            <key nameref="ProfitCenterTy" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: (ProfCenType) OutLets">
+            <key nameref="level1" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-FH [Dim]: ProfCen (Hierarchy2)" type="TreeFH" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[This is to build the second hierarchy of [Dim]: ProfCen hierarchies:
+1. ProfCen Ty by BusDiv
+2. BusDiv by ProfCen Ty]]></comment>
+      <sources>
+        <source nameref="tf-TU [Dim]:ProfCen (Hierarchy 2)" />
+      </sources>
+      <target skipEmpty="true" type="numeric">
+        <attributes>
+          <attribute name="Name" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="Total Retail (by BusinessDiv)" />
+          </level>
+          <level>
+            <input nameref="BusDivAllStores" />
+          </level>
+          <level>
+            <input nameref="BusDivAllstoresExOutlets" />
+          </level>
+          <level>
+            <input nameref="BusDivAllStoresExEcomm" />
+          </level>
+          <level>
+            <input nameref="BusDivBusTy" />
+          </level>
+          <level>
+            <input nameref="ProfitCenter" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="ProfCenDesc" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tr-FT [Dim]: ProfCen (Hierarchy2) Outlets" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Business division concatinated to (All Stores) to build the required format for Hierarchy2 of the [Dim]:profit/Cost Center]]></comment>
+      <sources>
+        <source nameref="tf-TJ [Attr]: ProfCenType Outlets" />
+      </sources>
+      <functions>
+        <function name="ProfCenTyFull" type="Map">
+          <inputs>
+            <input nameref="ProfitCenterTy" />
+          </inputs>
+          <parameters>
+            <default>noProfCenType</default>
+            <mapping>
+              <map from="RT" to="Retail (Own Stores)" />
+              <map from="SU" to="Support Centre" />
+              <map from="OU" to="Outlets" />
+              <map from="RH" to="Retail Head Office" />
+              <map from="UN" to="Uncategorised" />
+              <map from="WS" to="Wholesale" />
+              <map from="CO" to="Concessions" />
+              <map from="EC" to="E-commerce" />
+            </mapping>
+          </parameters>
+        </function>
+        <function name="BusDivBusTy" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+            <input nameref="ProfCenTyFull" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} - #{ProfCenTyFull}</template>
+          </parameters>
+        </function>
+        <function name="BusDivAllStores" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} (All Stores)</template>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="BusDevCode">
+            <input nameref="BusDevCode" />
+          </coordinate>
+          <coordinate name="BusDevDesc">
+            <input nameref="BusDevDesc" />
+          </coordinate>
+          <coordinate name="ProfCenDesc">
+            <input nameref="ProfCenDesc" />
+          </coordinate>
+          <coordinate name="ProfCenTyFull">
+            <input nameref="ProfCenTyFull" />
+          </coordinate>
+          <coordinate name="ProfitCenter">
+            <input nameref="ProfitCenter" />
+          </coordinate>
+          <coordinate name="ProfitCenterTy">
+            <input nameref="ProfitCenterTy" />
+          </coordinate>
+          <coordinate name="BusDivBusTy">
+            <input nameref="BusDivBusTy" />
+          </coordinate>
+          <coordinate name="OpenDate">
+            <input nameref="OpenDate" />
+          </coordinate>
+          <coordinate name="CloseDate">
+            <input nameref="CloseDate" />
+          </coordinate>
+          <coordinate name="BRefStartDate">
+            <input nameref="BRefStartDate" />
+          </coordinate>
+          <coordinate name="BRefEndDate">
+            <input nameref="BRefEndDate" />
+          </coordinate>
+          <coordinate name="BOpenDate">
+            <input nameref="BOpenDate" />
+          </coordinate>
+          <coordinate name="BCloseDate">
+            <input nameref="BCloseDate" />
+          </coordinate>
+          <coordinate name="FOpenDate">
+            <input nameref="FOpenDate" />
+          </coordinate>
+          <coordinate name="FCloseDate">
+            <input nameref="FCloseDate" />
+          </coordinate>
+          <coordinate name="FRefStartDate">
+            <input nameref="FRefStartDate" />
+          </coordinate>
+          <coordinate name="FRefEndDate">
+            <input nameref="FRefEndDate" />
+          </coordinate>
+          <coordinate name="Area">
+            <input nameref="Area" />
+          </coordinate>
+          <coordinate name="CurrLegalEnt">
+            <input nameref="CurrLegalEnt" />
+          </coordinate>
+          <coordinate name="LegalEntityDesc">
+            <input nameref="LegalEntityDesc" />
+          </coordinate>
+          <coordinate name="Grading">
+            <input nameref="Grading" />
+          </coordinate>
+          <coordinate name="SCapex">
+            <input nameref="SCapex" />
+          </coordinate>
+          <coordinate name="State">
+            <input nameref="State" />
+          </coordinate>
+          <coordinate name="StoreType">
+            <input nameref="StoreType" />
+          </coordinate>
+          <coordinate name="Country">
+            <input nameref="Country" />
+          </coordinate>
+          <coordinate name="RefStartDate">
+            <input nameref="RefStartDate" />
+          </coordinate>
+          <coordinate name="RefEndDate">
+            <input nameref="RefEndDate" />
+          </coordinate>
+          <coordinate name="BusDivAllStores">
+            <input nameref="BusDivAllStores" />
+          </coordinate>
+          <coordinate name="Long Description">
+            <input nameref="ProfitCentreLongDesc" />
+          </coordinate>
+          <coordinate name="Latitude">
+            <input nameref="Latitude" />
+          </coordinate>
+          <coordinate name="Longitude">
+            <input nameref="Longitude" />
+          </coordinate>
+          <coordinate name="Geozone">
+            <input nameref="GeographyZone" />
+          </coordinate>
+          <coordinate name="Floor Capacity">
+            <input nameref="FloorCapacity" />
+          </coordinate>
+          <coordinate name="External Partner">
+            <input nameref="ExternalPartner" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tr-FT [Dim]: ProfCen (Hierarchy2) Ecomm" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Business division concatinated to (All Stores) to build the required format for Hierarchy2 of the [Dim]:profit/Cost Center]]></comment>
+      <sources>
+        <source nameref="tf-TJ [Attr]: ProfCenType Ecomm" />
+      </sources>
+      <functions>
+        <function name="ProfCenTyFull" type="Map">
+          <inputs>
+            <input nameref="ProfitCenterTy" />
+          </inputs>
+          <parameters>
+            <default>noProfCenType</default>
+            <mapping>
+              <map from="RT" to="Retail (Own Stores)" />
+              <map from="SU" to="Support Centre" />
+              <map from="RH" to="Retail Head Office" />
+              <map from="UN" to="Uncategorised" />
+              <map from="WS" to="Wholesale" />
+              <map from="CO" to="Concessions" />
+              <map from="EC" to="E-commerce" />
+            </mapping>
+          </parameters>
+        </function>
+        <function name="BusDivBusTy" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+            <input nameref="ProfCenTyFull" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} - #{ProfCenTyFull}</template>
+          </parameters>
+        </function>
+        <function name="BusDivAllStoreExOutlets" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} (All Stores Excl Outlets)</template>
+          </parameters>
+        </function>
+        <function name="BusDivAllStores" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} (All Stores)</template>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="BusDevCode">
+            <input nameref="BusDevCode" />
+          </coordinate>
+          <coordinate name="BusDevDesc">
+            <input nameref="BusDevDesc" />
+          </coordinate>
+          <coordinate name="ProfCenDesc">
+            <input nameref="ProfCenDesc" />
+          </coordinate>
+          <coordinate name="ProfCenTyFull">
+            <input nameref="ProfCenTyFull" />
+          </coordinate>
+          <coordinate name="ProfitCenter">
+            <input nameref="ProfitCenter" />
+          </coordinate>
+          <coordinate name="ProfitCenterTy">
+            <input nameref="ProfitCenterTy" />
+          </coordinate>
+          <coordinate name="BusDivBusTy">
+            <input nameref="BusDivBusTy" />
+          </coordinate>
+          <coordinate name="OpenDate">
+            <input nameref="OpenDate" />
+          </coordinate>
+          <coordinate name="CloseDate">
+            <input nameref="CloseDate" />
+          </coordinate>
+          <coordinate name="BRefStartDate">
+            <input nameref="BRefStartDate" />
+          </coordinate>
+          <coordinate name="BRefEndDate">
+            <input nameref="BRefEndDate" />
+          </coordinate>
+          <coordinate name="BOpenDate">
+            <input nameref="BOpenDate" />
+          </coordinate>
+          <coordinate name="BCloseDate">
+            <input nameref="BCloseDate" />
+          </coordinate>
+          <coordinate name="FOpenDate">
+            <input nameref="FOpenDate" />
+          </coordinate>
+          <coordinate name="FCloseDate">
+            <input nameref="FCloseDate" />
+          </coordinate>
+          <coordinate name="FRefStartDate">
+            <input nameref="FRefStartDate" />
+          </coordinate>
+          <coordinate name="FRefEndDate">
+            <input nameref="FRefEndDate" />
+          </coordinate>
+          <coordinate name="Area">
+            <input nameref="Area" />
+          </coordinate>
+          <coordinate name="CurrLegalEnt">
+            <input nameref="CurrLegalEnt" />
+          </coordinate>
+          <coordinate name="LegalEntityDesc">
+            <input nameref="LegalEntityDesc" />
+          </coordinate>
+          <coordinate name="Grading">
+            <input nameref="Grading" />
+          </coordinate>
+          <coordinate name="SCapex">
+            <input nameref="SCapex" />
+          </coordinate>
+          <coordinate name="State">
+            <input nameref="State" />
+          </coordinate>
+          <coordinate name="StoreType">
+            <input nameref="StoreType" />
+          </coordinate>
+          <coordinate name="Country">
+            <input nameref="Country" />
+          </coordinate>
+          <coordinate name="RefStartDate">
+            <input nameref="RefStartDate" />
+          </coordinate>
+          <coordinate name="RefEndDate">
+            <input nameref="RefEndDate" />
+          </coordinate>
+          <coordinate name="BusDivAllstoresExOutlets">
+            <input nameref="BusDivAllStoreExOutlets" />
+          </coordinate>
+          <coordinate name="BusDivAllStores">
+            <input nameref="BusDivAllStores" />
+          </coordinate>
+          <coordinate name="Long Description">
+            <input nameref="ProfitCentreLongDesc" />
+          </coordinate>
+          <coordinate name="Latitude">
+            <input nameref="Latitude" />
+          </coordinate>
+          <coordinate name="Longitude">
+            <input nameref="Longitude" />
+          </coordinate>
+          <coordinate name="Geozone">
+            <input nameref="GeographyZone" />
+          </coordinate>
+          <coordinate name="Floor Capacity">
+            <input nameref="FloorCapacity" />
+          </coordinate>
+          <coordinate name="External Partner">
+            <input nameref="ExternalPartner" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tr-FT [Dim]: ProfCen (Hierarchy2) ExOutlets and Ecomm" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Business division concatinated to (All Stores) to build the required format for Hierarchy2 of the [Dim]:profit/Cost Center]]></comment>
+      <sources>
+        <source nameref="tf-TJ [Attr]: ProfCenType Excl-Outlets and Ecomm" />
+      </sources>
+      <functions>
+        <function name="ProfCenTyFull" type="Map">
+          <inputs>
+            <input nameref="ProfitCenterTy" />
+          </inputs>
+          <parameters>
+            <default>noProfCenType</default>
+            <mapping>
+              <map from="RT" to="Retail (Own Stores)" />
+              <map from="SU" to="Support Centre" />
+              <map from="RH" to="Retail Head Office" />
+              <map from="UN" to="Uncategorised" />
+              <map from="WS" to="Wholesale" />
+              <map from="CO" to="Concessions" />
+              <map from="EC" to="E-commerce" />
+            </mapping>
+          </parameters>
+        </function>
+        <function name="BusDivBusTy" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+            <input nameref="ProfCenTyFull" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} - #{ProfCenTyFull}</template>
+          </parameters>
+        </function>
+        <function name="BusDivAllStoresExEcomm" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} (All Standalone and Concession Stores)</template>
+          </parameters>
+        </function>
+        <function name="BusDivAllStoreExOutlets" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} (All Stores Excl Outlets)</template>
+          </parameters>
+        </function>
+        <function name="BusDivAllStores" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} (All Stores)</template>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="BusDevCode">
+            <input nameref="BusDevCode" />
+          </coordinate>
+          <coordinate name="BusDevDesc">
+            <input nameref="BusDevDesc" />
+          </coordinate>
+          <coordinate name="ProfCenDesc">
+            <input nameref="ProfCenDesc" />
+          </coordinate>
+          <coordinate name="ProfCenTyFull">
+            <input nameref="ProfCenTyFull" />
+          </coordinate>
+          <coordinate name="ProfitCenter">
+            <input nameref="ProfitCenter" />
+          </coordinate>
+          <coordinate name="ProfitCenterTy">
+            <input nameref="ProfitCenterTy" />
+          </coordinate>
+          <coordinate name="BusDivBusTy">
+            <input nameref="BusDivBusTy" />
+          </coordinate>
+          <coordinate name="OpenDate">
+            <input nameref="OpenDate" />
+          </coordinate>
+          <coordinate name="CloseDate">
+            <input nameref="CloseDate" />
+          </coordinate>
+          <coordinate name="BRefStartDate">
+            <input nameref="BRefStartDate" />
+          </coordinate>
+          <coordinate name="BRefEndDate">
+            <input nameref="BRefEndDate" />
+          </coordinate>
+          <coordinate name="BOpenDate">
+            <input nameref="BOpenDate" />
+          </coordinate>
+          <coordinate name="BCloseDate">
+            <input nameref="BCloseDate" />
+          </coordinate>
+          <coordinate name="FOpenDate">
+            <input nameref="FOpenDate" />
+          </coordinate>
+          <coordinate name="FCloseDate">
+            <input nameref="FCloseDate" />
+          </coordinate>
+          <coordinate name="FRefStartDate">
+            <input nameref="FRefStartDate" />
+          </coordinate>
+          <coordinate name="FRefEndDate">
+            <input nameref="FRefEndDate" />
+          </coordinate>
+          <coordinate name="Area">
+            <input nameref="Area" />
+          </coordinate>
+          <coordinate name="CurrLegalEnt">
+            <input nameref="CurrLegalEnt" />
+          </coordinate>
+          <coordinate name="LegalEntityDesc">
+            <input nameref="LegalEntityDesc" />
+          </coordinate>
+          <coordinate name="Grading">
+            <input nameref="Grading" />
+          </coordinate>
+          <coordinate name="SCapex">
+            <input nameref="SCapex" />
+          </coordinate>
+          <coordinate name="State">
+            <input nameref="State" />
+          </coordinate>
+          <coordinate name="StoreType">
+            <input nameref="StoreType" />
+          </coordinate>
+          <coordinate name="Country">
+            <input nameref="Country" />
+          </coordinate>
+          <coordinate name="RefStartDate">
+            <input nameref="RefStartDate" />
+          </coordinate>
+          <coordinate name="RefEndDate">
+            <input nameref="RefEndDate" />
+          </coordinate>
+          <coordinate name="BusDivAllStoresExEcomm">
+            <input nameref="BusDivAllStoresExEcomm" />
+          </coordinate>
+          <coordinate name="BusDivAllstoresExOutlets">
+            <input nameref="BusDivAllStoreExOutlets" />
+          </coordinate>
+          <coordinate name="BusDivAllStores">
+            <input nameref="BusDivAllStores" />
+          </coordinate>
+          <coordinate name="Long Description">
+            <input nameref="ProfitCentreLongDesc" />
+          </coordinate>
+          <coordinate name="Latitude">
+            <input nameref="Latitude" />
+          </coordinate>
+          <coordinate name="Longitude">
+            <input nameref="Longitude" />
+          </coordinate>
+          <coordinate name="Geozone">
+            <input nameref="GeographyZone" />
+          </coordinate>
+          <coordinate name="Floor Capacity">
+            <input nameref="FloorCapacity" />
+          </coordinate>
+          <coordinate name="External Partner">
+            <input nameref="ExternalPartner" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-TU [Dim]:ProfCen (Hierarchy 2)" type="TableUnion" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="tr-FT [Dim]: ProfCen (Hierarchy2) Outlets" />
+        <source nameref="tr-FT [Dim]: ProfCen (Hierarchy2) Ecomm" />
+        <source nameref="tr-FT [Dim]: ProfCen (Hierarchy2) ExOutlets and Ecomm" />
+      </sources>
+    </transform>
+    <transform name="tf-TJ [Attr]: ProfCenType Ecomm" type="TableJoin" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-Jedox [Attr]: (ProfCenType) Ecomm" />
+        <source nameref="ex-DW [Dim]: ProfCen (Retail)" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Attr]: (ProfCenType) Ecomm">
+            <key nameref="level1" />
+          </left>
+          <right nameref="ex-DW [Dim]: ProfCen (Retail)">
+            <key nameref="ProfitCenterTy" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1588293563456" name="tr-FT [Dim]: ProfCen (Non-Retail)" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-DW [Dim]: ProfCen (Non-Retail)" />
+      </sources>
+      <functions>
+        <function name="ProfCenTyFull" type="Map">
+          <inputs>
+            <input nameref="ProfCenType" />
+          </inputs>
+          <parameters>
+            <default>noProfCenType</default>
+            <mapping>
+              <map from="RT" to="Retail (Own Stores)" />
+              <map from="SU" to="Support Centre" />
+              <map from="OU" to="Outlets" />
+              <map from="RH" to="Retail Head Office" />
+              <map from="UN" to="Uncategorised" />
+              <map from="WS" to="Wholesale" />
+              <map from="CO" to="Concessions" />
+              <map from="EC" to="E-commerce" />
+            </mapping>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="ProfCenDesc">
+            <input nameref="ProfCenDesc" />
+          </coordinate>
+          <coordinate name="Long Description">
+            <input nameref="ProfCenLongDesc" />
+          </coordinate>
+          <coordinate name="ProfCenTyFull">
+            <input nameref="ProfCenTyFull" />
+          </coordinate>
+          <coordinate name="ProfCenType">
+            <input nameref="ProfCenType" />
+          </coordinate>
+          <coordinate name="ProfCenCode">
+            <input nameref="ProfCenCode" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-FH [Dim]: ProfCen (Non-Retail)" type="TreeFH" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Build two hierarchies:
+Hierarchy1. ProfCen Ty by BusDiv
+Hierarchy2. BusDiv by ProfCen Ty]]></comment>
+      <sources>
+        <source nameref="tr-FT [Dim]: ProfCen (Non-Retail)" />
+      </sources>
+      <target type="numeric">
+        <attributes>
+          <attribute name="Name" type="string" />
+          <attribute name="ProfCenType" type="string" />
+          <attribute name="Long Description" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="All Profit-Cost Centres" />
+          </level>
+          <level>
+            <input nameref="ProfCenTyFull" />
+          </level>
+          <level>
+            <input nameref="ProfCenCode" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="ProfCenDesc" />
+              </attribute>
+              <attribute name="ProfCenType">
+                <input nameref="ProfCenType" />
+              </attribute>
+              <attribute name="Long Description">
+                <input nameref="Long Description" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tr-FT [Dim]: ProfCen (Retail)" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-DW [Dim]: ProfCen (Retail)" />
+      </sources>
+      <functions>
+        <function name="ProfCenTyFull" type="Map">
+          <inputs>
+            <input nameref="ProfitCenterTy" />
+          </inputs>
+          <parameters>
+            <default>noProfCenType</default>
+            <mapping>
+              <map from="RT" to="Retail (Own Stores)" />
+              <map from="SU" to="Support Centre" />
+              <map from="OU" to="Outlets" />
+              <map from="RH" to="Retail Head Office" />
+              <map from="UN" to="Uncategorised" />
+              <map from="WS" to="Wholesale" />
+              <map from="CO" to="Concessions" />
+              <map from="EC" to="E-commerce" />
+            </mapping>
+          </parameters>
+        </function>
+        <function name="BusDivBusTy" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+            <input nameref="ProfCenTyFull" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} - #{ProfCenTyFull}</template>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="BusDevCode">
+            <input nameref="BusDevCode" />
+          </coordinate>
+          <coordinate name="BusDevDesc">
+            <input nameref="BusDevDesc" />
+          </coordinate>
+          <coordinate name="ProfCenDesc">
+            <input nameref="ProfCenDesc" />
+          </coordinate>
+          <coordinate name="ProfCenTyFull">
+            <input nameref="ProfCenTyFull" />
+          </coordinate>
+          <coordinate name="ProfitCenter">
+            <input nameref="ProfitCenter" />
+          </coordinate>
+          <coordinate name="ProfitCenterType">
+            <input nameref="ProfitCenterTy" />
+          </coordinate>
+          <coordinate name="BusDivBusTy">
+            <input nameref="BusDivBusTy" />
+          </coordinate>
+          <coordinate name="OpenDate">
+            <input nameref="OpenDate" />
+          </coordinate>
+          <coordinate name="CloseDate">
+            <input nameref="CloseDate" />
+          </coordinate>
+          <coordinate name="BRefStartDate">
+            <input nameref="BRefStartDate" />
+          </coordinate>
+          <coordinate name="BRefEndDate">
+            <input nameref="BRefEndDate" />
+          </coordinate>
+          <coordinate name="BOpenDate">
+            <input nameref="BOpenDate" />
+          </coordinate>
+          <coordinate name="BCloseDate">
+            <input nameref="BCloseDate" />
+          </coordinate>
+          <coordinate name="BOpenDateCY">
+            <input nameref="BOpenDateCY" />
+          </coordinate>
+          <coordinate name="BCloseDateCY">
+            <input nameref="BCloseDateCY" />
+          </coordinate>
+          <coordinate name="FOpenDate">
+            <input nameref="FOpenDate" />
+          </coordinate>
+          <coordinate name="FCloseDate">
+            <input nameref="FCloseDate" />
+          </coordinate>
+          <coordinate name="FRefStartDate">
+            <input nameref="FRefStartDate" />
+          </coordinate>
+          <coordinate name="FRefEndDate">
+            <input nameref="FRefEndDate" />
+          </coordinate>
+          <coordinate name="Area">
+            <input nameref="Area" />
+          </coordinate>
+          <coordinate name="CurrLegalEnt">
+            <input nameref="CurrLegalEnt" />
+          </coordinate>
+          <coordinate name="LegalEntityDesc">
+            <input nameref="LegalEntityDesc" />
+          </coordinate>
+          <coordinate name="Grading">
+            <input nameref="Grading" />
+          </coordinate>
+          <coordinate name="SCapex">
+            <input nameref="SCapex" />
+          </coordinate>
+          <coordinate name="State">
+            <input nameref="State" />
+          </coordinate>
+          <coordinate name="StoreType">
+            <input nameref="StoreType" />
+          </coordinate>
+          <coordinate name="Country">
+            <input nameref="Country" />
+          </coordinate>
+          <coordinate name="RefStartDate">
+            <input nameref="RefStartDate" />
+          </coordinate>
+          <coordinate name="RefEndDate">
+            <input nameref="RefEndDate" />
+          </coordinate>
+          <coordinate name="NonLegacy">
+            <input nameref="NonLegacy" />
+          </coordinate>
+          <coordinate name="BRefStartDateCY">
+            <input nameref="BRefStartDateCY" />
+          </coordinate>
+          <coordinate name="BRefEndDateCY">
+            <input nameref="BRefEndDateCY" />
+          </coordinate>
+          <coordinate name="Long Description">
+            <input nameref="ProfitCentreLongDesc" />
+          </coordinate>
+          <coordinate name="Area Manager">
+            <input nameref="AreaManager" />
+          </coordinate>
+          <coordinate name="Concession Store Grade">
+            <input nameref="ConcessionStoreGrade" />
+          </coordinate>
+          <coordinate name="People Counter">
+            <input nameref="PeopleCounter" />
+          </coordinate>
+          <coordinate name="Latitude">
+            <input nameref="Latitude" />
+          </coordinate>
+          <coordinate name="Longitude">
+            <input nameref="Longitude" />
+          </coordinate>
+          <coordinate name="Geozone">
+            <input nameref="GeographyZone" />
+          </coordinate>
+          <coordinate name="Floor Capacity">
+            <input nameref="FloorCapacity" />
+          </coordinate>
+          <coordinate name="External Partner">
+            <input nameref="ExternalPartner" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tf-FH [Dim]: ProfCen (Retail)" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Build two hierarchies:
+Hierarchy1. ProfCen Ty by BusDiv
+Hierarchy2. BusDiv by ProfCen Ty]]></comment>
+      <sources>
+        <source nameref="tr-FT [Dim]: ProfCen (Retail)" />
+      </sources>
+      <target type="numeric">
+        <attributes>
+          <attribute name="Open Date" type="string" />
+          <attribute name="State" type="string" />
+          <attribute name="Country" type="string" />
+          <attribute name="Close Date" type="string" />
+          <attribute name="Refurb Start Date" type="string" />
+          <attribute name="Refurb End Date" type="string" />
+          <attribute name="Open Date (Budget)" type="string" />
+          <attribute name="Close Date (Budget)" type="string" />
+          <attribute name="Open Date (Budget) CY" type="string" />
+          <attribute name="Close Date (Budget) CY" type="string" />
+          <attribute name="Open Date (Forecast)" type="string" />
+          <attribute name="Close Date (Forecast)" type="string" />
+          <attribute name="Refurb Start Date (Forecast)" type="string" />
+          <attribute name="Refurb End Date (Forecast)" type="string" />
+          <attribute name="SQM" type="string" />
+          <attribute name="Store Grading" type="string" />
+          <attribute name="Legal Entity Code" type="string" />
+          <attribute name="Start-Up Capex" type="string" />
+          <attribute name="Refurb Start Date (Budget)" type="string" />
+          <attribute name="Refurb End Date (Budget)" type="string" />
+          <attribute name="Refurb Start Date (Budget) CY" type="string" />
+          <attribute name="Refurb End Date (Budget) CY" type="string" />
+          <attribute name="Division Name" type="string" />
+          <attribute name="Division Code" type="string" />
+          <attribute name="Legal Entity Name" type="string" />
+          <attribute name="ProfCenType" type="string" />
+          <attribute name="Name" type="string" />
+          <attribute name="NonLegacyStore" type="numeric" />
+          <attribute name="Long Description" type="string" />
+          <attribute name="Area Manager" type="string" />
+          <attribute name="Concession Store Grade" type="string" />
+          <attribute name="People Counter" type="string" />
+          <attribute name="Latitude" type="string" />
+          <attribute name="Longitude" type="string" />
+          <attribute name="Geozone" type="string" />
+          <attribute name="Floor Capacity" type="string" />
+          <attribute name="External Partner" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="All Profit-Cost Centres" />
+          </level>
+          <level>
+            <input constant="Retail" />
+          </level>
+          <level>
+            <input nameref="ProfCenTyFull" />
+          </level>
+          <level>
+            <input nameref="BusDivBusTy" />
+          </level>
+          <level>
+            <input nameref="ProfitCenter" />
+            <attributes>
+              <attribute name="Open Date">
+                <input nameref="OpenDate" />
+              </attribute>
+              <attribute name="State">
+                <input nameref="State" />
+              </attribute>
+              <attribute name="Country">
+                <input nameref="Country" />
+              </attribute>
+              <attribute name="Close Date">
+                <input nameref="CloseDate" />
+              </attribute>
+              <attribute name="Refurb Start Date">
+                <input nameref="RefStartDate" />
+              </attribute>
+              <attribute name="Refurb End Date">
+                <input nameref="RefEndDate" />
+              </attribute>
+              <attribute name="Open Date (Budget)">
+                <input nameref="BOpenDate" />
+              </attribute>
+              <attribute name="Close Date (Budget)">
+                <input nameref="BCloseDate" />
+              </attribute>
+              <attribute name="Open Date (Budget) CY">
+                <input nameref="BOpenDateCY" />
+              </attribute>
+              <attribute name="Close Date (Budget) CY">
+                <input nameref="BCloseDateCY" />
+              </attribute>
+              <attribute name="Open Date (Forecast)">
+                <input nameref="FOpenDate" />
+              </attribute>
+              <attribute name="Close Date (Forecast)">
+                <input nameref="FCloseDate" />
+              </attribute>
+              <attribute name="Refurb Start Date (Forecast)">
+                <input nameref="FRefStartDate" />
+              </attribute>
+              <attribute name="Refurb End Date (Forecast)">
+                <input nameref="FRefEndDate" />
+              </attribute>
+              <attribute name="SQM">
+                <input nameref="Area" />
+              </attribute>
+              <attribute name="Store Grading">
+                <input nameref="Grading" />
+              </attribute>
+              <attribute name="Legal Entity Code">
+                <input nameref="CurrLegalEnt" />
+              </attribute>
+              <attribute name="Start-Up Capex">
+                <input nameref="SCapex" />
+              </attribute>
+              <attribute name="Refurb Start Date (Budget)">
+                <input nameref="BRefStartDate" />
+              </attribute>
+              <attribute name="Refurb End Date (Budget)">
+                <input nameref="BRefEndDate" />
+              </attribute>
+              <attribute name="Refurb Start Date (Budget) CY">
+                <input nameref="BRefStartDateCY" />
+              </attribute>
+              <attribute name="Refurb End Date (Budget) CY">
+                <input nameref="BRefEndDateCY" />
+              </attribute>
+              <attribute name="Division Name">
+                <input nameref="BusDevDesc" />
+              </attribute>
+              <attribute name="Division Code">
+                <input nameref="BusDevCode" />
+              </attribute>
+              <attribute name="Legal Entity Name">
+                <input nameref="LegalEntityDesc" />
+              </attribute>
+              <attribute name="ProfCenType">
+                <input nameref="ProfitCenterType" />
+              </attribute>
+              <attribute name="Name">
+                <input nameref="ProfCenDesc" />
+              </attribute>
+              <attribute name="NonLegacyStore">
+                <input nameref="NonLegacy" />
+              </attribute>
+              <attribute name="Long Description">
+                <input nameref="Long Description" />
+              </attribute>
+              <attribute name="Area Manager">
+                <input nameref="Area Manager" />
+              </attribute>
+              <attribute name="Concession Store Grade">
+                <input nameref="Concession Store Grade" />
+              </attribute>
+              <attribute name="People Counter">
+                <input nameref="People Counter" />
+              </attribute>
+              <attribute name="Latitude">
+                <input nameref="Latitude" />
+              </attribute>
+              <attribute name="Longitude">
+                <input nameref="Longitude" />
+              </attribute>
+              <attribute name="Geozone">
+                <input nameref="Geozone" />
+              </attribute>
+              <attribute name="Floor Capacity">
+                <input nameref="Floor Capacity" />
+              </attribute>
+              <attribute name="External Partner">
+                <input nameref="External Partner" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform name="tr-TJ [Dim]: Store" type="TreeJoin" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Joins two hierarchies under one parent]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Dim]: Store (Hierarchy1)" root="All Stores" />
+        <source nameref="ex-Jedox [Dim]: Store (Hierarchy2)" />
+        <source nameref="ex-Jedox [Dim]: Store (Hierarchy3)" />
+      </sources>
+    </transform>
+    <transform modified="1588293563456" name="tr-FH [Dim]: Store - Area Manager" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="tf-FT [Dim]: Store - Area Manager" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="Name" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="Manually Managed Consolidations" />
+          </level>
+          <level>
+            <input constant="Reporting Consolidations" />
+          </level>
+          <level>
+            <input constant="Payroll Reporting Consolidations" />
+          </level>
+          <level>
+            <input constant="Store By AreaManager" />
+          </level>
+          <level>
+            <input nameref="Division" />
+          </level>
+          <level>
+            <input nameref="Area Manager Code" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="Name" />
+              </attribute>
+            </attributes>
+          </level>
+          <level>
+            <input nameref="Store" />
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tf-FT [Dim]: Store - Area Manager" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="Store [By Area Manager]" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Division">
+            <input nameref="Level5" />
+          </coordinate>
+          <coordinate name="Area Manager Code">
+            <input nameref="Level6" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Level7" />
+          </coordinate>
+          <coordinate name="Name">
+            <input nameref="Name" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tr- FH [Dim]: LTM Period" type="TreeFH" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="tr-FT [Dim]: LTM Period" />
+      </sources>
+      <target type="numeric" skipEmpty="false">
+        <levels>
+          <level>
+            <input nameref="#Value" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform name="tr-FT [Dim]: LTM Period" type="FieldTransform" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Period LTM Calendar" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tf-FH [Dim]: Colour" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="Colour" />
+      </sources>
+      <target>
+        <levels>
+          <level>
+            <input constant="TotalColour" />
+          </level>
+          <level>
+            <input nameref="BusinessDivision" />
+          </level>
+          <level>
+            <input nameref="Colour" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tr-FT [Product By Category] - UpperLower Case" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="Wholesale Products By Category" />
+      </sources>
+      <functions>
+        <function name="Trf-Category" type="UpperLower">
+          <comment><![CDATA[Transforms uppercase to whatever the first record case is.]]></comment>
+          <inputs>
+            <input nameref="Category" />
+          </inputs>
+          <parameters>
+            <case>firstcase</case>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Division">
+            <input nameref="Division" />
+          </coordinate>
+          <coordinate name="Category">
+            <input nameref="Trf-Category" />
+          </coordinate>
+          <coordinate name="Product">
+            <input nameref="Product" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tf-FH [Dim]: Product By Category" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="tr-FT [Product By Category] - UpperLower Case" />
+      </sources>
+      <target>
+        <levels>
+          <level>
+            <input constant="TotalProduct - By Category" />
+          </level>
+          <level>
+            <input nameref="Division" />
+          </level>
+          <level>
+            <input nameref="Category" />
+          </level>
+          <level>
+            <input nameref="Product" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tf-FH [Dim]: Customer" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="Wholesale Customers" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="Customer Name" type="string" />
+          <attribute name="CustomerId" type="numeric" />
+          <attribute name="BillToCustomerId" type="numeric" />
+          <attribute name="SourceKey" type="numeric" />
+          <attribute name="CustomerPaymentType" type="string" />
+          <attribute name="Territory" type="string" />
+          <attribute name="SettlementDaysStatus" type="string" />
+          <attribute name="AveragePaymentDays" type="numeric" />
+          <attribute name="DeliveryStatus" type="string" />
+          <attribute name="LastPaymentDate" type="string" />
+          <attribute name="LastSaleDate" type="string" />
+          <attribute name="CustomerCreationDate" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="All Customers" />
+          </level>
+          <level>
+            <input nameref="Division" />
+          </level>
+          <level>
+            <input nameref="CustomerGroup" />
+          </level>
+          <level>
+            <input nameref="CustomerCode" />
+            <attributes>
+              <attribute name="Customer Name">
+                <input nameref="CustomerName" />
+              </attribute>
+              <attribute name="CustomerId">
+                <input nameref="CustomerId" />
+              </attribute>
+              <attribute name="BillToCustomerId">
+                <input nameref="BillToCustomerId" />
+              </attribute>
+              <attribute name="SourceKey">
+                <input nameref="SourceKey" />
+              </attribute>
+              <attribute name="CustomerPaymentType">
+                <input nameref="CustomerPaymentType" />
+              </attribute>
+              <attribute name="Territory">
+                <input nameref="Territory" />
+              </attribute>
+              <attribute name="SettlementDaysStatus">
+                <input nameref="SettlementDaysStatus" />
+              </attribute>
+              <attribute name="AveragePaymentDays">
+                <input nameref="AveragePaymentDays" />
+              </attribute>
+              <attribute name="DeliveryStatus">
+                <input nameref="DeliveryStatus" />
+              </attribute>
+              <attribute name="LastPaymentDate">
+                <input nameref="LastPaymentDate" />
+              </attribute>
+              <attribute name="LastSaleDate">
+                <input nameref="LastSaleDate" />
+              </attribute>
+              <attribute name="CustomerCreationDate">
+                <input nameref="CustomerCreationDate" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tf-FH [Dim]: Season" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="Season" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="Name" type="string" />
+          <attribute name="ID" type="numeric" />
+          <attribute name="SourceKey" type="numeric" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="TotalSeason" />
+          </level>
+          <level>
+            <input nameref="Code" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="Name" />
+              </attribute>
+              <attribute name="ID">
+                <input nameref="Id" />
+              </attribute>
+              <attribute name="SourceKey">
+                <input nameref="SourceKey" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tf-FH [Dim]: Story" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="Story" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="StoryName" type="string" />
+          <attribute name="StoryId" type="numeric" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="TotalStory" />
+          </level>
+          <level>
+            <input nameref="Division" />
+          </level>
+          <level>
+            <input nameref="StoryCode" />
+            <attributes>
+              <attribute name="StoryName">
+                <input nameref="StoryName" />
+              </attribute>
+              <attribute name="StoryId">
+                <input nameref="StoryId" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tf-FH [Dim]: Size" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="Size" />
+      </sources>
+      <target>
+        <levels>
+          <level>
+            <input constant="Total Size" />
+          </level>
+          <level>
+            <input nameref="Division" />
+          </level>
+          <level>
+            <input nameref="SizeRange" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+    <transform modified="1588293563456" name="tf-FH [Dim]: Product by Department" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="Wholesale Products by Department" />
+      </sources>
+      <target>
+        <levels>
+          <level>
+            <input constant="TotalProduct - By Department" />
+          </level>
+          <level>
+            <input nameref="Division" />
+          </level>
+          <level>
+            <input nameref="Department" />
+          </level>
+          <level>
+            <input nameref="Category" />
+          </level>
+          <level>
+            <input nameref="Product" />
+          </level>
+        </levels>
+        <attributes />
+      </target>
+    </transform>
+  </transforms>
+  <loads>
+    <load modified="1588293563456" name="ld-Jedox [Dim-Financials]: Account (All Levels)" type="Dimension" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Account load only at base levels. Keep the top levels untouched since they are manually created through excel spreedsheet.]]></comment>
+      <source nameref="tr-PC [Dim]:Accounts (AllLevels)" />
+      <connection nameref="Jedox" />
+      <dimension name="Account">
+        <elements mode="insert" />
+        <consolidations mode="update" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Dim-Financials]: BusDiv" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Loads business division code to [Dim]: Business Division]]></comment>
+      <source nameref="tf-FH [Dim]: BusDiv" />
+      <connection nameref="Jedox" />
+      <dimension name="Business Division">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Dim-Financials]: Company" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <source nameref="tf-FH [Dim]: Company" />
+      <connection nameref="Jedox" />
+      <dimension name="Company">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Dim-Financials]: Currency" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <source nameref="tf-FH [Dim]: Currency" />
+      <connection nameref="Jedox" />
+      <dimension name="Currency">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Dim-Financials]: ProfCen (Hierarchy2)" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Build two hierarchies:
+1. ProfCen Ty by BusDiv
+2. BusDiv by ProfCen Ty]]></comment>
+      <source nameref="tf-FH [Dim]: ProfCen (Hierarchy2)" />
+      <connection nameref="Jedox" />
+      <dimension name="Profit-Cost Centre">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="inactive" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Dim-Financials]: ProfCen (Non-Retail)" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Build two hierarchies:
+1. ProfCen Ty by BusDiv
+2. BusDiv by ProfCen Ty]]></comment>
+      <source nameref="tf-FH [Dim]: ProfCen (Non-Retail)" />
+      <connection nameref="Jedox" />
+      <dimension name="Profit-Cost Centre">
+        <elements mode="insert" />
+        <consolidations mode="add" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Dim-Financials]: ProfCen (Retail)" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Build two hierarchies:
+1. ProfCen Ty by BusDiv
+2. BusDiv by ProfCen Ty]]></comment>
+      <source nameref="tf-FH [Dim]: ProfCen (Retail)" />
+      <connection nameref="Jedox" />
+      <dimension name="Profit-Cost Centre">
+        <elements mode="insert" />
+        <consolidations mode="add" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Dim-Retail]: Store" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <source nameref="tr-TJ [Dim]: Store" />
+      <connection nameref="Jedox" />
+      <dimension name="Store">
+        <elements mode="insert" />
+        <consolidations mode="update" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+    <load modified="1588293563456" name="ld-Jedox [Dim-Retail]: Store by Area Manager" type="Dimension" modifiedBy="ONEPAS\richards">
+      <source nameref="tr-FH [Dim]: Store - Area Manager" />
+      <connection nameref="Jedox" />
+      <dimension name="Store">
+        <elements mode="insert" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Dim-Retail LTM]: LTM Period" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <source nameref="tr- FH [Dim]: LTM Period" />
+      <connection nameref="Jedox" />
+      <dimension name="LTM Period">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Dim-Financial LTM]: LTM Period" type="Dimension" modified="1588293563456" modifiedBy="ONEPAS\richards">
+      <source nameref="tr- FH [Dim]: LTM Period" />
+      <connection nameref="Jedox" />
+      <dimension name="LTM Period">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load modified="1588293563456" name="ld-Jedox [Dim-Wholesale]: ProductByDepartment" type="Dimension" modifiedBy="ONEPAS\richards">
+      <source nameref="tf-FH [Dim]: Product by Department" />
+      <connection nameref="Jedox" />
+      <dimension name="Product">
+        <elements mode="insert" />
+        <consolidations mode="add" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+    <load modified="1588293563456" name="ld-Jedox [Dim-Wholesale]: ProductByCategory" type="Dimension" modifiedBy="ONEPAS\richards">
+      <source nameref="tf-FH [Dim]: Product By Category" />
+      <connection nameref="Jedox" />
+      <dimension name="Product">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="inactive" />
+      </dimension>
+    </load>
+    <load modified="1588293563456" name="ld-Jedox [Dim-Wholesale]: WholesaleCustomer" type="Dimension" modifiedBy="ONEPAS\richards">
+      <source nameref="tf-FH [Dim]: Customer" />
+      <connection nameref="Jedox" />
+      <dimension name="Wholesale Customer">
+        <elements mode="add" />
+        <consolidations mode="insertParallel" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load modified="1588293563456" name="ld-Jedox [Dim-Wholesale]: Colour" type="Dimension" modifiedBy="ONEPAS\richards">
+      <source nameref="tf-FH [Dim]: Colour" />
+      <connection nameref="Jedox" />
+      <dimension name="Colour">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="inactive" />
+      </dimension>
+    </load>
+    <load modified="1588293563456" name="ld-Jedox [Dim-Wholesale]: Season" type="Dimension" modifiedBy="ONEPAS\richards">
+      <source nameref="tf-FH [Dim]: Season" />
+      <connection nameref="Jedox" />
+      <dimension name="Season">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load modified="1588293563456" name="ld-Jedox [Dim-Wholesale]: Size" type="Dimension" modifiedBy="ONEPAS\richards">
+      <source nameref="tf-FH [Dim]: Size" />
+      <connection nameref="Jedox" />
+      <dimension name="Size">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+    <load modified="1588293563456" name="ld-Jedox [Dim-Wholesale]: Story" type="Dimension" modifiedBy="ONEPAS\richards">
+      <source nameref="tf-FH [Dim]: Story" />
+      <connection nameref="Jedox" />
+      <dimension name="Story">
+        <elements mode="insert" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load modified="1588293563456" name="ld-DW [Dim]: Account (Jedox Root to Consol)" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Create a table that houses the account dimension in Jedox.
+This is the first pass that loads from the top of the tree down to the immediate parents of the base members - but not the base members. These will come from AP21
+There is another step that will load the alternate hierarchies in total and will append to this table.]]></comment>
+      <source format="pcwa" nameref="ex-Jedox [Dim]: Accounts (Jedox - Main Hierarchies To ConsLevel)" />
+      <connection nameref="DW Raw" />
+      <mode>update</mode>
+      <table name="JEDOX_ACCOUNTS_ATTRIBUTES" schema="dbo" />
+    </load>
+    <load modified="1588293563456" name="ld-DW [Dim]: Account (Jedox Alternate Hierarchies)" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[APPEND to the table that houses the account dimension in Jedox.
+This is the second pass that loads all the alternate structures in their entirety. These will be reloaded when integrated with the accounts coming from AP21.]]></comment>
+      <source format="pcwa" nameref="ex-Jedox [Dim]: Accounts (Jedox - Alternate Hierarchies)" />
+      <connection nameref="DW Raw" />
+      <mode>insert</mode>
+      <table aggregate="true" name="JEDOX_ACCOUNTS_ATTRIBUTES" schema="dbo" />
+    </load>
+  </loads>
+  <jobs>
+    <job modified="1588293563456" name="Dimension Load - Parallel" type="Parallel" modifiedBy="ONEPAS\richards">
+      <execution nameref="ld-Jedox [Dim-Wholesale]: ProductByDepartment" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim-Wholesale]: ProductByCategory" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim-Wholesale]: WholesaleCustomer" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim-Wholesale]: Colour" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim-Wholesale]: Season" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim-Wholesale]: Size" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim-Wholesale]: Story" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim-Financials]: Company" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim-Financials]: BusDiv" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim-Financials]: Currency" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim-Financial LTM]: LTM Period" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim-Retail LTM]: LTM Period" parallel="false" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1588293563456" name="Dimension Load - Sequencial" type="Standard" modifiedBy="ONEPAS\richards">
+      <execution nameref="ld-Jedox [Dim-Financials]: ProfCen (Non-Retail)" type="load" />
+      <execution nameref="ld-Jedox [Dim-Financials]: ProfCen (Retail)" type="load" />
+      <execution nameref="ld-Jedox [Dim-Financials]: ProfCen (Hierarchy2)" type="load" />
+      <execution nameref="ld-Jedox [Dim-Retail]: Store" type="load" />
+      <execution nameref="ld-Jedox [Dim-Retail]: Store by Area Manager" type="load" />
+      <execution nameref="ld-DW [Dim]: Account (Jedox Root to Consol)" type="load" />
+      <execution nameref="ld-DW [Dim]: Account (Jedox Alternate Hierarchies)" type="load" />
+      <execution nameref="ld-Jedox [Dim-Financials]: Account (All Levels)" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1588293563456" name="Load Dimensions" type="Standard" modifiedBy="ONEPAS\richards">
+      <execution nameref="Dimension Load - Sequencial" type="job" />
+      <execution nameref="Dimension Load - Parallel" type="job" />
+      <failStatus>error</failStatus>
+    </job>
+  </jobs>
+</project>
