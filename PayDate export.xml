@@ -1,0 +1,47 @@
+<project name="PayDate export" version="7.3" modified="1515478310878" modifiedBy="richardsADMIN" olapId="p40">
+  <headers>
+    <header name="comment">
+      <comment><![CDATA[ETL project for DimensionDownload, generated on Tue Jan 09 16:58:00 AEDT 2018]]></comment>
+    </header>
+  </headers>
+  <variables />
+  <connections>
+    <connection name="C_Olap_localhost_PAS-FINANCIALS" type="JedoxGlobal" modified="1515477480311" modifiedBy="richardsADMIN">
+      <globalReference>localhost</globalReference>
+      <database>PAS-FINANCIALS</database>
+    </connection>
+    <connection modified="1515478310878" name="C_CSV_(Export from PayDate dimension to PayDate)" type="File" modifiedBy="richardsADMIN">
+      <location type="FileSystem" />
+      <database>C:\PayDate.csv</database>
+      <header>true</header>
+      <delimiter>;</delimiter>
+      <quote>#none</quote>
+      <encoding>UTF8</encoding>
+      <enableEscape>false</enableEscape>
+    </connection>
+  </connections>
+  <extracts>
+    <extract modified="1515477818708" name="E_Dim_(Export from PayDate dimension to PayDate)" type="Dimension" modifiedBy="richardsADMIN">
+      <connection nameref="C_Olap_localhost_PAS-FINANCIALS" />
+      <query>
+        <dimension name="PayDate">
+          <condition mode="nodesToBases" operator="equal" type="accept"><![CDATA[PayDates by Year]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>none</attributesMode>
+    </extract>
+  </extracts>
+  <transforms />
+  <loads>
+    <load modified="1515477855437" name="L_CSV_(Export from PayDate dimension to PayDate)" type="File" modifiedBy="richardsADMIN">
+      <source format="pc" nameref="E_Dim_(Export from PayDate dimension to PayDate)" />
+      <connection nameref="C_CSV_(Export from PayDate dimension to PayDate)" />
+      <mode>create</mode>
+    </load>
+  </loads>
+  <jobs>
+    <job name="Export from PayDate dimension to PayDate" type="Standard" modified="1515477480311" modifiedBy="richardsADMIN">
+      <execution type="load" nameref="L_CSV_(Export from PayDate dimension to PayDate)" />
+    </job>
+  </jobs>
+</project>
