@@ -1,0 +1,608 @@
+<project name="[99-01]-PAS-FINANCIALS [ FinancialDay - RetailDay] Dimension Updates - Manual Only" version="7.3" modified="1461821179684" modifiedBy="_internal_suite" olapId="p1">
+  <headers>
+    <header name="comment" modified="1428911154309" modifiedBy="">
+      <comment><![CDATA[2015-04-15 RKS
+This is a manual load only as it is only required when a new financial year has been added to AP21
+=================================
+2015-02-03 RKS
+Combined both the update/build of the retail days and financial days dimensions into 1 ETL
+=================================
+Updated by RKS 2015-02-02 ti build the dimension from the pTime table in the PAS data warehouse PAS_DWH based on retail weeks/periods/years
+==================
+Uploaded by RKS 2015-01-30
+*** Disclaimer - Originally Developed by Naked Data ***
+This project demonstrates building a Date dimension with attributes. Created by Naked Data Pty Ltd 2014.
+*************************************************]]></comment>
+    </header>
+  </headers>
+  <variables />
+  <connections>
+    <connection name="Jedox" type="JedoxGlobal" modified="1461821179684" modifiedBy="_internal_suite">
+      <comment><![CDATA[Connection to Jedox server via the Connection Manager. Much more flexible and transportable connection type.]]></comment>
+      <globalReference>localhost</globalReference>
+      <database>PAS-FINANCIALS</database>
+    </connection>
+    <connection name="DW" type="Sqlserver" modified="1461821179684" modifiedBy="_internal_suite">
+      <host>mtwsql04.onepas.local</host>
+      <port>1433</port>
+      <user>PasFin</user>
+      <database>PAS_DWH</database>
+      <password encrypted="true">yy44+gMrRmhVvjp4fbf0zZya+WOz2aKR</password>
+    </connection>
+  </connections>
+  <extracts>
+    <extract name="ex-DW [Dim]: RetailDays from PTime" type="Relational" modified="1461821179684" modifiedBy="_internal_suite">
+      <comment><![CDATA[2015-01-30 RKS Extracts the day and attribute data from the pTime table in PAS data warehouse PAS-DWH.]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[select 'AllRetailYears' [AllRetailYears]
+, RetYear  'RetailYear'
+, RetYear + '_' + case when RetMonth < 10 then 'P0' + RetMonth else 'P' + RetMonth end 'RetailMonth'
+, RetYear + '_' + case when RetWeek <10 then 'WK0' + RetWeek else 'WK' + RetWeek end 'RetailWeek'
+, convert(varchar(12), CalDate,112) 'Day'
+, convert(varchar(12),RetWeekStart, 112) 'RetailWeekStart'
+, convert(varchar(12),RetWeekEnd, 112) 'RetailWeekEnd'
+, substring(datename(dw,CalDate),1,3) 'DayOfWeek'
+from Ptime
+where CalDate >= '20130701'
+order by 4]]></query>
+      <alias_map>
+        <alias origin="AllRetailYears">1</alias>
+        <alias origin="RetailYear">2</alias>
+        <alias origin="RetailMonth">3</alias>
+        <alias origin="RetailWeek">4</alias>
+        <alias origin="Day">5</alias>
+        <alias origin="RetailWeekStart">6</alias>
+        <alias origin="RetailWeekEnd">7</alias>
+        <alias origin="DayOfWeek">8</alias>
+      </alias_map>
+    </extract>
+    <extract name="ex-DW [Dim]: FinancialDays from PTime" type="Relational" modified="1461821179684" modifiedBy="_internal_suite">
+      <comment><![CDATA[2015-01-30 RKS Extracts the day and attribute data from the pTime table in PAS data warehouse PAS-DWH.]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[select 'AllFinancialYears' [AllFinancialYears]
+, FinYear  'FinYear'
+, Convert(Varchar(4), FinYear) + '_' + case when  FinMonth < 10 then 'P0' + Convert(varchar(2),FinMonth) else 'P' + Convert(varchar(2),FinMonth) end 'FinancialPeriod'
+, convert(varchar(12), CalDate,112) 'Day'
+, substring(datename(dw,CalDate),1,3) 'DayOfWeek'
+, 'WK' + convert(varchar(4),RetYear) + case when RetWeek <10 then '0' + convert(varchar(2), RetWeek) else  convert(varchar(2), RetWeek) end 'RetailWeek'
+from Ptime
+where CalDate >= '20130701'
+order by 3]]></query>
+      <alias_map>
+        <alias origin="AllFinancialYears">1</alias>
+        <alias origin="FinYear">2</alias>
+        <alias origin="FinancialPeriod">3</alias>
+        <alias origin="Day">4</alias>
+        <alias origin="DayOfWeek">5</alias>
+      </alias_map>
+    </extract>
+  </extracts>
+  <transforms>
+    <transform name="tf-FT [Dim] : RetailDay" type="FieldTransform" modified="1461821179684" modifiedBy="_internal_suite">
+      <comment><![CDATA[Groovy scripts developed by Naked Data
+
+This transform calculates various attribute values.]]></comment>
+      <sources>
+        <source nameref="ex-DW [Dim]: RetailDays from PTime" />
+      </sources>
+      <functions>
+        <function name="prevDay" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="int" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+tomorrowCal.add(Calendar.DATE, -1);
+yesterday = tomorrowCal.time;
+String sYear = yesterday.getAt(Calendar.YEAR);
+String sDate = yesterday.getAt(Calendar.DATE);
+String sNumMonth = yesterday.getAt(Calendar.MONTH)+1;
+String sDay = (sDate.toInteger()<10)?"0"+(sDate.toInteger()):(sDate.toInteger());
+String sMonth = (sNumMonth.toInteger()<10)?"0"+sNumMonth:sNumMonth;
+String sLoadYear = (sMonth.toInteger()<7)?sYear:sYear.toInteger()+1;
+sTemp1 = Date.parse( 'MM', sNumMonth );
+sTemp2 = sTemp1.toString();
+Mth = sTemp2.substring(4,7);
+FYr = "FY-"+sLoadYear;
+prevDay = sYear+sMonth+sDay;]]></script>
+            <type><![CDATA[String]]></type>
+          </parameters>
+        </function>
+        <function name="nextDay" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="int" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+tomorrowCal.add(Calendar.DATE, 1);
+tomorrow = tomorrowCal.time;
+String sYear = tomorrow.getAt(Calendar.YEAR);
+String sDate = tomorrow.getAt(Calendar.DATE);
+String sNumMonth = tomorrow.getAt(Calendar.MONTH)+1;
+String sDay = (sDate.toInteger()<10)?"0"+(sDate.toInteger()):(sDate.toInteger());
+String sMonth = (sNumMonth.toInteger()<10)?"0"+sNumMonth:sNumMonth;
+String sLoadYear = (sMonth.toInteger()<7)?sYear:sYear.toInteger()+1;
+sTemp1 = Date.parse( 'MM', sNumMonth );
+sTemp2 = sTemp1.toString();
+Mth = sTemp2.substring(4,7);
+FYr = "FY-"+sLoadYear;
+nextDay = sYear+sMonth+sDay;]]></script>
+            <type><![CDATA[int]]></type>
+          </parameters>
+        </function>
+        <function name="lastDay" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="String" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+String sYear = tomorrowCal.getAt(Calendar.YEAR);
+String sDate = tomorrowCal.getAt(Calendar.DATE);
+String sNumMonth = tomorrowCal.getAt(Calendar.MONTH)+1;
+int lastDayOfMonth = tomorrowCal.getActualMaximum(Calendar.DAY_OF_MONTH);
+String sDay = (lastDayOfMonth<10)?"0"+(lastDayOfMonth):(lastDayOfMonth);
+String sMonth = (sNumMonth.toInteger()<10)?"0"+sNumMonth:sNumMonth;
+String sLoadYear = (sMonth.toInteger()<7)?sYear:sYear.toInteger()+1;
+sTemp1 = Date.parse( 'MM', sNumMonth );
+sTemp2 = sTemp1.toString();
+Mth = sTemp2.substring(4,7);
+FYr = "FY-"+sLoadYear;
+lastDay = sYear+sMonth+sDay;]]></script>
+            <type><![CDATA[String]]></type>
+          </parameters>
+        </function>
+        <function name="prevMonth" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="int" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+tomorrowCal.add(Calendar.MONTH, -1);
+tomorrow = tomorrowCal.time;
+String sYear = tomorrow.getAt(Calendar.YEAR);
+String sNumMonth = tomorrow.getAt(Calendar.MONTH)+1;
+String sMonth = (sNumMonth.toInteger()<10)?"0"+sNumMonth:sNumMonth;
+prevMonth = sYear+sMonth;]]></script>
+            <type><![CDATA[int]]></type>
+          </parameters>
+        </function>
+        <function name="nextMonth" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="int" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+tomorrowCal.add(Calendar.MONTH, 1);
+tomorrow = tomorrowCal.time;
+String sYear = tomorrow.getAt(Calendar.YEAR);
+String sNumMonth = tomorrow.getAt(Calendar.MONTH)+1;
+String sMonth = (sNumMonth.toInteger()<10)?"0"+sNumMonth:sNumMonth;
+nextMonth = sYear+sMonth;]]></script>
+            <type><![CDATA[int]]></type>
+          </parameters>
+        </function>
+        <function name="nextYear" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="int" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+tomorrowCal.add(Calendar.YEAR, 1);
+tomorrow = tomorrowCal.time;
+String sYear = tomorrow.getAt(Calendar.YEAR);
+nextYear = sYear;]]></script>
+            <type><![CDATA[int]]></type>
+          </parameters>
+        </function>
+        <function name="prevYear" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="int" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+tomorrowCal.add(Calendar.YEAR, -1);
+tomorrow = tomorrowCal.time;
+String sYear = tomorrow.getAt(Calendar.YEAR);
+prevYear = sYear;]]></script>
+            <type><![CDATA[int]]></type>
+          </parameters>
+        </function>
+        <function name="ddMMMyyyy" type="DateFormat">
+          <inputs>
+            <input nameref="Day" />
+          </inputs>
+          <parameters>
+            <sourceformat>yyyyMMdd</sourceformat>
+            <targetformat>dd-MMM-yyyy</targetformat>
+            <language>en</language>
+          </parameters>
+        </function>
+        <function name="MMMyyyy" type="DateFormat">
+          <inputs>
+            <input nameref="Day" />
+          </inputs>
+          <parameters>
+            <sourceformat>yyyyMMdd</sourceformat>
+            <targetformat>MMM-yyyy</targetformat>
+            <language>en</language>
+          </parameters>
+        </function>
+        <function name="dd/mm/yyyy" type="DateFormat">
+          <inputs>
+            <input nameref="Day" />
+          </inputs>
+          <parameters>
+            <sourceformat>yyyyMMdd</sourceformat>
+            <targetformat>dd/MM/yyyy</targetformat>
+            <language>en</language>
+          </parameters>
+        </function>
+      </functions>
+    </transform>
+    <transform name="tf-FH [Dim] : RetailDay" type="TreeFH" modified="1461821179684" modifiedBy="_internal_suite">
+      <comment><![CDATA[Brings in the attributes associated with each day.]]></comment>
+      <sources>
+        <source nameref="tf-FT [Dim] : RetailDay" />
+      </sources>
+      <target type="numeric" skipEmpty="false">
+        <levels>
+          <level>
+            <input nameref="AllRetailYears" />
+          </level>
+          <level>
+            <input nameref="RetailYear" />
+          </level>
+          <level>
+            <input nameref="RetailMonth" />
+          </level>
+          <level>
+            <input nameref="RetailWeek" />
+          </level>
+          <level>
+            <input nameref="Day" />
+            <attributes>
+              <attribute name="Previous">
+                <input nameref="prevDay" />
+              </attribute>
+              <attribute name="Next">
+                <input nameref="nextDay" />
+              </attribute>
+              <attribute name="Last Day of Month">
+                <input nameref="lastDay" />
+              </attribute>
+              <attribute name="dd/mm/yyyy">
+                <input nameref="dd/mm/yyyy" />
+              </attribute>
+              <attribute name="RetailWeek">
+                <input nameref="RetailWeek" />
+              </attribute>
+              <attribute name="RetailMonth">
+                <input nameref="RetailMonth" />
+              </attribute>
+              <attribute name="RetailYear">
+                <input nameref="RetailYear" />
+              </attribute>
+              <attribute name="MMMyyyy">
+                <input nameref="MMMyyyy" />
+              </attribute>
+              <attribute name="ddMMMyyyy">
+                <input nameref="ddMMMyyyy" />
+              </attribute>
+              <attribute name="RetailWeekStart">
+                <input nameref="RetailWeekStart" />
+              </attribute>
+              <attribute name="RetailWeekEnd">
+                <input nameref="RetailWeekEnd" />
+              </attribute>
+              <attribute name="DayOfWeek">
+                <input nameref="DayOfWeek" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+        <attributes>
+          <attribute name="Previous" type="string" />
+          <attribute name="Next" type="string" />
+          <attribute name="Last Day of Month" type="string" />
+          <attribute name="dd/mm/yyyy" type="string" />
+          <attribute name="RetailWeek" type="string" />
+          <attribute name="RetailMonth" type="string" />
+          <attribute name="RetailYear" type="numeric" />
+          <attribute name="MMMyyyy" type="string" />
+          <attribute name="ddMMMyyyy" type="string" />
+          <attribute name="RetailWeekStart" type="string" />
+          <attribute name="RetailWeekEnd" type="string" />
+          <attribute name="DayOfWeek" type="string" />
+        </attributes>
+      </target>
+    </transform>
+    <transform name="tf-FT [Dim]: FinancialDay" type="FieldTransform" modified="1461821179684" modifiedBy="_internal_suite">
+      <comment><![CDATA[Groovy scripts developed by Naked Data
+
+This transform calculates various attribute values.]]></comment>
+      <sources>
+        <source nameref="ex-DW [Dim]: FinancialDays from PTime" />
+      </sources>
+      <functions>
+        <function name="prevDay" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="int" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+tomorrowCal.add(Calendar.DATE, -1);
+yesterday = tomorrowCal.time;
+String sYear = yesterday.getAt(Calendar.YEAR);
+String sDate = yesterday.getAt(Calendar.DATE);
+String sNumMonth = yesterday.getAt(Calendar.MONTH)+1;
+String sDay = (sDate.toInteger()<10)?"0"+(sDate.toInteger()):(sDate.toInteger());
+String sMonth = (sNumMonth.toInteger()<10)?"0"+sNumMonth:sNumMonth;
+String sLoadYear = (sMonth.toInteger()<7)?sYear:sYear.toInteger()+1;
+sTemp1 = Date.parse( 'MM', sNumMonth );
+sTemp2 = sTemp1.toString();
+Mth = sTemp2.substring(4,7);
+FYr = "FY-"+sLoadYear;
+prevDay = sYear+sMonth+sDay;]]></script>
+            <type><![CDATA[String]]></type>
+          </parameters>
+        </function>
+        <function name="nextDay" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="int" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+tomorrowCal.add(Calendar.DATE, 1);
+tomorrow = tomorrowCal.time;
+String sYear = tomorrow.getAt(Calendar.YEAR);
+String sDate = tomorrow.getAt(Calendar.DATE);
+String sNumMonth = tomorrow.getAt(Calendar.MONTH)+1;
+String sDay = (sDate.toInteger()<10)?"0"+(sDate.toInteger()):(sDate.toInteger());
+String sMonth = (sNumMonth.toInteger()<10)?"0"+sNumMonth:sNumMonth;
+String sLoadYear = (sMonth.toInteger()<7)?sYear:sYear.toInteger()+1;
+sTemp1 = Date.parse( 'MM', sNumMonth );
+sTemp2 = sTemp1.toString();
+Mth = sTemp2.substring(4,7);
+FYr = "FY-"+sLoadYear;
+nextDay = sYear+sMonth+sDay;]]></script>
+            <type><![CDATA[int]]></type>
+          </parameters>
+        </function>
+        <function name="lastDay" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="String" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+String sYear = tomorrowCal.getAt(Calendar.YEAR);
+String sDate = tomorrowCal.getAt(Calendar.DATE);
+String sNumMonth = tomorrowCal.getAt(Calendar.MONTH)+1;
+int lastDayOfMonth = tomorrowCal.getActualMaximum(Calendar.DAY_OF_MONTH);
+String sDay = (lastDayOfMonth<10)?"0"+(lastDayOfMonth):(lastDayOfMonth);
+String sMonth = (sNumMonth.toInteger()<10)?"0"+sNumMonth:sNumMonth;
+String sLoadYear = (sMonth.toInteger()<7)?sYear:sYear.toInteger()+1;
+sTemp1 = Date.parse( 'MM', sNumMonth );
+sTemp2 = sTemp1.toString();
+Mth = sTemp2.substring(4,7);
+FYr = "FY-"+sLoadYear;
+lastDay = sYear+sMonth+sDay;]]></script>
+            <type><![CDATA[String]]></type>
+          </parameters>
+        </function>
+        <function name="prevMonth" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="int" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+tomorrowCal.add(Calendar.MONTH, -1);
+tomorrow = tomorrowCal.time;
+String sYear = tomorrow.getAt(Calendar.YEAR);
+String sNumMonth = tomorrow.getAt(Calendar.MONTH)+1;
+String sMonth = (sNumMonth.toInteger()<10)?"0"+sNumMonth:sNumMonth;
+prevMonth = sYear+sMonth;]]></script>
+            <type><![CDATA[int]]></type>
+          </parameters>
+        </function>
+        <function name="nextMonth" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="int" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+tomorrowCal.add(Calendar.MONTH, 1);
+tomorrow = tomorrowCal.time;
+String sYear = tomorrow.getAt(Calendar.YEAR);
+String sNumMonth = tomorrow.getAt(Calendar.MONTH)+1;
+String sMonth = (sNumMonth.toInteger()<10)?"0"+sNumMonth:sNumMonth;
+nextMonth = sYear+sMonth;]]></script>
+            <type><![CDATA[int]]></type>
+          </parameters>
+        </function>
+        <function name="nextYear" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="int" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+tomorrowCal.add(Calendar.YEAR, 1);
+tomorrow = tomorrowCal.time;
+String sYear = tomorrow.getAt(Calendar.YEAR);
+nextYear = sYear;]]></script>
+            <type><![CDATA[int]]></type>
+          </parameters>
+        </function>
+        <function name="prevYear" type="Groovy">
+          <inputs>
+            <input nameref="Day" type="int" />
+          </inputs>
+          <parameters>
+            <script><![CDATA[def Calendar tomorrowCal = Calendar.instance;
+tomorrowCal.setTime(Date.parse("yyyyMMdd",_input1.toString()));
+tomorrowCal.clearTime();
+tomorrowCal.add(Calendar.YEAR, -1);
+tomorrow = tomorrowCal.time;
+String sYear = tomorrow.getAt(Calendar.YEAR);
+prevYear = sYear;]]></script>
+            <type><![CDATA[int]]></type>
+          </parameters>
+        </function>
+        <function name="ddMMMyyyy" type="DateFormat">
+          <inputs>
+            <input nameref="Day" />
+          </inputs>
+          <parameters>
+            <sourceformat>yyyyMMdd</sourceformat>
+            <targetformat>dd-MMM-yyyy</targetformat>
+            <language>en</language>
+          </parameters>
+        </function>
+        <function name="MMMyyyy" type="DateFormat">
+          <inputs>
+            <input nameref="Day" />
+          </inputs>
+          <parameters>
+            <sourceformat>yyyyMMdd</sourceformat>
+            <targetformat>MMM-yyyy</targetformat>
+            <language>en</language>
+          </parameters>
+        </function>
+        <function name="dd/mm/yyyy" type="DateFormat">
+          <inputs>
+            <input nameref="Day" />
+          </inputs>
+          <parameters>
+            <sourceformat>yyyyMMdd</sourceformat>
+            <targetformat>dd/MM/yyyy</targetformat>
+            <language>en</language>
+          </parameters>
+        </function>
+      </functions>
+    </transform>
+    <transform name="tf-FH [Dim]: FinancialDay" type="TreeFH" modified="1461821179684" modifiedBy="_internal_suite">
+      <comment><![CDATA[Brings in the attributes associated with each day.]]></comment>
+      <sources>
+        <source nameref="tf-FT [Dim]: FinancialDay" />
+      </sources>
+      <target type="numeric">
+        <attributes>
+          <attribute name="Previous" type="string" />
+          <attribute name="Next" type="string" />
+          <attribute name="Last Day of Month" type="string" />
+          <attribute name="dd/mm/yyyy" type="string" />
+          <attribute name="MMMyyyy" type="string" />
+          <attribute name="ddMMMyyyy" type="string" />
+          <attribute name="DayOfWeek" type="string" />
+          <attribute name="RetailWeek" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input nameref="AllFinancialYears" />
+          </level>
+          <level>
+            <input nameref="FinYear" />
+          </level>
+          <level>
+            <input nameref="FinancialPeriod" />
+          </level>
+          <level>
+            <input nameref="Day" />
+            <attributes>
+              <attribute name="Previous">
+                <input nameref="prevDay" />
+              </attribute>
+              <attribute name="Next">
+                <input nameref="nextDay" />
+              </attribute>
+              <attribute name="Last Day of Month">
+                <input nameref="lastDay" />
+              </attribute>
+              <attribute name="dd/mm/yyyy">
+                <input nameref="dd/mm/yyyy" />
+              </attribute>
+              <attribute name="MMMyyyy">
+                <input nameref="MMMyyyy" />
+              </attribute>
+              <attribute name="ddMMMyyyy">
+                <input nameref="ddMMMyyyy" />
+              </attribute>
+              <attribute name="DayOfWeek">
+                <input nameref="DayOfWeek" />
+              </attribute>
+              <attribute name="RetailWeek">
+                <input nameref="RetailWeek" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+  </transforms>
+  <loads>
+    <load name="ld-Jedox-[Dim] : RetailDay" type="Dimension" modified="1461821179684" modifiedBy="_internal_suite">
+      <comment><![CDATA[Uses insert functionality...
+inser The same as "add", with the following exception: duplicate consolidations are deleted and replaced with new consolidations
+Target dimension name is set in the variable DateDimName]]></comment>
+      <source nameref="tf-FH [Dim] : RetailDay" />
+      <connection nameref="Jedox" />
+      <dimension name="RetailDay">
+        <elements mode="insert" />
+        <consolidations mode="insert" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox-[Dim]: FinancialDay" type="Dimension" modified="1461821179684" modifiedBy="_internal_suite">
+      <comment><![CDATA[Uses insert functionality...
+inser The same as "add", with the following exception: duplicate consolidations are deleted and replaced with new consolidations
+Target dimension name is set in the variable DateDimName]]></comment>
+      <source nameref="tf-FH [Dim]: FinancialDay" />
+      <connection nameref="Jedox" />
+      <dimension name="FinancialDay">
+        <elements mode="insert" />
+        <consolidations mode="insert" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+  </loads>
+  <jobs>
+    <job name="01-02-load Dim RetailDays" type="Standard" modified="1461821179684" modifiedBy="_internal_suite">
+      <execution nameref="ld-Jedox-[Dim] : RetailDay" type="load" />
+    </job>
+    <job name="01-01-load Dim FinancialDays" type="Standard" modified="1461821179684" modifiedBy="_internal_suite">
+      <execution nameref="ld-Jedox-[Dim]: FinancialDay" type="load" />
+    </job>
+    <job name="01-00-Load Days Dimensions" type="Standard" modified="1461821179684" modifiedBy="_internal_suite">
+      <comment><![CDATA[This is the master job that runs the 2 separate jobs to build
+1. FinancialDays dimension
+2. RetailDays dimension]]></comment>
+      <execution nameref="01-01-load Dim FinancialDays" type="job" />
+      <execution nameref="01-02-load Dim RetailDays" type="job" />
+    </job>
+  </jobs>
+</project>

@@ -1,0 +1,1866 @@
+<project name="[04-01]-PAS-FINANCIALS [Retail Sales Weekly] Store Update and Data Load" version="7.3" modified="1577769247529" modifiedBy="richards" olapId="p27">
+  <headers>
+    <header name="comment" modified="1428890015675" modifiedBy="">
+      <comment><![CDATA[All the ETL processes required to load the Retail Sales Weekly cube
+This project is dependent upon the Rtl ETL process to build the store dimension used by the Retail Sales Weekly cube.]]></comment>
+    </header>
+  </headers>
+  <variables>
+    <variable name="ParameterYear" modified="1508972410301" modifiedBy="richardsADMIN">
+      <default>CurrYear|PrevYear</default>
+    </variable>
+    <variable modified="1531461972426" name="CurrYear" modifiedBy="richardsADMIN">
+      <comment />
+      <default>2019</default>
+    </variable>
+    <variable modified="1531461980058" name="PrevYear" modifiedBy="richardsADMIN">
+      <comment />
+      <default>2018</default>
+    </variable>
+    <variable modified="1560988451253" name="BudYear" modifiedBy="ONEPAS\richards">
+      <comment />
+      <default>2020</default>
+    </variable>
+    <variable modified="1564957378436" name="Budget Copy Target" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Determines the target version of the Budget Copy ETL]]></comment>
+      <default>Budget_2</default>
+    </variable>
+  </variables>
+  <connections>
+    <connection modified="1508972410301" name="DW" type="Sqlserver" modifiedBy="richardsADMIN">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DataWarehouse</database>
+      <parameters>
+        <parameter name="autoCommit">true</parameter>
+        <parameter name="integratedSecurity">true</parameter>
+      </parameters>
+    </connection>
+    <connection modified="1508972410301" name="Jedox" type="JedoxGlobal" modifiedBy="richardsADMIN">
+      <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
+      <globalReference>localhost</globalReference>
+      <database>PAS-FINANCIALS</database>
+      <ssl>off</ssl>
+    </connection>
+    <connection name="AP21" type="Oracle" modified="1508972410301" modifiedBy="richardsADMIN">
+      <host>MTWORA01</host>
+      <port>1521</port>
+      <database>PROD</database>
+      <user>AP21_v</user>
+      <password encrypted="true">U2Ag0dadqDYybjcXB/0wXA==</password>
+    </connection>
+    <connection name="file-SalesDailyUpdate" type="File" modified="1508972410301" modifiedBy="richardsADMIN">
+      <location type="FileSystem" />
+      <comment><![CDATA[Used for sending the SalesDaily update times in an email.]]></comment>
+      <database>C:\Program Files\Jedox\Jedox Suite\tomcat\client\SailesDailyUpdate.txt</database>
+      <header>true</header>
+      <delimiter>,</delimiter>
+      <quote>#none</quote>
+      <enableEscape>false</enableEscape>
+    </connection>
+    <connection name="file-Test" type="File" modified="1508972410301" modifiedBy="richardsADMIN">
+      <location type="FileSystem" />
+      <database>TestingFile.csv</database>
+      <header>true</header>
+      <delimiter>,</delimiter>
+      <quote>"</quote>
+      <ssl>verify</ssl>
+      <enableEscape>false</enableEscape>
+    </connection>
+  </connections>
+  <extracts>
+    <extract modified="1508972410301" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Actuals)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
+NOTE: This is only used for the actual/Forecast load at this stage.
+NOTE: Manual loads will not be cleared out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual]]></condition>
+          </dimension>
+          <dimension name="Week">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Week Base Periods]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Stores]]></condition>
+          </dimension>
+          <dimension name="Region">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Regions]]></condition>
+          </dimension>
+          <dimension name="Weekly Retail Measure">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Weekly Retail ETL Measures]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Consolidations by Dispatch Type]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Weekly" />
+      </query>
+    </extract>
+    <extract modified="1537836964351" name="ex-DW-Sales Budget" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[2015-01-12 RKS
+The query will be replaced by a view once it has been created.]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[-- Set up variables for CurrYear and BudYear to be used by queries
+Declare @BudYear int
+set @BudYear = (SELECT ConfigurationValue from DataWarehouse.dbo.SysConfiguration where ConfigurationKey = 'ETLBudRetailYear')
+print 'Current Year ' + convert(nvarchar(4), @BudYear)
+
+SELECT [Version]
+ ,[FYear] 
+ ,[Week]
+ ,[Currency] 
+ ,[Region] 
+ ,[Store] 
+ ,[Comp Type] 
+ ,[Weekly Retail Measure]
+ ,CASE
+    WHEN [Weekly Retail Measure] = 'Number of Stores' THEN MIN([#Value])
+    ELSE SUM([#Value])
+  END
+  AS [#VALUE]
+  FROM [DataWarehouseSummarisedFactData].[dbo].[FactJedox]
+  JOIN DataWarehouse.dbo.DimProfitCentre on FactJedox.Store = DimProfitCentre.Code
+  LEFT OUTER JOIN DataWarehouse.dbo.DimWarehouse on DimProfitCentre.Id = DimWarehouse.ProfitCentreId
+  LEFT OUTER JOIN DataWarehouse.dbo.JedoxDuplicateProfitCentres  ON JedoxDuplicateProfitCentres.WarehouseId = DimWarehouse.Id    
+  WHERE 1=1
+  AND Version = 'BUDGET'
+  AND FYear = @BudYear
+  AND FactJedox.LegalEntity != 89 -- Metalicus - External Legal Entity ID
+  AND JedoxDuplicateProfitCentres.WarehouseId IS NULL
+  GROUP BY [VERSION]
+ ,[FYear] 
+ ,[Week]
+ ,[Currency] 
+ ,[Region] 
+ ,[Store] 
+ ,[Comp Type] 
+ ,[Weekly Retail Measure]]]></query>
+      <alias_map>
+        <alias origin="Version">1</alias>
+        <alias origin="FYear">2</alias>
+        <alias origin="Week">3</alias>
+        <alias origin="Currency">4</alias>
+        <alias origin="Region">5</alias>
+        <alias origin="Store">6</alias>
+        <alias origin="Comp Type">7</alias>
+        <alias origin="Weekly Retail Measure">8</alias>
+        <alias origin="#VALUE">9</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1537836880438" name="ex-DW-Sales Forecast" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[2015-01-12 RKS
+The query will be replaced by a view once it has been created.]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[-- Set up variables for CurrYear and BudYear to be used by queries
+Declare @CurrYear int
+set @CurrYear = (SELECT ConfigurationValue from DataWarehouse.dbo.SysConfiguration where ConfigurationKey = 'ETLCurrRetailYear')
+print 'Current Year ' + convert(nvarchar(4), @CurrYear)
+
+SELECT [Version]
+ ,[FYear] 
+ ,[Week]
+ ,[Currency] 
+ ,[Region] 
+ ,[Store] 
+ ,[Comp Type] 
+ ,[Weekly Retail Measure]
+ ,CASE
+    WHEN [Weekly Retail Measure] = 'Number of Stores' THEN MIN([#Value])
+    ELSE ROUND(SUM([#Value]),2)
+  END
+  AS [#VALUE]
+  FROM [DataWarehouseSummarisedFactData].[dbo].[FactJedox]
+  JOIN DataWarehouse.dbo.DimProfitCentre on FactJedox.Store = DimProfitCentre.Code
+  LEFT OUTER JOIN DataWarehouse.dbo.DimWarehouse on DimProfitCentre.Id = DimWarehouse.ProfitCentreId
+  LEFT OUTER JOIN DataWarehouse.dbo.JedoxDuplicateProfitCentres  ON JedoxDuplicateProfitCentres.WarehouseId = DimWarehouse.Id  
+  WHERE 1=1
+  AND Version = 'FORECAST'
+  AND FYear = @CurrYear
+  AND FactJedox.LegalEntity != 89 -- Metalicus - External Legal Entity ID
+  AND JedoxDuplicateProfitCentres.WarehouseId IS NULL
+  GROUP BY [VERSION]
+ ,[FYear] 
+ ,[Week]
+ ,[Currency] 
+ ,[Region] 
+ ,[Store] 
+ ,[Comp Type] 
+-- ,[Dispatch Type] 
+ ,[Weekly Retail Measure]
+	order by 3,6]]></query>
+      <alias_map>
+        <alias origin="Version">1</alias>
+        <alias origin="FYear">2</alias>
+        <alias origin="Week">3</alias>
+        <alias origin="Currency">4</alias>
+        <alias origin="Region">5</alias>
+        <alias origin="Store">6</alias>
+        <alias origin="Comp Type">7</alias>
+        <alias origin="Weekly Retail Measure">8</alias>
+        <alias origin="#VALUE">9</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1508972410301" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Budget)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
+NOTE: This is only used for the actual/Forecast load at this stage.
+NOTE: Manual loads will not be cleared out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Budget]]></condition>
+          </dimension>
+          <dimension name="Week">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Week Base Periods]]></condition>
+          </dimension>
+          <dimension name="Region">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Regions]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Stores]]></condition>
+          </dimension>
+          <dimension name="Weekly Retail Measure">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Weekly Retail ETL Measures]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Weekly" />
+      </query>
+    </extract>
+    <extract modified="1529546661495" name="ex-Jedox[Cube]: Act2Fcst - Actuals" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
+NOTE: This is only used for the actual/Forecast load at this stage.
+NOTE: Manual loads will not be cleared out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+          <dimension name="Week">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Week Base Periods]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Stores]]></condition>
+          </dimension>
+          <dimension name="Region">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Regions]]></condition>
+          </dimension>
+          <dimension name="Weekly Retail Measure">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Weekly Retail ETL Measures]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Weekly" />
+      </query>
+    </extract>
+    <extract modified="1508972410301" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_DW)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
+NOTE: This is only used for the actual/Forecast load at this stage.
+NOTE: Manual loads will not be cleared out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast_DW]]></condition>
+          </dimension>
+          <dimension name="Week">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Week Base Periods]]></condition>
+          </dimension>
+          <dimension name="Region">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Regions]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Stores]]></condition>
+          </dimension>
+          <dimension name="Weekly Retail Measure">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Weekly Retail ETL Measures]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Weekly" />
+      </query>
+    </extract>
+    <extract modified="1508972410301" name="ex-Jedox [Cube]: Retail Sales Weekly (Forecast)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extracts the Forecast_DW version for loading into Forecast_MMM]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Weekly" />
+      </query>
+    </extract>
+    <extract modified="1508972410301" name="ex-Jedox [Attr]: Week (Forecast Weeks)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query celltype="only_numeric" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmptyAndZero">
+        <dimensions>
+          <dimension name="#_Week_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[ForecastWeek]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Week" />
+      </query>
+    </extract>
+    <extract modified="1508972410301" name="ex-Jedox [Attr]: Week (Actual Week)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query celltype="only_numeric" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmptyAndZero">
+        <dimensions>
+          <dimension name="#_Week_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[ActualWeek]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Week" />
+      </query>
+    </extract>
+    <extract modified="1537837072322" name="ex-DW-Sales Daily" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="DW" />
+      <query><![CDATA[DECLARE @PrevYear as int
+DECLARE @CurrYear as int
+
+Set @PrevYear = (Select ConfigurationValue from DataWarehouse.dbo.SysConfiguration where ConfigurationKey = 'ETLPrevRetailYear')
+Set @CurrYear = (Select ConfigurationValue from DataWarehouse.dbo.SysConfiguration where ConfigurationKey = 'ETLCurrRetailYear')
+
+SELECT [Version]
+      ,[FYear] as [FYear]
+      ,[Week] as [Week]
+      ,[Currency]
+      ,[Store] AS [Store]
+      ,[Region]
+      ,[Weekly Retail Measure] AS [Weekly Retail Measure]
+      ,[Comp Type] AS [Comp Type]
+      ,CASE
+        WHEN [Weekly Retail Measure] = 'Number of Stores' THEN MIN([#Value])
+        ELSE ROUND(SUM([#Value]),2)
+       END [#Value]
+  FROM DataWarehouseSummarisedFactData.dbo.FactJedox
+  JOIN DataWarehouse.dbo.DimProfitCentre on FactJedox.Store = DimProfitCentre.Code
+  LEFT OUTER JOIN DataWarehouse.dbo.DimWarehouse on DimProfitCentre.Id = DimWarehouse.ProfitCentreId
+  LEFT OUTER JOIN DataWarehouse.dbo.JedoxDuplicateProfitCentres  ON JedoxDuplicateProfitCentres.WarehouseId = DimWarehouse.Id   
+  WHERE 1=1
+  AND [FYear] Between @PrevYear and @CurrYear
+  AND Version = 'ACTUAL'
+  AND FactJedox.LegalEntity != 89 -- Metalicus - External Legal Entity ID
+  AND JedoxDuplicateProfitCentres.WarehouseId IS NULL
+  GROUP BY [Version]
+      ,[FYear]
+      ,[Week]
+      ,[Currency]
+      ,[Region]
+      ,[Store]
+      ,[Comp Type]
+      ,[Weekly Retail Measure]
+
+UNION
+
+SELECT [Version]
+      ,[FYear] as [FYear]
+      ,[Week] as [Week]
+      ,[Currency]
+      ,[Store] AS [Store]
+      ,[Region]
+      ,[Weekly Retail Measure] +' - ' + [Dispatch Type] AS [Weekly Retail Measure]
+      ,[Comp Type] AS [Comp Type]
+      ,CASE
+        WHEN [Weekly Retail Measure] = 'Number of Stores' THEN MIN([#Value])
+        ELSE ROUND(SUM([#Value]),2)
+       END [#Value]
+  FROM DataWarehouseSummarisedFactData.dbo.FactJedox
+  JOIN DataWarehouse.dbo.DimProfitCentre on FactJedox.Store = DimProfitCentre.Code
+  LEFT OUTER JOIN DataWarehouse.dbo.DimWarehouse on DimProfitCentre.Id = DimWarehouse.ProfitCentreId
+  WHERE 1=1
+  AND [FYear] Between @PrevYear and @CurrYear
+  AND Version = 'ACTUAL'
+  AND FactJedox.LegalEntity != 89 -- Metalicus - External Legal Entity ID
+  AND (DimWarehouse.Id IS NULL OR DimWarehouse.ID NOT IN (421, 20))  --Review E-Comm Singapore Store for Markdowns (421) and Head office Finished Goods (20)
+  AND [Weekly Retail Measure] != 'Number of Stores'
+  GROUP BY [Version]
+      ,[FYear]
+      ,[Week]
+      ,[Currency]
+      ,[Region]
+      ,[Store]
+      ,[Comp Type]
+      ,[Dispatch Type]
+      ,[Weekly Retail Measure]]]></query>
+      <alias_map>
+        <alias origin="Version">1</alias>
+        <alias origin="FYear">2</alias>
+        <alias origin="Week">3</alias>
+        <alias origin="Currency">4</alias>
+        <alias origin="Store">5</alias>
+        <alias origin="Region">6</alias>
+        <alias origin="Weekly Retail Measure">7</alias>
+        <alias origin="#Value">8</alias>
+        <alias origin="Comp Type">9</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1555567590187" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Target)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
+NOTE: This is only used for the actual/Forecast load at this stage.
+NOTE: Manual loads will not be cleared out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Target]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+          <dimension name="Region">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Regions]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="deny"><![CDATA[Jets (All Stores)]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Review (All Stores)]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Breakaway (All Stores)]]></condition>
+          </dimension>
+          <dimension name="Weekly Retail Measure">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Weekly Retail ETL Measures]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Weekly" />
+      </query>
+    </extract>
+    <extract modified="1537837004352" name="ex-DW-Sales Target" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[2015-01-12 RKS
+The query will be replaced by a view once it has been created.]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[-- Set up variables for CurrYear and BudYear to be used by queries
+Declare @CurrYear int
+set @CurrYear = (SELECT ConfigurationValue from DataWarehouse.dbo.SysConfiguration where ConfigurationKey = 'ETLCurrRetailYear')
+print 'Current Year ' + convert(nvarchar(4), @CurrYear)
+
+SELECT [Version]
+ ,[FYear] 
+ ,[Week]
+ ,[Currency] 
+ ,[Region] 
+ ,[Store] 
+ ,[Comp Type] 
+ ,[Weekly Retail Measure]
+ ,CASE
+    WHEN [Weekly Retail Measure] = 'Number of Stores' THEN MIN([#Value])
+    ELSE SUM([#Value])
+  END
+  AS [#VALUE]
+  FROM [DataWarehouseSummarisedFactData].[dbo].[FactJedox]
+  JOIN DataWarehouse.dbo.DimProfitCentre on FactJedox.Store = DimProfitCentre.Code
+  LEFT OUTER JOIN DataWarehouse.dbo.DimWarehouse on DimProfitCentre.Id = DimWarehouse.ProfitCentreId
+  LEFT OUTER JOIN DataWarehouse.dbo.JedoxDuplicateProfitCentres  ON JedoxDuplicateProfitCentres.WarehouseId = DimWarehouse.Id  
+  WHERE 1=1
+  AND Version = 'TARGET'
+  AND FYear = @CurrYear
+  AND FactJedox.LegalEntity != 89 -- Metalicus - External Legal Entity ID
+  AND JedoxDuplicateProfitCentres.WarehouseId IS NULL
+  GROUP BY [VERSION]
+ ,[FYear] 
+ ,[Week]
+ ,[Currency] 
+ ,[Region] 
+ ,[Store] 
+ ,[Comp Type] 
+ ,[Weekly Retail Measure]]]></query>
+      <alias_map>
+        <alias origin="Version">1</alias>
+        <alias origin="FYear">2</alias>
+        <alias origin="Week">3</alias>
+        <alias origin="Currency">4</alias>
+        <alias origin="Region">5</alias>
+        <alias origin="Store">6</alias>
+        <alias origin="Comp Type">7</alias>
+        <alias origin="Weekly Retail Measure">8</alias>
+        <alias origin="#VALUE">9</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1508972410301" name="ex-Jedox [Cube]: Retail Sales Weekly (Budget Copy)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Used to copy the Budget from one version to another]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Budget]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${BudYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Weekly" />
+      </query>
+    </extract>
+    <extract modified="1508972410301" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_MMM)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
+NOTE: This is only used for the actual/Forecast load at this stage.
+NOTE: Manual loads will not be cleared out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="like" type="accept"><![CDATA[Forecast_]]></condition>
+          </dimension>
+          <dimension name="Region">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Regions]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Stores]]></condition>
+          </dimension>
+          <dimension name="Weekly Retail Measure">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Weekly Retail ETL Measures]]></condition>
+          </dimension>
+          <dimension name="Week">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Week Base Periods]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Weekly" />
+      </query>
+    </extract>
+    <extract modified="1508972410301" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
+NOTE: This is only used for the actual/Forecast load at this stage.
+NOTE: Manual loads will not be cleared out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+          <dimension name="Region">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Regions]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Stores]]></condition>
+          </dimension>
+          <dimension name="Weekly Retail Measure">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Weekly Retail ETL Measures]]></condition>
+          </dimension>
+          <dimension name="Week">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Week Base Periods]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Weekly" />
+      </query>
+    </extract>
+    <extract modified="1508972410301" name="ex-Jedox [Cube]: Parameter - CurrYearETL" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="false" useRules="false" zeroSuppressionType="includeEmptyDefaultMapping">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition operator="equal" type="accept"><![CDATA[CurrYearETL]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract modified="1575236543958" name="ex-Jedox [Cube]: Parameter - Forecast_MMM" type="Cube" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="false" useRules="true" zeroSuppressionType="includeEmptyDefaultMapping">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition operator="equal" type="accept"><![CDATA[Retail ETL Forecast]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract modified="1529486791199" name="ex-Jedox [Cube]: Parameter - BudYearETL" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="false" useRules="false" zeroSuppressionType="includeEmptyDefaultMapping">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition operator="equal" type="accept"><![CDATA[BudYearETL]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract modified="1508972410301" name="ex-Jedox [Cube]: Parameter - PrevYearETL" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query drillthrough="false" onlyBasisAsDefault="false" useRules="true" zeroSuppressionType="includeEmptyDefaultMapping">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition operator="equal" type="accept"><![CDATA[PrevYearETL]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract modified="1529550946298" name="ex-Jedox [Cube]: Retail Sales Weekly (Forecast Comp Lookup)" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Sales Weekly" />
+        <valuefilter logicaloperator="and" />
+      </query>
+      <columns>
+        <column name="FCompType" origin="Comp Type" />
+        <column name="FCurrency" origin="Currency" />
+        <column name="FFYear" origin="FYear" />
+        <column name="FRegion" origin="Region" />
+        <column name="FStore" origin="Store" />
+        <column name="FVersion" origin="Version" />
+        <column name="FWeek" origin="Week" />
+        <column name="FRetail Measure" origin="Weekly Retail Measure" />
+      </columns>
+    </extract>
+    <extract modified="1537837316962" name="ex-DW-Sales Act-Fcst Load" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract used to load actual into forecast version]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[IF OBJECT_ID('tempdb.dbo.#Actual', 'U') IS NOT NULL 
+DROP TABLE #Actual;
+
+IF OBJECT_ID('tempdb.dbo.#Forecast', 'U') IS NOT NULL
+DROP TABLE #Forecast;
+
+DECLARE @CurrYear as int
+Set @CurrYear = (Select ConfigurationValue from DataWarehouse.dbo.SysConfiguration where ConfigurationKey = 'ETLCurrRetailYear')
+
+SELECT [Version]
+      ,[FYear] as [FYear]
+      ,[Week] as [Week]
+      ,[Currency]
+      ,[Store] AS [Store]
+      ,[Region]
+      ,[Weekly Retail Measure] AS [Weekly Retail Measure]
+      ,[Comp Type] AS [Comp Type ACT]
+      ,CAST(NULL AS VARCHAR(50)) AS [Comp Type Fcst]
+      ,CASE
+        WHEN [Weekly Retail Measure] = 'Number of Stores' THEN MIN([#Value])
+        ELSE ROUND(SUM([#Value]),2)
+       END [#Value]
+INTO #Actual
+  FROM DataWarehouseSummarisedFactData.dbo.FactJedox
+  JOIN DataWarehouse.dbo.DimProfitCentre on FactJedox.Store = DimProfitCentre.Code
+  LEFT OUTER JOIN DataWarehouse.dbo.DimWarehouse on DimProfitCentre.Id = DimWarehouse.ProfitCentreId
+  LEFT OUTER JOIN DataWarehouse.dbo.JedoxDuplicateProfitCentres  ON JedoxDuplicateProfitCentres.WarehouseId = DimWarehouse.Id    
+  WHERE 1=1
+  AND [FYear] = @CurrYear
+  AND Version = 'ACTUAL'
+  AND FactJedox.LegalEntity != 89 -- Metalicus - External Legal Entity ID
+  AND JedoxDuplicateProfitCentres.WarehouseId IS NULL
+  GROUP BY [Version]
+      ,[FYear]
+      ,[Week]
+      ,[Currency]
+      ,[Region]
+      ,[Store]
+      ,[Comp Type]
+      ,[Weekly Retail Measure]
+
+SELECT FactJedox.[Version]
+      ,FactJedox.[FYear] as [FYear]
+      ,FactJedox.[Week] as [Week]
+      ,FactJedox.[Currency]
+      ,FactJedox.[Store] AS [Store]
+      ,FactJedox.[Region]
+      ,FactJedox.[Weekly Retail Measure] AS [Weekly Retail Measure]
+      ,FactJedox.[Comp Type] AS [Comp Type Fcst]
+      ,CASE
+        WHEN FactJedox.[Weekly Retail Measure] = 'Number of Stores' THEN MIN(FactJedox.[#Value])
+        ELSE ROUND(SUM(FactJedox.[#Value]),2)
+       END [#Value]
+  INTO #Forecast
+  FROM DataWarehouseSummarisedFactData.dbo.FactJedox
+  JOIN DataWarehouse.dbo.DimProfitCentre on FactJedox.Store = DimProfitCentre.Code
+  LEFT OUTER JOIN DataWarehouse.dbo.DimWarehouse on DimProfitCentre.Id = DimWarehouse.ProfitCentreId
+  WHERE 1=1
+  AND FactJedox.[FYear] = @CurrYear
+  AND FactJedox.Version = 'Forecast'
+  AND FactJedox.LegalEntity != 89 -- Metalicus - External Legal Entity ID
+  AND (DimWarehouse.Id IS NULL OR DimWarehouse.ID NOT IN (421, 20)) --Review E-Comm Singapore Store for Markdowns (421) and Head office Finished Goods (20)
+  GROUP BY FactJedox.[Version]
+      ,FactJedox.[FYear]
+      ,FactJedox.[Week]
+      ,FactJedox.[Currency]
+      ,FactJedox.[Region]
+      ,FactJedox.[Store]
+      ,FactJedox.[Comp Type]
+      ,FactJedox.[Weekly Retail Measure]
+
+/* Can not rely on CY Forecast Comp as not all dates in forecast match actual re store 1162 Refurb */
+UPDATE A
+SET A.[Comp Type Fcst] = A.[Comp Type Act]
+From #Actual A
+WHERE A.[Comp Type Act] LIKE 'CY -%'
+
+UPDATE A
+SET A.[Comp Type Fcst] = COALESCE(F.[Comp Type Fcst], A.[Comp Type ACT])
+From #Actual A
+LEFT JOIN #Forecast F
+ON F.FYear = A.FYear
+AND F.Week = A.Week
+AND F.STore = A.Store
+AND F.Region = A.Region
+AND F.[Comp Type Fcst] LIKE 'LY -%'
+AND A.[Comp Type Act] LIKE 'LY -%'
+
+SELECT Version
+,FYear
+,Week
+,Currency
+,Store
+,Region
+,[Weekly Retail Measure]
+,[Comp Type Fcst] AS [Comp Type]
+,#Value
+FROM #Actual
+order by 1,2,3,4,5,6,7
+
+/*
+select * from dimprofitcentre where code in (
+select * FROM #Actual
+where /* store = 1234 and */ [Comp Type ACT] <> [Comp Type Fcst]
+and [Comp Type Act] LIKE 'LY -%'
+)
+*/
+
+--select * from #Actual where [Comp Type Fcst]  is null]]></query>
+      <alias_map>
+        <alias origin="Version">1</alias>
+        <alias origin="FYear">2</alias>
+        <alias origin="Week">3</alias>
+        <alias origin="Currency">4</alias>
+        <alias origin="Store">5</alias>
+        <alias origin="Region">6</alias>
+        <alias origin="Weekly Retail Measure">7</alias>
+        <alias origin="Comp Type">8</alias>
+        <alias origin="#Value">9</alias>
+      </alias_map>
+    </extract>
+  </extracts>
+  <transforms>
+    <transform modified="1508972410301" name="tf-FT [Cube]: Actual Load" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Matches the dimensions in the cube (Weekly Retail Sales) to the query used to extract the data
+RetYear in the query to FYear in the cube etc.]]></comment>
+      <sources>
+        <source nameref="ex-DW-Sales Daily" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Weekly Retail Measure">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972410301" name="tf-FT [Cube]: Forecast Load" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Matches the dimensions in the cube (Weekly Retail Sales) to the query used to extract the data
+RetYear in the query to FYear in the cube etc.]]></comment>
+      <sources>
+        <source nameref="tf-TJ [Cube] - Forecast Load Forecast Weeks Only" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Weekly Retail Measure">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#VALUE" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-FT[Cube]: Act2Fcst - Actual Week - Week Only" type="FieldTransform" modified="1508972410301" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Brings in the only 2 required field and renames them to avoid naming issues down stream.]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Attr]: Week (Actual Week)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972410301" name="tf-FT[Cube]: Act2Fcst - Format for Jedox Load" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Renames the #_Value field to eliminate issues down stream.]]></comment>
+      <sources>
+        <source nameref="tf-TJ[Cube]: - Ex-Jedox Act2Fcst Actuals Up to Prior Week" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+          <coordinate name="Version">
+            <input constant="Forecast" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Weekly Retail Measure">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="Amount">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1529558837347" name="tf-TJ[Cube]: - Ex-Jedox Act2Fcst Actuals Up to Prior Week" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-FT[Cube]: Act2Fcst - Actual Week - Week Only" />
+        <source nameref="ex-DW-Sales Act-Fcst Load" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="tf-FT[Cube]: Act2Fcst - Actual Week - Week Only">
+            <key nameref="Week" />
+          </left>
+          <right nameref="ex-DW-Sales Act-Fcst Load">
+            <key nameref="Week" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972410301" name="tf-FT[Cube]: Act2Fcst - Forecast Week - Week Only" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Brings in the only 2 required field and renames them to avoid naming issues down stream.]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Attr]: Week (Forecast Weeks)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972410301" name="tf-TJ [Cube] - Forecast Load Forecast Weeks Only" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW-Sales Forecast" />
+        <source nameref="tf-FT[Cube]: Act2Fcst - Forecast Week - Week Only" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-DW-Sales Forecast">
+            <key nameref="Week" />
+          </left>
+          <right nameref="tf-FT[Cube]: Act2Fcst - Forecast Week - Week Only">
+            <key nameref="Week" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972410301" name="tf-FT [Cube]: Forecast_DW Load" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Matches the dimensions in the cube (Weekly Retail Sales) to the query used to extract the data
+RetYear in the query to FYear in the cube etc.]]></comment>
+      <sources>
+        <source nameref="ex-DW-Sales Forecast" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input constant="Forecast_DW" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Weekly Retail Measure">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#VALUE" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-FT [Cube]: Target Load" type="FieldTransform" modified="1508972410301" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Matches the dimensions in the cube (Weekly Retail Sales) to the query used to extract the data
+RetYear in the query to FYear in the cube etc.]]></comment>
+      <sources>
+        <source nameref="ex-DW-Sales Target" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="RetYear" />
+          </coordinate>
+          <coordinate name="Week">
+            <input nameref="TimePeriod" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="ProfCen" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="CompType" />
+          </coordinate>
+          <coordinate name="Weekly Retail Measure">
+            <input nameref="Account" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="Amount" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-FT [Cube]: Budget Copy" type="FieldTransform" modified="1508972410301" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Transforms the version of the budget copy from Budget to what ever the variable ${Budget Target Copy} is set to.
+To change the target change the version in the variable.]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Budget Copy)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input constant="${Budget Copy Target}" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Weekly Retail Measure">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972410301" name="tf-FT [Attr]: Parameter - CurrYearETL" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Parameter - CurrYearETL" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="CurrYear">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972410301" name="tf-TJ [Cube] - CurrYearETL to Forecast Z-Out" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast)" />
+        <source nameref="tf-FT [Attr]: Parameter - CurrYearETL" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="tf-FT [Attr]: Parameter - CurrYearETL">
+            <key nameref="CurrYear" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972410301" name="tf-TJ [Cube] - CurrYearETL to Forecast_DW Z-Out" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_DW)" />
+        <source nameref="tf-FT [Attr]: Parameter - CurrYearETL" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_DW)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="tf-FT [Attr]: Parameter - CurrYearETL">
+            <key nameref="CurrYear" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972410301" name="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out Curr Year" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_MMM)" />
+        <source nameref="ex-Jedox [Cube]: Parameter - CurrYearETL" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_MMM)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Cube]: Parameter - CurrYearETL">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972410301" name="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out Forecast MMM" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_MMM)" />
+        <source nameref="tf-FT [Attr]: Parameter - Forecast_MMM" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_MMM)">
+            <key nameref="Version" />
+          </left>
+          <right nameref="tf-FT [Attr]: Parameter - Forecast_MMM">
+            <key nameref="Forecast_MMM" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972410301" name="tf-FT [Attr]: Parameter - Forecast_MMM" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Parameter - Forecast_MMM" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Forecast_MMM">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972410301" name="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-FT[Attr-Cube]: Forecast_MMM Z-Out - Forecast_MMM" />
+        <source nameref="tf-FT[Attr-Cube]: Forecast_MMM Z-Out - Curr Year" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="tf-FT[Attr-Cube]: Forecast_MMM Z-Out - Forecast_MMM">
+            <key nameref="FYear" />
+            <key nameref="Version" />
+            <key nameref="Week" />
+            <key nameref="Currency" />
+            <key nameref="Region" />
+            <key nameref="Store" />
+            <key nameref="Comp Type" />
+            <key nameref="Weekly Retail Measure" />
+            <key nameref="#Value" />
+          </left>
+          <right nameref="tf-FT[Attr-Cube]: Forecast_MMM Z-Out - Curr Year">
+            <key nameref="FYear" />
+            <key nameref="Version" />
+            <key nameref="Week" />
+            <key nameref="Currency" />
+            <key nameref="Region" />
+            <key nameref="Store" />
+            <key nameref="Comp Type" />
+            <key nameref="Weekly Retail Measure" />
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972410301" name="tf-FT[Attr-Cube]: Forecast_MMM Z-Out - Forecast_MMM" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out Forecast MMM" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Forecast_MMM" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Weekly Retail Measure">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972410301" name="tf-FT[Attr-Cube]: Forecast_MMM Z-Out - Curr Year" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out Curr Year" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Weekly Retail Measure">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972410301" name="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Curr Year" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Forecast)" />
+        <source nameref="tf-FT [Attr]: Parameter - CurrYearETL" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Retail Sales Weekly (Forecast)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="tf-FT [Attr]: Parameter - CurrYearETL">
+            <key nameref="CurrYear" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1575235596570" name="tf-FT[Attr-Cube]: Forecast_MMM - Curr Year" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Curr Year" />
+      </sources>
+      <functions>
+        <function name="Forecast_MMM" type="OlapData">
+          <inputs>
+            <input constant="Item" />
+            <input constant="Retail ETL Forecast" />
+            <input constant="~" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>#_Parameter</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="FYear">
+            <input nameref="CurrYear" />
+          </coordinate>
+          <coordinate name="Version">
+            <input nameref="Forecast_MMM" />
+          </coordinate>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Weekly Retail Measure">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972410301" name="tf-TJ [Cube] - CurrYearETL to Budget Z-Out" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Budget)" />
+        <source nameref="ex-Jedox [Cube]: Parameter - BudYearETL" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Budget)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Cube]: Parameter - BudYearETL">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972410301" name="tf-FT [Attr-Cube]: Budget Z-Out Bud Year" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube] - CurrYearETL to Budget Z-Out" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Weekly Retail Measure">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972410301" name="tf-FT [Attr]: Parameter - PrevYearETL" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Parameter - PrevYearETL" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="PrevYear">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972410301" name="tf-TJ [Cube] - Actual Z-Out - CurrYearETL" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Actuals)" />
+        <source nameref="tf-FT [Attr]: Parameter - CurrYearETL" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Actuals)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="tf-FT [Attr]: Parameter - CurrYearETL">
+            <key nameref="CurrYear" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972410301" name="tf-TJ [Cube] -  Actual Z-Out - PrevYearETL" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Actuals)" />
+        <source nameref="tf-FT [Attr]: Parameter - PrevYearETL" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Actuals)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="tf-FT [Attr]: Parameter - PrevYearETL">
+            <key nameref="PrevYear" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972410301" name="tf-TU [Cube] - Union PrevYear and CurrYear to Actual Z-Out" type="TableUnion" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube] -  Actual Z-Out - PrevYearETL" />
+        <source nameref="tf-TJ [Cube] - Actual Z-Out - CurrYearETL" />
+      </sources>
+    </transform>
+    <transform modified="1508972410301" name="tf-FT [Cube]: Actual Z-Out" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TU [Cube] - Union PrevYear and CurrYear to Actual Z-Out" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Weekly Retail Measure">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972410301" name="tf-TJ [Cube] - CurrYearETL to Target Z-Out" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Target)" />
+        <source nameref="ex-Jedox [Cube]: Parameter - CurrYearETL" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Target)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Cube]: Parameter - CurrYearETL">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972410301" name="tf-FT [Attr-Cube]: Target Z-Out Curr Year" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube] - CurrYearETL to Target Z-Out" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Week">
+            <input nameref="Week" />
+          </coordinate>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="Region">
+            <input nameref="Region" />
+          </coordinate>
+          <coordinate name="Store">
+            <input nameref="Store" />
+          </coordinate>
+          <coordinate name="Comp Type">
+            <input nameref="Comp Type" />
+          </coordinate>
+          <coordinate name="Weekly Retail Measure">
+            <input nameref="Weekly Retail Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+  </transforms>
+  <loads>
+    <load modified="1508972410301" name="ld-Jedox [Cube]: Retail Sales Weekly - Actual" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Actual Load" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1508972410301" name="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Actuals)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Actual Z-Out" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1508972410301" name="ld-Jedox [Cube]: Retail Sales Weekly - Budget" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="ex-DW-Sales Budget" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1508972410301" name="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Budget)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Attr-Cube]: Budget Z-Out Bud Year" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1508972410301" name="ld-Jedox [Cube]: Retail Sales Weekly - Forecast" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Forecast Load" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1508972410301" name="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Forecast)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast Z-Out" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1508972410301" name="ld-Jedox [Cube]: Retail Sales Weekly - Forecast (Fcst2Fcst_mmm)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT[Attr-Cube]: Forecast_MMM - Curr Year" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1508972410301" name="ld-Jedox [Cube]: Retail Sales Weekly - (Z-Out Forecast_MMM)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail Sales Weekly - Act2Fcst (Copy Actual over Forecast up to Prior Week)" type="Cube" modified="1508972410301" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT[Cube]: Act2Fcst - Format for Jedox Load" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Week" name="Week" />
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1508972410301" name="ld-Jedox [Cube]: Retail Sales Weekly - Forecast_DW" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Forecast_DW Load" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1508972410301" name="ld-Jedox [Cube]: Retail Sales Weekly (Z-Out Forecast_DW)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast_DW Z-Out" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1508972410301" name="ld-File TestFile" type="File" modifiedBy="richardsADMIN">
+      <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast Z-Out" />
+      <connection nameref="file-Test" />
+      <mode>create</mode>
+    </load>
+    <load modified="1508972410301" name="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Target)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Attr-Cube]: Target Z-Out Curr Year" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1508972410301" name="ld-Jedox [Cube]: Retail Sales Weekly - Target" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="ex-DW-Sales Target" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail Sales Weekly - Budget Copy" type="Cube" modified="1508972410301" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Second step in the budget copy process
+Copies the Budget to the Budget target version (as defined in the variable Budget Copy Target) for the budget year (as defined in the variable BudgetYear).]]></comment>
+      <source nameref="tf-FT [Cube]: Budget Copy" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Retail Sales Weekly - Budget Copy Z-Out" type="Cube" modified="1508972410301" modifiedBy="richardsADMIN">
+      <comment><![CDATA[First step in the budget copy process
+Zeros out the Budget target version (as defined in the variable Budget Copy Target) for the budget year (as defined in the variable BudgetYear).]]></comment>
+      <source nameref="tf-FT [Cube]: Budget Copy" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Week" name="Week" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="Comp Type" name="Comp Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+  </loads>
+  <jobs>
+    <job name="01-02 Nightly - Retail Sales Cube Weekly Load Actuals" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Actual" type="load" />
+    </job>
+    <job name="01-01 Nightly - Retail Sales Weekly Cube - Z-Out Actuals" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Zeros out the current year that is being loaded]]></comment>
+      <execution nameref="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Actuals)" type="load" />
+    </job>
+    <job name="01-00 Nightly - Retail Sales Weekly Cube Load" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="01-01 Nightly - Retail Sales Weekly Cube - Z-Out Actuals" type="job" />
+      <execution nameref="01-02 Nightly - Retail Sales Cube Weekly Load Actuals" type="job" />
+      <execution nameref="02-00 Manual - Retail Sales Weekly - Forecast Load" type="job" />
+      <execution nameref="04-00 Manual - Retail Sales Weekly - Target Load" type="job" />
+    </job>
+    <job name="03-02 Manual - Retail Sales Weekly - Budget Load" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Budget" type="load" />
+    </job>
+    <job name="03-01 Manual - Retail Sales Weekly - Budget - Z-Out" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Budget)" type="load" />
+    </job>
+    <job name="03-00 Manual - Retail Sales Weekly - Budget Load" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="03-01 Manual - Retail Sales Weekly - Budget - Z-Out" type="job" />
+      <execution nameref="03-02 Manual - Retail Sales Weekly - Budget Load" type="job" />
+    </job>
+    <job name="02-06 Manual - Retail Sales Weekly - Forecast (Fcst2Fcst_mmm)" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Forecast (Fcst2Fcst_mmm)" type="load" />
+    </job>
+    <job name="02-05 Manual - Retail Sales Weekly - Forecast (Fcst2Fcst_mmm Z-Out)" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - (Z-Out Forecast_MMM)" type="load" />
+    </job>
+    <job name="02-04 Manual - Retail Sales Weekly - Forecast_DW Load" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Load the contents of the StoreForecast table in the DW for all weeks into a version called Forecast_DW
+This job relies on job 02-02 Manual - Retail Sales Weekly - Load Forecast which populates the table F_RetailSalesData.
+If that job is not run first the contents of Forecast_DW may not reflect the latest forecasts.]]></comment>
+      <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Forecast_DW" type="load" />
+    </job>
+    <job name="02-03 Manual - Retail Sales Weekly - Forecast_DW Z-Out" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly (Z-Out Forecast_DW)" type="load" />
+    </job>
+    <job name="02-02 Manual - Retail Sales Weekly - Load Forecast" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Act2Fcst (Copy Actual over Forecast up to Prior Week)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Forecast" type="load" />
+    </job>
+    <job name="02-01 Manual - Retail Sales Weekly - Z-Out Forecast" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Forecast)" type="load" />
+    </job>
+    <job modified="1529560821694" name="02-00 Manual - Retail Sales Weekly - Forecast Load" type="Standard" modifiedBy="richardsADMIN">
+      <execution nameref="02-01 Manual - Retail Sales Weekly - Z-Out Forecast" type="job" />
+      <execution nameref="02-02 Manual - Retail Sales Weekly - Load Forecast" type="job" />
+      <execution nameref="02-03 Manual - Retail Sales Weekly - Forecast_DW Z-Out" type="job" />
+      <execution nameref="02-04 Manual - Retail Sales Weekly - Forecast_DW Load" type="job" />
+      <execution nameref="02-05 Manual - Retail Sales Weekly - Forecast (Fcst2Fcst_mmm Z-Out)" type="job" />
+      <execution nameref="02-06 Manual - Retail Sales Weekly - Forecast (Fcst2Fcst_mmm)" type="job" />
+      <failStatus>error</failStatus>
+    </job>
+    <job name="02-00-01 Nightly - Retail Sales Weekly - Forecast (Only) Load" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="02-01 Manual - Retail Sales Weekly - Z-Out Forecast" type="job" />
+      <execution nameref="02-02 Manual - Retail Sales Weekly - Load Forecast" type="job" />
+    </job>
+    <job name="04-01 Manual - Retail Sales Weekly - Z-Out Target" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Target)" type="load" />
+    </job>
+    <job name="04-02 Manual - Retail Sales Weekly - Target Load" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Target" type="load" />
+    </job>
+    <job name="04-00 Manual - Retail Sales Weekly - Target Load" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Target)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Target" type="load" />
+    </job>
+    <job name="99-01 Manual - Retail Sales Weekly Budget Copy" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Zeros out and then performs a copy using the Variables BudgetYear and Budget Target Version from the Budget version to the version set in Budget Target Version for the variable BudgetYear.]]></comment>
+      <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Budget Copy Z-Out" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Budget Copy" type="load" />
+    </job>
+    <job name="02-00-02 Nightly - Retail Sales Weekly - Forecast DW - Forecast_MMM Load" type="Standard" modified="1508972410301" modifiedBy="richardsADMIN">
+      <execution nameref="02-03 Manual - Retail Sales Weekly - Forecast_DW Z-Out" type="job" />
+      <execution nameref="02-04 Manual - Retail Sales Weekly - Forecast_DW Load" type="job" />
+      <execution nameref="02-05 Manual - Retail Sales Weekly - Forecast (Fcst2Fcst_mmm Z-Out)" type="job" />
+      <execution nameref="02-06 Manual - Retail Sales Weekly - Forecast (Fcst2Fcst_mmm)" type="job" />
+    </job>
+    <job modified="1508972410301" name="Load Targets from AP21" type="Groovy" modifiedBy="richardsADMIN">
+      <jobscript><![CDATA[LOG.info("Calling the load targets batch file");
+
+Runtime.runtime.exec("D:\\Jedox\\LoadTargets.bat");
+
+LOG.info("The load targets batch file has been called");]]></jobscript>
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1575516374517" name="Update Breakaway Forecast" type="Groovy" modifiedBy="ONEPAS\richards">
+      <jobscript><![CDATA[LOG.info("Calling the load Breakaway forecast file");
+
+Runtime.runtime.exec("D:\\Jedox\\UpdateBreakawayForecast.bat");
+
+LOG.info("The load Breakaway forecast batch file has been called");]]></jobscript>
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1577769247529" name="Update Review Forecast" type="Groovy" modifiedBy="richards">
+      <jobscript><![CDATA[LOG.info("Calling the load Review forecast file");
+
+Runtime.runtime.exec("D:\\Jedox\\UpdateReviewForecast.bat");
+
+LOG.info("The load Review forecast batch file has been called");]]></jobscript>
+      <failStatus>error</failStatus>
+    </job>
+  </jobs>
+</project>

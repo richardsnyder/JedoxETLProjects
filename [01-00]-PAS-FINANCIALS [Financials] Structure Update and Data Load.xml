@@ -1,0 +1,3058 @@
+<project name="[01-00]-PAS-FINANCIALS [Financials] Structure Update and Data Load" version="7.3" modified="1588201620766" modifiedBy="ONEPAS\richards" olapId="p36">
+  <headers>
+    <header name="comment" modified="1466661415776" modifiedBy="richardsADMIN">
+      <comment><![CDATA[1. Load Finance Cube with Actuals from AP21
+2. Monthly Forecast Rollover Process]]></comment>
+    </header>
+  </headers>
+  <variables>
+    <variable modified="1508972351622" name="ForecastVersion" modifiedBy="richardsADMIN">
+      <comment />
+      <default>Forecast_Oct</default>
+    </variable>
+    <variable modified="1537844780126" name="ForecastYr" modifiedBy="richardsADMIN">
+      <comment />
+      <default>2019</default>
+    </variable>
+    <variable modified="1560987423361" name="BudgetYear" modifiedBy="ONEPAS\richards">
+      <comment />
+      <default>2020</default>
+    </variable>
+    <variable modified="1564957260788" name="Budget Copy Target" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Determines the target version of the Budget Copy ETL]]></comment>
+      <default>Budget_2</default>
+    </variable>
+    <variable modified="1563511340621" name="CurrYear" modifiedBy="ONEPAS\richards">
+      <comment />
+      <default>2020</default>
+    </variable>
+    <variable modified="1508972351622" name="Company" modifiedBy="richardsADMIN">
+      <comment />
+      <default />
+    </variable>
+    <variable modified="1508972351622" name="FYear" modifiedBy="richardsADMIN">
+      <comment />
+      <default />
+    </variable>
+  </variables>
+  <connections>
+    <connection modified="1508972351622" name="DW" type="Sqlserver" modifiedBy="richardsADMIN">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DataWarehouse</database>
+      <parameters>
+        <parameter name="integratedSecurity">true</parameter>
+        <parameter name="autoCommit">true</parameter>
+      </parameters>
+    </connection>
+    <connection modified="1508972351622" name="Jedox" type="JedoxGlobal" modifiedBy="richardsADMIN">
+      <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
+      <globalReference>localhost</globalReference>
+      <database>PAS-Financials</database>
+      <ssl>off</ssl>
+    </connection>
+    <connection name="z_File-Test" type="File" modified="1508972351622" modifiedBy="richardsADMIN">
+      <location type="FileSystem" />
+      <database>D:\Jedox\FileOut\z_test.txt</database>
+      <header>true</header>
+      <delimiter>,</delimiter>
+      <enableEscape>false</enableEscape>
+    </connection>
+    <connection name="Financials" type="JedoxGlobal" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Connection to the Financials database.
+This will only be used to perform a database save at the end of the nightly ETL.]]></comment>
+      <globalReference>localhost</globalReference>
+      <database>Financials</database>
+    </connection>
+    <connection name="Retail" type="JedoxGlobal" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Connection to the Retail database.
+This will only be used to perform a database save at the end of the nightly ETL.]]></comment>
+      <globalReference>localhost</globalReference>
+      <database>Retail</database>
+    </connection>
+    <connection modified="1508972351622" name="DW Raw" type="Sqlserver" modifiedBy="richardsADMIN">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DataWarehouseRawData</database>
+      <parameters>
+        <parameter name="integratedSecurity">true</parameter>
+        <parameter name="autoCommit">true</parameter>
+      </parameters>
+    </connection>
+  </connections>
+  <extracts>
+    <extract modified="1508972351622" name="ex-DW-Fin [Cube]" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Update Where Statement as required]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[/* Balances */
+Select Currency, Year as FYear, Period, 'Actual' as Version, [Business Division], Company, [Profit Cost Centre] as [Profit-Cost Centre], Account,'Value' AS [Fin Measure], [Balance Movement] as [#Value] --, LoadFactor
+FROM (
+ SELECT
+   COALESCE(BusinessDivisionFinancialCurrency.Code, BalanceCurrency.Code) AS Currency,
+   FactGeneralLedgerBalance.FinancialYear AS [Year],
+   'P00' AS Period,
+   COALESCE(FinancialBusinessDivision.Code, DimBusinessDivision.Code) AS [Business Division],
+   DimLegalEntity.Code AS [Company],
+   DimProfitCentre.Code AS [Profit Cost Centre],
+   DimGeneralLedgerAccount.Code AS [Account],
+   FactGeneralLedgerBalance.BalanceAmount * DimGeneralLedgerAccount.LoadFactor AS [Balance Movement],
+   DimGeneralLedgerAccount.LoadFactor AS [LoadFactor]
+ FROM
+   dbo.FactGeneralLedgerBalance
+ INNER JOIN
+   dbo.DimGeneralLedgerChart ON
+   DimGeneralLedgerChart.Id = FactGeneralLedgerBalance.GeneralLedgerChartId
+ INNER JOIN
+   dbo.DimBusinessDivision ON
+   DimBusinessDivision.Id = DimGeneralLedgerChart.BusinessDivisionId
+ INNER JOIN
+   dbo.DimBusinessDivision AS FinancialBusinessDivision ON
+   FinancialBusinessDivision.Id = DimBusinessDivision.FinancialBusinessDivisionId
+ INNER JOIN
+   dbo.DimGeneralLedgerAccount ON
+   DimGeneralLedgerAccount.Id = DimGeneralLedgerChart.GeneralLedgerAccountId
+ INNER JOIN
+   dbo.DimCurrency AS BalanceCurrency ON
+   BalanceCurrency.Id = FactGeneralLedgerBalance.CurrencyId
+ INNER JOIN
+   dbo.DimCurrency AS BusinessDivisionFinancialCurrency ON
+   BusinessDivisionFinancialCurrency.Id = DimBusinessDivision.FinancialCurrencyId
+ INNER JOIN
+   dbo.DimLegalEntity ON
+   DimLegalEntity.Id = DimGeneralLedgerChart.LegalEntityId
+ INNER JOIN
+   dbo.DimProfitCentre ON
+   DimProfitCentre.Id = DimGeneralLedgerChart.ProfitCentreId
+   WHERE
+   FactGeneralLedgerBalance.FinancialYear > '2013'
+
+ UNION ALL
+
+ /* Balance Movements */
+ SELECT
+   COALESCE(BusinessDivisionFinancialCurrency.Code, BalanceCurrency.Code) AS Currency,
+   FactGeneralLedgerBalanceMovement.FinancialYear AS [Year],
+   'P' + FORMAT(FactGeneralLedgerBalanceMovement.FinancialMonth, '00') AS Period,
+   COALESCE(FinancialBusinessDivision.Code, DimBusinessDivision.Code) AS [Business Division],
+   DimLegalEntity.Code AS [Company],
+   DimProfitCentre.Code AS [Profit Cost Centre],
+   DimGeneralLedgerAccount.Code AS [Account],
+   FactGeneralLedgerBalanceMovement.BalanceAmount * DimGeneralLedgerAccount.LoadFactor AS [Balance Movement],
+   DimGeneralLedgerAccount.LoadFactor AS [LoadFactor]
+ FROM
+   dbo.FactGeneralLedgerBalanceMovement
+ INNER JOIN
+   dbo.DimGeneralLedgerChart ON
+   DimGeneralLedgerChart.Id = FactGeneralLedgerBalanceMovement.GeneralLedgerChartId
+ INNER JOIN
+   dbo.DimBusinessDivision ON
+   DimBusinessDivision.Id = DimGeneralLedgerChart.BusinessDivisionId
+ INNER JOIN
+   dbo.DimBusinessDivision AS FinancialBusinessDivision ON
+   FinancialBusinessDivision.Id = DimBusinessDivision.FinancialBusinessDivisionId
+ INNER JOIN
+   dbo.DimGeneralLedgerAccount ON
+   DimGeneralLedgerAccount.Id = DimGeneralLedgerChart.GeneralLedgerAccountId
+ INNER JOIN
+   dbo.DimCurrency AS BalanceCurrency ON
+   BalanceCurrency.Id = FactGeneralLedgerBalanceMovement.CurrencyId
+ INNER JOIN
+   dbo.DimCurrency AS BusinessDivisionFinancialCurrency ON
+   BusinessDivisionFinancialCurrency.Id = DimBusinessDivision.FinancialCurrencyId
+ INNER JOIN
+   dbo.DimLegalEntity ON
+   DimLegalEntity.Id = DimGeneralLedgerChart.LegalEntityId
+ INNER JOIN
+   dbo.DimProfitCentre ON
+   DimProfitCentre.Id = DimGeneralLedgerChart.ProfitCentreId
+ WHERE
+   FactGeneralLedgerBalanceMovement.FinancialYear > '2013'
+) Query
+order by 2,3
+  
+/* Original Query - Old DW */
+ /*
+SELECT
+GL.Currency,
+GL.Year AS FYear,
+GL.Period,
+'Actual' AS Version,
+GL."Business Division",
+GL.Company,
+GL."Profit Cost Centre" AS "Profit-Cost Centre",
+GL.Account,
+'Value' AS "Fin Measure",
+GL."Balance Movement" AS "#Value"
+FROM PAS_DWH.dbo.VFinGL_BalMovement  GL
+
+WHERE
+
+GL.Year > 2013
+*/]]></query>
+      <alias_map>
+        <alias origin="Currency">1</alias>
+        <alias origin="FYear">2</alias>
+        <alias origin="Period">3</alias>
+        <alias origin="Version">4</alias>
+        <alias origin="Business Division">5</alias>
+        <alias origin="Company">6</alias>
+        <alias origin="Profit-Cost Centre">7</alias>
+        <alias origin="Account">8</alias>
+        <alias origin="Fin Measure">9</alias>
+        <alias origin="#Value">10</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1508972351622" name="ex-DW [Dim]: Company" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Uncomplete - Build [Dim]:Company]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT  'All AP21 B Companies' AS AllCo
+, DimLegalEntity.Code as LegalEnt
+, DimLegalEntity.Name as Description
+FROM Datawarehouse.dbo.DimLegalEntity
+ORDER BY DimLegalEntity.Code]]></query>
+      <alias_map>
+        <alias origin="AllCo">1</alias>
+        <alias origin="LegalEnt">2</alias>
+        <alias origin="Description">3</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1508972351622" name="ex-DW [Dim]: BusDiv" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT DISTINCT 
+--, DimBusinessDivision2.id 
+'All Business Divisions' AS AllBus
+, DimBusinessDivision2.code AS BusDiv
+, DimBusinessDivision2.FinancialBusinessDivisionDescription AS Description
+FROM Datawarehouse.dbo.DimBusinessDivision DimBusinessDivision
+INNER JOIN DimBusinessDivision DimBusinessDivision2 ON DimBusinessDivision.FinancialBusinessDivisionId = DimBusinessDivision2.Id
+ORDER BY DimBusinessDivision2.code]]></query>
+      <alias_map>
+        <alias origin="AllBus">1</alias>
+        <alias origin="BusDiv">2</alias>
+        <alias origin="description">3</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1508972351622" name="ex-DW [Dim]: Currency" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="DW" />
+      <query><![CDATA[/* Currency Dimension */
+SELECT DISTINCT
+ Currency
+, DimCurrency.Name
+FROM (
+  /* Balances */
+  SELECT
+    COALESCE(BusinessDivisionFinancialCurrency.Code, BalanceCurrency.Code) AS Currency,
+    FactGeneralLedgerBalance.FinancialYear AS [Year],
+    'P00' AS Period,
+    COALESCE(FinancialBusinessDivision.Code, DimBusinessDivision.Code) AS [Business Division],
+    DimLegalEntity.Code AS [Company],
+    DimProfitCentre.Code AS [Profit Cost Centre],
+    DimGeneralLedgerAccount.Code AS [Account],
+    FactGeneralLedgerBalance.BalanceAmount * DimGeneralLedgerAccount.LoadFactor AS [Balance Movement],
+    DimGeneralLedgerAccount.LoadFactor AS [LoadFactor]
+  FROM
+    dbo.FactGeneralLedgerBalance
+  INNER JOIN
+    dbo.DimGeneralLedgerChart ON
+    DimGeneralLedgerChart.Id = FactGeneralLedgerBalance.GeneralLedgerChartId
+  INNER JOIN
+    dbo.DimBusinessDivision ON
+    DimBusinessDivision.Id = DimGeneralLedgerChart.BusinessDivisionId
+  INNER JOIN
+    dbo.DimBusinessDivision AS FinancialBusinessDivision ON
+    FinancialBusinessDivision.Id = DimBusinessDivision.FinancialBusinessDivisionId
+  INNER JOIN
+    dbo.DimGeneralLedgerAccount ON
+    DimGeneralLedgerAccount.Id = DimGeneralLedgerChart.GeneralLedgerAccountId
+  INNER JOIN
+    dbo.DimCurrency AS BalanceCurrency ON
+    BalanceCurrency.Id = FactGeneralLedgerBalance.CurrencyId
+  INNER JOIN
+    dbo.DimCurrency AS BusinessDivisionFinancialCurrency ON
+    BusinessDivisionFinancialCurrency.Id = DimBusinessDivision.FinancialCurrencyId
+  INNER JOIN
+    dbo.DimLegalEntity ON
+    DimLegalEntity.Id = DimGeneralLedgerChart.LegalEntityId
+  INNER JOIN
+    dbo.DimProfitCentre ON
+    DimProfitCentre.Id = DimGeneralLedgerChart.ProfitCentreId
+
+  UNION ALL
+
+  /* Balance Movements */
+  SELECT
+    COALESCE(BusinessDivisionFinancialCurrency.Code, BalanceCurrency.Code) AS Currency,
+    FactGeneralLedgerBalanceMovement.FinancialYear AS [Year],
+    'P' + FORMAT(FactGeneralLedgerBalanceMovement.FinancialMonth, '00') AS Period,
+    COALESCE(FinancialBusinessDivision.Code, DimBusinessDivision.Code) AS [Business Division],
+    DimLegalEntity.Code AS [Company],
+    DimProfitCentre.Code AS [Profit Cost Centre],
+    DimGeneralLedgerAccount.Code AS [Account],
+    FactGeneralLedgerBalanceMovement.BalanceAmount * DimGeneralLedgerAccount.LoadFactor AS [Balance Movement],
+    DimGeneralLedgerAccount.LoadFactor AS [LoadFactor]
+  FROM
+    dbo.FactGeneralLedgerBalanceMovement
+  INNER JOIN
+    dbo.DimGeneralLedgerChart ON
+    DimGeneralLedgerChart.Id = FactGeneralLedgerBalanceMovement.GeneralLedgerChartId
+  INNER JOIN
+    dbo.DimBusinessDivision ON
+    DimBusinessDivision.Id = DimGeneralLedgerChart.BusinessDivisionId
+  INNER JOIN
+    dbo.DimBusinessDivision AS FinancialBusinessDivision ON
+    FinancialBusinessDivision.Id = DimBusinessDivision.FinancialBusinessDivisionId
+  INNER JOIN
+    dbo.DimGeneralLedgerAccount ON
+    DimGeneralLedgerAccount.Id = DimGeneralLedgerChart.GeneralLedgerAccountId
+  INNER JOIN
+    dbo.DimCurrency AS BalanceCurrency ON
+    BalanceCurrency.Id = FactGeneralLedgerBalanceMovement.CurrencyId
+  INNER JOIN
+    dbo.DimCurrency AS BusinessDivisionFinancialCurrency ON
+    BusinessDivisionFinancialCurrency.Id = DimBusinessDivision.FinancialCurrencyId
+  INNER JOIN
+    dbo.DimLegalEntity ON
+    DimLegalEntity.Id = DimGeneralLedgerChart.LegalEntityId
+  INNER JOIN
+    dbo.DimProfitCentre ON
+    DimProfitCentre.Id = DimGeneralLedgerChart.ProfitCentreId
+  WHERE
+    FactGeneralLedgerBalanceMovement.FinancialYear > '2013'
+) GLBalance_GLMovement
+INNER JOIN DimCurrency on GLBalance_GLMovement.Currency = DimCurrency.Code]]></query>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Fin (Actual)" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[1- Source to zero out before loading
+2- Source to Copy (Act 2 Fcst)]]></comment>
+      <connection nameref="Jedox" />
+      <query useRules="false" onlyBasisAsDefault="true" celltype="both" zeroSuppressionType="excludeEmpty">
+        <cube name="Financials" />
+        <dimensions>
+          <dimension name="Version">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Actual]]></condition>
+          </dimension>
+        </dimensions>
+      </query>
+    </extract>
+    <extract modified="1588201620766" name="ex-Jedox [Attr]: Company" type="Cube" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Extract the load year for zero-ing out and loading from DW. Also for Prev Fin year to allow when Jul/Jun requires reloading previous month.]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmptyAndZero">
+        <dimensions>
+          <dimension name="#_Company_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[LoadFYear]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Company" />
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Fin (Forecast)" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[1- Source to back up current forecast before applying actuals
+2- Source to Fcst Z-Out]]></comment>
+      <connection nameref="Jedox" />
+      <query useRules="false" onlyBasisAsDefault="true" celltype="both" zeroSuppressionType="excludeEmpty">
+        <cube name="Financials" />
+        <dimensions>
+          <dimension name="Version">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+        </dimensions>
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Fin (Forecast_Mmm Z-Out)" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Source to zero out forecast backup before replacing with current forecast
+${ForecastYr}
+Forecast_Mmm = e.g. Forecast_Jul]]></comment>
+      <connection nameref="Jedox" />
+      <query useRules="false" onlyBasisAsDefault="true" celltype="both" zeroSuppressionType="excludeEmpty">
+        <cube name="Financials" />
+        <dimensions>
+          <dimension name="Version">
+            <condition operator="like" mode="onlyBases" type="accept"><![CDATA[Forecast_]]></condition>
+          </dimension>
+        </dimensions>
+      </query>
+    </extract>
+    <extract modified="1508972351622" name="ex-Jedox [Attr]: Period (Actual)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Is Used to:
+1- Copy Act 2 Fcst
+2- Fcst Z-Out]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmptyAndZero">
+        <dimensions>
+          <dimension name="#_Period_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual Period]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Period" />
+      </query>
+    </extract>
+    <extract modified="1564456541323" name="ex-DW [Dim]: ProfCen (Non-Retail)" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[NOT COMPLETE - requires update from DW
+Build two hierarchies:
+1. ProfCen Ty by BusDiv
+2. BusDiv by ProfCen Ty
+
+Also the [Attr] is loaded from here]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT DISTINCT
+ DimProfitCentre.ProfitCentreType AS [ProfCenType]
+ , DimProfitCentre.[Code] AS [ProfCenCode]
+ , DimProfitCentre.[Name] AS [ProfCenDesc]
+ , DimProfitCentre.[Code] + ' - ' + DimProfitCentre.[Name] AS [ProfCenLongDesc]
+ , DimBusinessDivision.[Code] AS [BusDevCode]
+ , DimBusinessDivision.[FinancialBusinessDivisionDescription] AS [BusDevDesc]
+FROM DataWarehouse.dbo.DimProfitCentre DimProfitCentre
+LEFT JOIN DataWarehouse.dbo.DimBusinessDivision DimBusinessDivision on DimProfitCentre.CurrentBusinessDivisionId = DimBusinessDivision.Id
+WHERE (DimProfitCentre.ProfitCentreType = 'WS' OR DimProfitCentre.ProfitCentreType = 'SU' OR DimProfitCentre.ProfitCentreType = 'UN')
+and DimProfitCentre.Code != 9450
+ORDER BY DimProfitCentre.[Code]]]></query>
+      <alias_map>
+        <alias origin="ProfCenType">1</alias>
+        <alias origin="ProfCenCode">2</alias>
+        <alias origin="ProfCenDesc">3</alias>
+        <alias origin="ProfCenLongDesc">4</alias>
+        <alias origin="BusDevCode">5</alias>
+        <alias origin="BusDevDesc">6</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1566962596805" name="ex-DW [Dim]: ProfCen (Retail)" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[NOT COMPLETE - requires update from DW
+Build two hierarchies:
+1. ProfCen Ty by BusDiv
+2. BusDiv by ProfCen Ty
+
+Also the [Attr] is loaded from here]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT DISTINCT
+	DimLegalentity.Name AS [LegalEntityDesc]
+	,DimLegalEntity.Code AS [CurrLegalEnt]
+	,DimProfitCentre.[State]
+	,DimProfitCentre.[Country]
+	,CONVERT(INT, DimProfitCentre.[AreaInSquareMeters]) AS [Area]
+	,CASE
+		WHEN DimProfitCentre.[ProfitCentreType] IN ('WH', 'SU') THEN ''
+		ELSE DimProfitCentre.[ProfitCentreType]
+	END AS [StoreType]
+	,DimProfitCentre.[StartupCapitalExpenditure] AS [SCapex]
+	,DimProfitCentre.[StoreGrading] AS [Grading]
+	,DimProfitCentre.ConcessionStoreGrade AS [ConcessionStoreGrade]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[OpenDate], 112) AS [OpenDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[CloseDate], 112) AS [CloseDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishStartDate], 112) AS [RefStartDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishEndDate], 112) AS [RefEndDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[BudgetOpenDate], 112) AS [BOpenDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[BudgetCloseDate], 112) AS [BCloseDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[BudgetOpenDateCurrentYear], 112) AS [BOpenDateCY]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[BudgetCloseDateCurrentYear], 112) AS [BCloseDateCY]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishStartDateBudget], 112) AS [BRefStartDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishEndDateBudget], 112) AS [BRefEndDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishStartDateBudgetCurrentYear], 112) AS [BRefStartDateCY]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishEndDateBudgetCurrentYear], 112) AS [BRefEndDateCY]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[ForecastOpenDate], 112) AS [FOpenDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[ForecastCloseDate], 112) AS [FCloseDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishStartDateForecast], 112) AS [FRefStartDate]
+	,CONVERT(VARCHAR(12), DimProfitCentre.[RefurbishEndDateForecast], 112) AS [FRefEndDate]
+	,DimProfitCentre.[ProfitCentreType] AS [ProfitCenterTy]
+	,DimProfitCentre.[Code] AS [ProfitCenter]
+	,DimProfitCentre.[Name] AS [ProfCenDesc]
+	,DimBusinessDivision.[Code] AS [BusDevCode]
+	,DimBusinessDivision.[FinancialBusinessDivisionDescription] AS [BusDevDesc]
+	,CASE
+		WHEN (CHARINDEX('Legacy', DimProfitCentre.[Name]) <> 0 OR
+			SUBSTRING(CAST(DimProfitCentre.[Code] AS VARCHAR(10)), 1, 2) = '86') THEN 0
+		ELSE 1
+	END AS NonLegacy
+	,DimProfitCentre.[Code] + ' - ' + DimProfitCentre.[Name] AS [ProfitCentreLongDesc]
+	,DimAreaManager.Name AS [AreaManager]
+	,CASE
+		WHEN DimProfitCentre.HasPeopleCounter = 1 THEN 'Y'
+		ELSE 'N'
+	END AS [PeopleCounter]
+	,DimProfitCentre.Latitude
+	,DimProfitCentre.Longitude
+	,DimGeographyZone.Code AS GeographyZone
+	,DimProfitCentre.FloorCapacity
+	,DimExternalSalesPartner.Name AS ExternalPartner
+FROM DataWarehouse.dbo.DimProfitCentre DimProfitCentre
+LEFT JOIN DataWarehouse.dbo.DimLegalEntity DimLegalentity
+	ON DimProfitCentre.CurrentLegalEntityId = DimLegalentity.Id
+LEFT JOIN DataWarehouse.dbo.DimBusinessDivision DimBusinessDivision
+	ON DimProfitCentre.CurrentBusinessDivisionId = DimBusinessDivision.Id
+LEFT JOIN DataWarehouse.dbo.DimWarehouse DimWarehouse
+	ON DimProfitCentre.Id = DimWarehouse.ProfitCentreId
+		AND DimWarehouse.Code != 'REEDUMMSG'
+		AND DimWarehouse.Code != 'zzRESBUR'
+LEFT JOIN DataWarehouse.dbo.DimAreaManager DimAreaManager
+	ON DimWarehouse.AreaManagerId = DimAreaManager.Id
+LEFT JOIN DataWarehouse.dbo.DimGeographyZone
+	ON DimGeographyZone.Id = DimProfitCentre.GeographyZoneId
+LEFT JOIN DimExternalSalesPartner
+	ON DimProfitCentre.ExternalSalesPartnerId = DimExternalSalesPartner.Id
+WHERE (DimProfitCentre.ProfitCentreType = 'RT'
+OR DimProfitCentre.ProfitCentreType = 'CO'
+OR DimProfitCentre.ProfitCentreType = 'OU'
+OR DimProfitCentre.ProfitCentreType = 'RH'
+OR DimProfitCentre.ProfitCentreType = 'EC')
+AND DimProfitCentre.Code not in (1998)
+ORDER BY DimProfitCentre.[Code]]]></query>
+      <alias_map>
+        <alias origin="LegalEntityDesc">1</alias>
+        <alias origin="CurrLegalEnt">2</alias>
+        <alias origin="State">3</alias>
+        <alias origin="Country">4</alias>
+        <alias origin="Area">5</alias>
+        <alias origin="StoreType">6</alias>
+        <alias origin="SCapex">7</alias>
+        <alias origin="Grading">8</alias>
+        <alias origin="ConcessionStoreGrade">9</alias>
+        <alias origin="OpenDate">10</alias>
+        <alias origin="CloseDate">11</alias>
+        <alias origin="RefStartDate">12</alias>
+        <alias origin="RefEndDate">13</alias>
+        <alias origin="BOpenDate">14</alias>
+        <alias origin="BCloseDate">15</alias>
+        <alias origin="BOpenDateCY">16</alias>
+        <alias origin="BCloseDateCY">17</alias>
+        <alias origin="BRefStartDate">18</alias>
+        <alias origin="BRefEndDate">19</alias>
+        <alias origin="BRefStartDateCY">20</alias>
+        <alias origin="BRefEndDateCY">21</alias>
+        <alias origin="FOpenDate">22</alias>
+        <alias origin="FCloseDate">23</alias>
+        <alias origin="FRefStartDate">24</alias>
+        <alias origin="FRefEndDate">25</alias>
+        <alias origin="ProfitCenterTy">26</alias>
+        <alias origin="ProfitCenter">27</alias>
+        <alias origin="ProfCenDesc">28</alias>
+        <alias origin="BusDevCode">29</alias>
+        <alias origin="BusDevDesc">30</alias>
+        <alias origin="NonLegacy">31</alias>
+        <alias origin="ProfitCentreLongDesc">32</alias>
+        <alias origin="AreaManager">33</alias>
+        <alias origin="PeopleCounter">34</alias>
+        <alias origin="Latitude">35</alias>
+        <alias origin="Longitude">36</alias>
+        <alias origin="GeographyZone">37</alias>
+        <alias origin="FloorCapacity">38</alias>
+        <alias origin="ExternalPartner">39</alias>
+      </alias_map>
+    </extract>
+    <extract name="ex-Jedox [Attr]: Parameters (CurrYear)" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Is used to extract the FYear(CurrYear) for following :
+1- Forecast]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[CurrYear]]></condition>
+          </dimension>
+          <dimension name="#_Parameter_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Attr]: Parameters (Forecast_Mmm)" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Is used to extract the Version (Forecast_Mmm) to facilitate copying of Current Forecast.]]></comment>
+      <connection nameref="Jedox" />
+      <query useRules="true" onlyBasisAsDefault="true" celltype="both" zeroSuppressionType="excludeEmpty">
+        <cube name="#_Parameter" />
+        <dimensions>
+          <dimension name="Parameter">
+            <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[FMth]]></condition>
+          </dimension>
+        </dimensions>
+      </query>
+    </extract>
+    <extract modified="1508972351622" name="ex-DW [Dim]: Accounts (All Levels)" type="Relational" modifiedBy="richardsADMIN">
+      <connection nameref="DW Raw" />
+      <query><![CDATA[SELECT
+    [:parent]
+   ,[:child]
+   ,[:weight]
+   ,CASE
+        WHEN JEDOX_ACCOUNTS_ATTRIBUTES.Name = '' THEN [:child]
+        WHEN DimGeneralLedgerAccount.Name <> JEDOX_ACCOUNTS_ATTRIBUTES.Name THEN DimGeneralLedgerAccount.Name
+        ELSE JEDOX_ACCOUNTS_ATTRIBUTES.Name
+    END Name
+FROM DataWarehouseRawData.dbo.JEDOX_ACCOUNTS_ATTRIBUTES
+LEFT OUTER JOIN  DataWarehouse.dbo.DimGeneralLedgerAccount on DimGeneralLedgerAccount.Code = JEDOX_ACCOUNTS_ATTRIBUTES.[:Child]
+
+/* Original query superceded 2017-07-17
+Select [:parent]
+,[:child]
+,[:weight]
+,case when [Name]='' then [:child] else [Name] end Name
+From DataWarehouseRawData.dbo.JEDOX_ACCOUNTS_ATTRIBUTES
+*/]]></query>
+      <alias_map>
+        <alias origin=":parent">1</alias>
+        <alias origin=":child">2</alias>
+        <alias origin=":weight">3</alias>
+        <alias origin="Name">4</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1508972351622" name="ex-DW [Dim]: Accounts (BaseLevel)" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Accounts to only update the base level account. The parent hierarchy is manually build and not to be touched by etl.]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[SELECT 
+ DimGeneralLedgerAccountGroup.Name AS [AccountGroup]
+ , DimGeneralLedgerAccount.[Code] AS [Accounts]
+ , '' AS [Weight]
+ , DimGeneralLedgerAccount.[Name] AS [AccountDescAtt]
+  FROM DataWarehouse.dbo.DimGeneralLedgerAccount DimGeneralLedgerAccount
+  LEFT OUTER JOIN DataWarehouse.dbo.DimGeneralLedgerAccountGroup  DimGeneralLedgerAccountGroup on DimGeneralLedgerAccount.GeneralLedgerAccountGroupId = DimGeneralLedgerAccountGroup.Id
+  --ORDER BY DimGeneralLedgerAccount.[Code]]]></query>
+      <alias_map>
+        <alias name=":parent" origin="AccountGroup">1</alias>
+        <alias name=":child" origin="Accounts">2</alias>
+        <alias name="weight" origin="weight">3</alias>
+        <alias name="AccDescAtt" origin="AccountDescAtt">4</alias>
+      </alias_map>
+    </extract>
+    <extract name="ex-Jedox [Dim]: Accounts (Jedox - Alternate Hierarchies)" type="Dimension" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from root to consolidations only not base level]]></comment>
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Account">
+          <condition operator="equal" mode="nodesToBases" type="accept"><![CDATA[Stat PL Profit / (loss) for the Year]]></condition>
+          <condition operator="equal" mode="nodesToBases" type="accept"><![CDATA[Base P&L Accounts]]></condition>
+          <condition operator="equal" mode="nodesToBases" type="accept"><![CDATA[Manual Hierarchies]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>defaultLanguage</attributesMode>
+    </extract>
+    <extract name="ex-Jedox [Dim]: Accounts (Jedox - Main Hierarchies To ConsLevel)" type="Dimension" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Extract from root to consolidations and not base level.
+This is for the "main" hierarchy of Balance Sheet and P&L]]></comment>
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Account">
+          <condition operator="equal" mode="rootToConsolidates" type="accept"><![CDATA[Balance Sheet]]></condition>
+          <condition operator="equal" mode="rootToConsolidates" type="accept"><![CDATA[P&L]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>defaultLanguage</attributesMode>
+    </extract>
+    <extract modified="1508972351622" name="ex-Jedox [Attr]: (ProfCenType) Excl-OutLets and Ecomm" type="ConstantTree" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Load only NonLegacyStore attribute = 1]]></comment>
+      <data>
+        <header>
+          <value>:level</value>
+          <value>:element</value>
+          <value>:weight</value>
+          <value>:nodetype</value>
+        </header>
+        <row>
+          <value>1</value>
+          <value>CO</value>
+          <value>1</value>
+          <value>S</value>
+        </row>
+        <row>
+          <value>1</value>
+          <value>RH</value>
+          <value>1</value>
+          <value>S</value>
+        </row>
+        <row>
+          <value>1</value>
+          <value>RT</value>
+          <value>1</value>
+          <value>S</value>
+        </row>
+      </data>
+    </extract>
+    <extract modified="1508972351622" name="ex-Jedox [Attr]: (ProfCenType) OutLets" type="ConstantTree" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Load only NonLegacyStore attribute = 1]]></comment>
+      <data>
+        <header>
+          <value>:level</value>
+          <value>:element</value>
+          <value>:weight</value>
+          <value>:nodetype</value>
+        </header>
+        <row>
+          <value>1</value>
+          <value>OU</value>
+          <value>1</value>
+          <value>S</value>
+        </row>
+      </data>
+    </extract>
+    <extract modified="1508972351622" name="ex-Jedox [Attr]: (ProfCenType) Ecomm" type="ConstantTree" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Load only NonLegacyStore attribute = 1]]></comment>
+      <data>
+        <header>
+          <value>:level</value>
+          <value>:element</value>
+          <value>:weight</value>
+          <value>:nodetype</value>
+        </header>
+        <row>
+          <value>1</value>
+          <value>EC</value>
+          <value>1</value>
+          <value>S</value>
+        </row>
+      </data>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Fin (Budget) - Budget Copy" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Used to copy the Budget from one version to another]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Budget]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${BudgetYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Financials" />
+      </query>
+    </extract>
+    <extract modified="1508972351622" name="ex-Jedox [Cube]: Fin (Manual Load) - LCs &amp; Guarantee" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query celltype="only_numeric" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Manual Load]]></condition>
+          </dimension>
+          <dimension name="Account">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Bank Guarantees & LCs]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+          <dimension name="Profit-Cost Centre">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[9500]]></condition>
+          </dimension>
+          <dimension name="Company">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Guarantees & LCs]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Financials" />
+      </query>
+    </extract>
+    <extract name="ex-Jedox [Cube]: Fin (Manual Load) - Eliminations" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query celltype="only_numeric" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Manual Load]]></condition>
+          </dimension>
+          <dimension name="Company">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Elimination Companies]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+          <dimension name="Profit-Cost Centre">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[5999]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[9100]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[9500]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Financials" />
+      </query>
+    </extract>
+    <extract modified="1508972351622" name="ex-Jedox [Cube]: Fin (Actual) - Z-Out" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[1- Source to zero out before loading
+2- Source to Copy (Act 2 Fcst)]]></comment>
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmptyAndZero">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual]]></condition>
+          </dimension>
+          <dimension name="Account">
+            <condition mode="onlyBases" operator="equal" type="deny"><![CDATA[Bank Guarantees & LCs]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Financials" />
+      </query>
+    </extract>
+    <extract modified="1510289881376" name="ex-Jedox [Cube]: Fin (Manual Load) - LCs &amp; Guarantee - Z-Out" type="Cube" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query celltype="only_numeric" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="includeEmptyDefaultMapping">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+          <dimension name="Account">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Bank Guarantees & LCs]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${CurrYear}]]></condition>
+          </dimension>
+          <dimension name="Profit-Cost Centre">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[9500]]></condition>
+          </dimension>
+          <dimension name="Company">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Guarantees & LCs]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Financials" />
+      </query>
+    </extract>
+    <extract modified="1508972351622" name="ex-Jedox [Cube Slice]: Fin (Actual) - Z-Out" type="CubeSlice" modifiedBy="richardsADMIN">
+      <connection nameref="Jedox" />
+      <query mode="exclude" randomPaths="false">
+        <dimensions>
+          <dimension name="Company">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${Company}]]></condition>
+          </dimension>
+          <dimension name="FYear">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${FYear}]]></condition>
+          </dimension>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Actual]]></condition>
+          </dimension>
+          <dimension name="Account">
+            <condition mode="onlyNodes" operator="equal" type="accept"><![CDATA[Balance Sheet]]></condition>
+            <condition mode="nodesToBases" operator="equal" type="deny"><![CDATA[Bank Guarantees & LCs]]></condition>
+          </dimension>
+          <dimension name="Fin Measure">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Value]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Financials" />
+      </query>
+    </extract>
+  </extracts>
+  <transforms>
+    <transform name="tf-FH [Dim]: Company" type="TreeFH" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Define the hierarchy of the [Dim]: Company]]></comment>
+      <sources>
+        <source nameref="ex-DW [Dim]: Company" />
+      </sources>
+      <target type="numeric" skipEmpty="false">
+        <levels>
+          <level>
+            <input nameref="AllCo" />
+          </level>
+          <level>
+            <weight constant="0" />
+            <input nameref="LegalEnt" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="Description" />
+              </attribute>
+              <attribute name="Source">
+                <input constant="AP21" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+        <attributes>
+          <attribute name="Name" type="string" />
+          <attribute name="Source" type="string" />
+        </attributes>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tf-FH [Dim]: BusDiv" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW [Dim]: BusDiv" />
+      </sources>
+      <target type="numeric">
+        <attributes>
+          <attribute name="Name" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input nameref="AllBus" />
+          </level>
+          <level>
+            <input nameref="BusDiv" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="Description" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tf-FH [Dim]: Currency" type="TreeFH" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW [Dim]: Currency" />
+      </sources>
+      <target type="numeric">
+        <attributes>
+          <attribute name="Name" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input nameref="Currency" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="Name" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tf-TJ [Cube]: Fin (Z-Out) 1" type="TableJoin" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Uses an attribute on the company dim to only zero out (and hence reload) the specific companies for the designated year (or years).]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Fin (Actual) - Z-Out" />
+        <source nameref="tf-FT [Attr]: Fin (Z-Out) 1" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="ex-Jedox [Cube]: Fin (Actual) - Z-Out">
+            <key nameref="Company" />
+          </left>
+          <right nameref="tf-FT [Attr]: Fin (Z-Out) 1">
+            <key nameref="AttrCompany" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-FT [Cube]: Fin (Z-Out) 2" type="FieldTransform" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Creates the correct structure to load into [Cube]:"Financials"]]></comment>
+      <sources>
+        <source nameref="tf-TJ [Cube]: Fin (Z-Out) 1" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="Profit-Cost Centre">
+            <input nameref="Profit-Cost Centre" />
+          </coordinate>
+          <coordinate name="Account">
+            <input nameref="Account" />
+          </coordinate>
+          <coordinate name="Fin Measure">
+            <input nameref="Fin Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-TJ [Cube]: Fin 1" type="TableJoin" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Uses an attribute on the company dim to only zero out (and hence reload) the specific companies for the designated year (or years).]]></comment>
+      <sources>
+        <source nameref="ex-DW-Fin [Cube]" />
+        <source nameref="ex-Jedox [Attr]: Company" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="ex-DW-Fin [Cube]">
+            <key nameref="Company" />
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Company">
+            <key nameref="Company" />
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972351622" name="tf-FT [Cube]: Fin 2" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube]: Fin 1" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="Profit-Cost Centre">
+            <input nameref="Profit-Cost Centre" />
+          </coordinate>
+          <coordinate name="Account">
+            <input nameref="Account" />
+          </coordinate>
+          <coordinate name="Fin Measure">
+            <input nameref="Fin Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-TJ [Cube]: Fin (Act 2 Fcst) 1" type="TableJoin" modified="1508972351622" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube]: Fin (Actual)" />
+        <source nameref="tf-FT [Attr]: Period (Actual)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="tf-TJ [Cube]: Fin (Actual)">
+            <key nameref="Period" />
+          </left>
+          <right nameref="tf-FT [Attr]: Period (Actual)">
+            <key nameref="AttrPeriod" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-FT [Cube]: Fin (Act 2 Fcst) 2" type="FieldTransform" modified="1508972351622" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube]: Fin (Act 2 Fcst) 1" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input constant="Forecast" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="Profit-Cost Centre">
+            <input nameref="Profit-Cost Centre" />
+          </coordinate>
+          <coordinate name="Account">
+            <input nameref="Account" />
+          </coordinate>
+          <coordinate name="Fin Measure">
+            <input nameref="Fin Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tf-FT [Attr]: Period (Actual)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Rename the fields so the ensuing join does not give a warninng]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Attr]: Period (Actual)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Attr#_Period_">
+            <input nameref="#_Period_" />
+          </coordinate>
+          <coordinate name="AttrPeriod">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Attr#Value">
+            <input nameref="#Value" />
+          </coordinate>
+          <coordinate name="~">
+            <input nameref="#_LANGUAGE" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tf-TJ [Cube]: Fin (Fcst Z-Out) 1" type="TableJoin" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Zero out Actuals Months]]></comment>
+      <sources>
+        <source nameref="tf-TJ [Cube]: Fin (Forecast)" />
+        <source nameref="tf-FT [Attr]: Period (Actual)" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="tf-TJ [Cube]: Fin (Forecast)">
+            <key nameref="Period" />
+          </left>
+          <right nameref="tf-FT [Attr]: Period (Actual)">
+            <key nameref="AttrPeriod" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-FT [Cube]: Fin (Fcst Z-Out) 2" type="FieldTransform" modified="1508972351622" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube]: Fin (Fcst Z-Out) 1" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input nameref="Version" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="Profit-Cost Centre">
+            <input nameref="Profit-Cost Centre" />
+          </coordinate>
+          <coordinate name="Account">
+            <input nameref="Account" />
+          </coordinate>
+          <coordinate name="Fin Measure">
+            <input nameref="Fin Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-FH [Dim]: ProfCen (Non-Retail)" type="TreeFH" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Build two hierarchies:
+Hierarchy1. ProfCen Ty by BusDiv
+Hierarchy2. BusDiv by ProfCen Ty]]></comment>
+      <sources>
+        <source nameref="tr-FT [Dim]: ProfCen (Non-Retail)" />
+      </sources>
+      <target type="numeric">
+        <attributes>
+          <attribute name="Name" type="string" />
+          <attribute name="ProfCenType" type="string" />
+          <attribute name="Long Description" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="All Profit-Cost Centres" />
+          </level>
+          <level>
+            <input nameref="ProfCenTyFull" />
+          </level>
+          <level>
+            <input nameref="ProfCenCode" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="ProfCenDesc" />
+              </attribute>
+              <attribute name="ProfCenType">
+                <input nameref="ProfCenType" />
+              </attribute>
+              <attribute name="Long Description">
+                <input nameref="Long Description" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tr-FT [Dim]: ProfCen (Non-Retail)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW [Dim]: ProfCen (Non-Retail)" />
+      </sources>
+      <functions>
+        <function name="ProfCenTyFull" type="Map">
+          <inputs>
+            <input nameref="ProfCenType" />
+          </inputs>
+          <parameters>
+            <default>noProfCenType</default>
+            <mapping>
+              <map from="RT" to="Retail (Own Stores)" />
+              <map from="SU" to="Support Centre" />
+              <map from="OU" to="Outlets" />
+              <map from="RH" to="Retail Head Office" />
+              <map from="UN" to="Uncategorised" />
+              <map from="WS" to="Wholesale" />
+              <map from="CO" to="Concessions" />
+              <map from="EC" to="E-commerce" />
+            </mapping>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="ProfCenDesc">
+            <input nameref="ProfCenDesc" />
+          </coordinate>
+          <coordinate name="Long Description">
+            <input nameref="ProfCenLongDesc" />
+          </coordinate>
+          <coordinate name="ProfCenTyFull">
+            <input nameref="ProfCenTyFull" />
+          </coordinate>
+          <coordinate name="ProfCenType">
+            <input nameref="ProfCenType" />
+          </coordinate>
+          <coordinate name="ProfCenCode">
+            <input nameref="ProfCenCode" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-FH [Dim]: ProfCen (Hierarchy2) - Excl Outlets" type="TreeFH" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[This is to build the second hierarchy of [Dim]: ProfCen hierarchies:
+1. ProfCen Ty by BusDiv
+2. BusDiv by ProfCen Ty]]></comment>
+      <sources>
+        <source nameref="tf-TU [Dim]:ProfCen (Hierarchy 2)" />
+      </sources>
+      <target type="numeric" skipEmpty="false">
+        <levels>
+          <level>
+            <input constant="Total Retail (by BusinessDiv)" />
+          </level>
+          <level>
+            <input nameref="BusDivAllStoresExOutlets" />
+          </level>
+          <level>
+            <input nameref="BusDivBusTy" />
+          </level>
+          <level>
+            <input nameref="ProfitCenter" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="ProfCenDesc" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+        <attributes>
+          <attribute name="Name" type="string" />
+        </attributes>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tr-FT [Dim]: ProfCen (Retail)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW [Dim]: ProfCen (Retail)" />
+      </sources>
+      <functions>
+        <function name="ProfCenTyFull" type="Map">
+          <inputs>
+            <input nameref="ProfitCenterTy" />
+          </inputs>
+          <parameters>
+            <default>noProfCenType</default>
+            <mapping>
+              <map from="RT" to="Retail (Own Stores)" />
+              <map from="SU" to="Support Centre" />
+              <map from="OU" to="Outlets" />
+              <map from="RH" to="Retail Head Office" />
+              <map from="UN" to="Uncategorised" />
+              <map from="WS" to="Wholesale" />
+              <map from="CO" to="Concessions" />
+              <map from="EC" to="E-commerce" />
+            </mapping>
+          </parameters>
+        </function>
+        <function name="BusDivBusTy" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+            <input nameref="ProfCenTyFull" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} - #{ProfCenTyFull}</template>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="BusDevCode">
+            <input nameref="BusDevCode" />
+          </coordinate>
+          <coordinate name="BusDevDesc">
+            <input nameref="BusDevDesc" />
+          </coordinate>
+          <coordinate name="ProfCenDesc">
+            <input nameref="ProfCenDesc" />
+          </coordinate>
+          <coordinate name="ProfCenTyFull">
+            <input nameref="ProfCenTyFull" />
+          </coordinate>
+          <coordinate name="ProfitCenter">
+            <input nameref="ProfitCenter" />
+          </coordinate>
+          <coordinate name="ProfitCenterType">
+            <input nameref="ProfitCenterTy" />
+          </coordinate>
+          <coordinate name="BusDivBusTy">
+            <input nameref="BusDivBusTy" />
+          </coordinate>
+          <coordinate name="OpenDate">
+            <input nameref="OpenDate" />
+          </coordinate>
+          <coordinate name="CloseDate">
+            <input nameref="CloseDate" />
+          </coordinate>
+          <coordinate name="BRefStartDate">
+            <input nameref="BRefStartDate" />
+          </coordinate>
+          <coordinate name="BRefEndDate">
+            <input nameref="BRefEndDate" />
+          </coordinate>
+          <coordinate name="BOpenDate">
+            <input nameref="BOpenDate" />
+          </coordinate>
+          <coordinate name="BCloseDate">
+            <input nameref="BCloseDate" />
+          </coordinate>
+          <coordinate name="BOpenDateCY">
+            <input nameref="BOpenDateCY" />
+          </coordinate>
+          <coordinate name="BCloseDateCY">
+            <input nameref="BCloseDateCY" />
+          </coordinate>
+          <coordinate name="FOpenDate">
+            <input nameref="FOpenDate" />
+          </coordinate>
+          <coordinate name="FCloseDate">
+            <input nameref="FCloseDate" />
+          </coordinate>
+          <coordinate name="FRefStartDate">
+            <input nameref="FRefStartDate" />
+          </coordinate>
+          <coordinate name="FRefEndDate">
+            <input nameref="FRefEndDate" />
+          </coordinate>
+          <coordinate name="Area">
+            <input nameref="Area" />
+          </coordinate>
+          <coordinate name="CurrLegalEnt">
+            <input nameref="CurrLegalEnt" />
+          </coordinate>
+          <coordinate name="LegalEntityDesc">
+            <input nameref="LegalEntityDesc" />
+          </coordinate>
+          <coordinate name="Grading">
+            <input nameref="Grading" />
+          </coordinate>
+          <coordinate name="SCapex">
+            <input nameref="SCapex" />
+          </coordinate>
+          <coordinate name="State">
+            <input nameref="State" />
+          </coordinate>
+          <coordinate name="StoreType">
+            <input nameref="StoreType" />
+          </coordinate>
+          <coordinate name="Country">
+            <input nameref="Country" />
+          </coordinate>
+          <coordinate name="RefStartDate">
+            <input nameref="RefStartDate" />
+          </coordinate>
+          <coordinate name="RefEndDate">
+            <input nameref="RefEndDate" />
+          </coordinate>
+          <coordinate name="NonLegacy">
+            <input nameref="NonLegacy" />
+          </coordinate>
+          <coordinate name="BRefStartDateCY">
+            <input nameref="BRefStartDateCY" />
+          </coordinate>
+          <coordinate name="BRefEndDateCY">
+            <input nameref="BRefEndDateCY" />
+          </coordinate>
+          <coordinate name="Long Description">
+            <input nameref="ProfitCentreLongDesc" />
+          </coordinate>
+          <coordinate name="Area Manager">
+            <input nameref="AreaManager" />
+          </coordinate>
+          <coordinate name="Concession Store Grade">
+            <input nameref="ConcessionStoreGrade" />
+          </coordinate>
+          <coordinate name="People Counter">
+            <input nameref="PeopleCounter" />
+          </coordinate>
+          <coordinate name="Latitude">
+            <input nameref="Latitude" />
+          </coordinate>
+          <coordinate name="Longitude">
+            <input nameref="Longitude" />
+          </coordinate>
+          <coordinate name="Geozone">
+            <input nameref="GeographyZone" />
+          </coordinate>
+          <coordinate name="Floor Capacity">
+            <input nameref="FloorCapacity" />
+          </coordinate>
+          <coordinate name="External Partner">
+            <input nameref="ExternalPartner" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tf-FH [Dim]: ProfCen (Retail)" type="TreeFH" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Build two hierarchies:
+Hierarchy1. ProfCen Ty by BusDiv
+Hierarchy2. BusDiv by ProfCen Ty]]></comment>
+      <sources>
+        <source nameref="tr-FT [Dim]: ProfCen (Retail)" />
+      </sources>
+      <target type="numeric">
+        <attributes>
+          <attribute name="Open Date" type="string" />
+          <attribute name="State" type="string" />
+          <attribute name="Country" type="string" />
+          <attribute name="Close Date" type="string" />
+          <attribute name="Refurb Start Date" type="string" />
+          <attribute name="Refurb End Date" type="string" />
+          <attribute name="Open Date (Budget)" type="string" />
+          <attribute name="Close Date (Budget)" type="string" />
+          <attribute name="Open Date (Budget) CY" type="string" />
+          <attribute name="Close Date (Budget) CY" type="string" />
+          <attribute name="Open Date (Forecast)" type="string" />
+          <attribute name="Close Date (Forecast)" type="string" />
+          <attribute name="Refurb Start Date (Forecast)" type="string" />
+          <attribute name="Refurb End Date (Forecast)" type="string" />
+          <attribute name="SQM" type="string" />
+          <attribute name="Store Grading" type="string" />
+          <attribute name="Legal Entity Code" type="string" />
+          <attribute name="Start-Up Capex" type="string" />
+          <attribute name="Refurb Start Date (Budget)" type="string" />
+          <attribute name="Refurb End Date (Budget)" type="string" />
+          <attribute name="Refurb Start Date (Budget) CY" type="string" />
+          <attribute name="Refurb End Date (Budget) CY" type="string" />
+          <attribute name="Division Name" type="string" />
+          <attribute name="Division Code" type="string" />
+          <attribute name="Legal Entity Name" type="string" />
+          <attribute name="ProfCenType" type="string" />
+          <attribute name="Name" type="string" />
+          <attribute name="NonLegacyStore" type="numeric" />
+          <attribute name="Long Description" type="string" />
+          <attribute name="Area Manager" type="string" />
+          <attribute name="Concession Store Grade" type="string" />
+          <attribute name="People Counter" type="string" />
+          <attribute name="Latitude" type="string" />
+          <attribute name="Longitude" type="string" />
+          <attribute name="Geozone" type="string" />
+          <attribute name="Floor Capacity" type="string" />
+          <attribute name="External Partner" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="All Profit-Cost Centres" />
+          </level>
+          <level>
+            <input constant="Retail" />
+          </level>
+          <level>
+            <input nameref="ProfCenTyFull" />
+          </level>
+          <level>
+            <input nameref="BusDivBusTy" />
+          </level>
+          <level>
+            <input nameref="ProfitCenter" />
+            <attributes>
+              <attribute name="Open Date">
+                <input nameref="OpenDate" />
+              </attribute>
+              <attribute name="State">
+                <input nameref="State" />
+              </attribute>
+              <attribute name="Country">
+                <input nameref="Country" />
+              </attribute>
+              <attribute name="Close Date">
+                <input nameref="CloseDate" />
+              </attribute>
+              <attribute name="Refurb Start Date">
+                <input nameref="RefStartDate" />
+              </attribute>
+              <attribute name="Refurb End Date">
+                <input nameref="RefEndDate" />
+              </attribute>
+              <attribute name="Open Date (Budget)">
+                <input nameref="BOpenDate" />
+              </attribute>
+              <attribute name="Close Date (Budget)">
+                <input nameref="BCloseDate" />
+              </attribute>
+              <attribute name="Open Date (Budget) CY">
+                <input nameref="BOpenDateCY" />
+              </attribute>
+              <attribute name="Close Date (Budget) CY">
+                <input nameref="BCloseDateCY" />
+              </attribute>
+              <attribute name="Open Date (Forecast)">
+                <input nameref="FOpenDate" />
+              </attribute>
+              <attribute name="Close Date (Forecast)">
+                <input nameref="FCloseDate" />
+              </attribute>
+              <attribute name="Refurb Start Date (Forecast)">
+                <input nameref="FRefStartDate" />
+              </attribute>
+              <attribute name="Refurb End Date (Forecast)">
+                <input nameref="FRefEndDate" />
+              </attribute>
+              <attribute name="SQM">
+                <input nameref="Area" />
+              </attribute>
+              <attribute name="Store Grading">
+                <input nameref="Grading" />
+              </attribute>
+              <attribute name="Legal Entity Code">
+                <input nameref="CurrLegalEnt" />
+              </attribute>
+              <attribute name="Start-Up Capex">
+                <input nameref="SCapex" />
+              </attribute>
+              <attribute name="Refurb Start Date (Budget)">
+                <input nameref="BRefStartDate" />
+              </attribute>
+              <attribute name="Refurb End Date (Budget)">
+                <input nameref="BRefEndDate" />
+              </attribute>
+              <attribute name="Refurb Start Date (Budget) CY">
+                <input nameref="BRefStartDateCY" />
+              </attribute>
+              <attribute name="Refurb End Date (Budget) CY">
+                <input nameref="BRefEndDateCY" />
+              </attribute>
+              <attribute name="Division Name">
+                <input nameref="BusDevDesc" />
+              </attribute>
+              <attribute name="Division Code">
+                <input nameref="BusDevCode" />
+              </attribute>
+              <attribute name="Legal Entity Name">
+                <input nameref="LegalEntityDesc" />
+              </attribute>
+              <attribute name="ProfCenType">
+                <input nameref="ProfitCenterType" />
+              </attribute>
+              <attribute name="Name">
+                <input nameref="ProfCenDesc" />
+              </attribute>
+              <attribute name="NonLegacyStore">
+                <input nameref="NonLegacy" />
+              </attribute>
+              <attribute name="Long Description">
+                <input nameref="Long Description" />
+              </attribute>
+              <attribute name="Area Manager">
+                <input nameref="Area Manager" />
+              </attribute>
+              <attribute name="Concession Store Grade">
+                <input nameref="Concession Store Grade" />
+              </attribute>
+              <attribute name="People Counter">
+                <input nameref="People Counter" />
+              </attribute>
+              <attribute name="Latitude">
+                <input nameref="Latitude" />
+              </attribute>
+              <attribute name="Longitude">
+                <input nameref="Longitude" />
+              </attribute>
+              <attribute name="Geozone">
+                <input nameref="Geozone" />
+              </attribute>
+              <attribute name="Floor Capacity">
+                <input nameref="Floor Capacity" />
+              </attribute>
+              <attribute name="External Partner">
+                <input nameref="External Partner" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tr-FT [Dim]: ProfCen (Hierarchy2)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Business division concatinated to (All Stores) to build the required format for Hierarchy2 of the [Dim]:profit/Cost Center]]></comment>
+      <sources>
+        <source nameref="ex-DW [Dim]: ProfCen (Retail)" />
+      </sources>
+      <functions>
+        <function name="ProfCenTyFull" type="Map">
+          <inputs>
+            <input nameref="ProfitCenterTy" />
+          </inputs>
+          <parameters>
+            <default>noProfCenType</default>
+            <mapping>
+              <map from="RT" to="Retail (Own Stores)" />
+              <map from="SU" to="Support Centre" />
+              <map from="OU" to="Outlets" />
+              <map from="RH" to="Retail Head Office" />
+              <map from="UN" to="Uncategorised" />
+              <map from="WS" to="Wholesale" />
+              <map from="CO" to="Concessions" />
+              <map from="EC" to="E-commerce" />
+            </mapping>
+          </parameters>
+        </function>
+        <function name="BusDivBusTy" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+            <input nameref="ProfCenTyFull" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} - #{ProfCenTyFull}</template>
+          </parameters>
+        </function>
+        <function name="BusDivAllStores" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} (All Stores)</template>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="BusDevCode">
+            <input nameref="BusDevCode" />
+          </coordinate>
+          <coordinate name="BusDevDesc">
+            <input nameref="BusDevDesc" />
+          </coordinate>
+          <coordinate name="ProfCenDesc">
+            <input nameref="ProfCenDesc" />
+          </coordinate>
+          <coordinate name="ProfCenTyFull">
+            <input nameref="ProfCenTyFull" />
+          </coordinate>
+          <coordinate name="ProfitCenter">
+            <input nameref="ProfitCenter" />
+          </coordinate>
+          <coordinate name="ProfitCenterTy">
+            <input nameref="ProfitCenterTy" />
+          </coordinate>
+          <coordinate name="BusDivBusTy">
+            <input nameref="BusDivBusTy" />
+          </coordinate>
+          <coordinate name="OpenDate">
+            <input nameref="OpenDate" />
+          </coordinate>
+          <coordinate name="CloseDate">
+            <input nameref="CloseDate" />
+          </coordinate>
+          <coordinate name="BRefStartDate">
+            <input nameref="BRefStartDate" />
+          </coordinate>
+          <coordinate name="BRefEndDate">
+            <input nameref="BRefEndDate" />
+          </coordinate>
+          <coordinate name="BOpenDate">
+            <input nameref="BOpenDate" />
+          </coordinate>
+          <coordinate name="BCloseDate">
+            <input nameref="BCloseDate" />
+          </coordinate>
+          <coordinate name="FOpenDate">
+            <input nameref="FOpenDate" />
+          </coordinate>
+          <coordinate name="FCloseDate">
+            <input nameref="FCloseDate" />
+          </coordinate>
+          <coordinate name="FRefStartDate">
+            <input nameref="FRefStartDate" />
+          </coordinate>
+          <coordinate name="FRefEndDate">
+            <input nameref="FRefEndDate" />
+          </coordinate>
+          <coordinate name="Area">
+            <input nameref="Area" />
+          </coordinate>
+          <coordinate name="CurrLegalEnt">
+            <input nameref="CurrLegalEnt" />
+          </coordinate>
+          <coordinate name="LegalEntityDesc">
+            <input nameref="LegalEntityDesc" />
+          </coordinate>
+          <coordinate name="Grading">
+            <input nameref="Grading" />
+          </coordinate>
+          <coordinate name="SCapex">
+            <input nameref="SCapex" />
+          </coordinate>
+          <coordinate name="State">
+            <input nameref="State" />
+          </coordinate>
+          <coordinate name="StoreType">
+            <input nameref="StoreType" />
+          </coordinate>
+          <coordinate name="Country">
+            <input nameref="Country" />
+          </coordinate>
+          <coordinate name="RefStartDate">
+            <input nameref="RefStartDate" />
+          </coordinate>
+          <coordinate name="RefEndDate">
+            <input nameref="RefEndDate" />
+          </coordinate>
+          <coordinate name="BusDivAllStores">
+            <input nameref="BusDivAllStores" />
+          </coordinate>
+          <coordinate name="Description">
+            <input nameref="ProfitCentreLongDesc" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tf-TJ [Cube]: Fin (Forecast)" type="TableJoin" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Fin (Forecast)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (CurrYear)" />
+      </sources>
+      <joins persist="false">
+        <join allColumns="false" type="inner" unique="false">
+          <left nameref="ex-Jedox [Cube]: Fin (Forecast)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (CurrYear)">
+            <key nameref="#Value" />
+          </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-TJ [Cube]: Fin (Fcst_Mmm Z-Out) 0" type="TableJoin" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Source:
+1- Fcst_Mmm Z-Out]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Fin (Forecast_Mmm Z-Out)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (CurrYear)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Fin (Forecast_Mmm Z-Out)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (CurrYear)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-TJ [Cube]: Fin (Actual)" type="TableJoin" modified="1508972351622" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Fin (Actual)" />
+        <source nameref="ex-Jedox [Attr]: Parameters (CurrYear)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="ex-Jedox [Cube]: Fin (Actual)">
+            <key nameref="FYear" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: Parameters (CurrYear)">
+            <key nameref="#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-TJ [Cube]: Fin (Fcst_mmm Z-Out) 1" type="TableJoin" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Zero out Actuals Months]]></comment>
+      <sources>
+        <source nameref="tf-TJ [Cube]: Fin (Fcst_Mmm Z-Out) 0" />
+        <source nameref="tf-FT [Attr]: Version (Forecast_Mmm)" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="tf-TJ [Cube]: Fin (Fcst_Mmm Z-Out) 0">
+            <key nameref="Version" />
+          </left>
+          <right nameref="tf-FT [Attr]: Version (Forecast_Mmm)">
+            <key nameref="Attr#Value" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-FT [Attr]: Version (Forecast_Mmm)" type="FieldTransform" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Rename the fields so the ensuing join does not give a warninng]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Attr]: Parameters (Forecast_Mmm)" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Attr#_Parameter_">
+            <input nameref="#_Parameter_" />
+          </coordinate>
+          <coordinate name="AttrVersion">
+            <input nameref="Parameter" />
+          </coordinate>
+          <coordinate name="Attr#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tf-FT [Cube]: Fin (Fcst 2 Fcst_Mmm)" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tf-TJ [Cube]: Fin (Forecast)" />
+      </sources>
+      <functions>
+        <function name="ForecastVersion" type="OlapData">
+          <inputs>
+            <input constant="Item" />
+            <input constant="FMth" />
+            <input constant="~" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>#_Parameter</cube>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input nameref="ForecastVersion" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="Profit-Cost Centre">
+            <input nameref="Profit-Cost Centre" />
+          </coordinate>
+          <coordinate name="Account">
+            <input nameref="Account" />
+          </coordinate>
+          <coordinate name="Fin Measure">
+            <input nameref="Fin Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tr-TU [Dim]:Accounts (All Levels)" type="TableUnion" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Join two account extracts. 1-Consolidations From the manually built [Dim]:Accounts , 2-Baselevels From the auto updating DW]]></comment>
+      <sources>
+        <source nameref="tf-PC [Dim]: Account (BaseLevel)" />
+        <source nameref="ex-DW [Dim]: Accounts (All Levels)" />
+      </sources>
+    </transform>
+    <transform name="tf-PC [Dim]: Account (BaseLevel)" type="TreePC" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[preparing the raw extract from DW into a PC format.]]></comment>
+      <sources>
+        <source nameref="ex-DW [Dim]: Accounts (BaseLevel)" />
+      </sources>
+      <target>
+        <parent>
+          <input nameref=":parent" />
+        </parent>
+        <child>
+          <input nameref=":child" />
+        </child>
+        <weight>
+          <input nameref="weight" />
+        </weight>
+        <attributes>
+          <attribute name="Name" type="string">
+            <input nameref="AccDescAtt" />
+          </attribute>
+        </attributes>
+      </target>
+    </transform>
+    <transform name="tr-PC [Dim]:Accounts (AllLevels)" type="TreePC" modified="1508972351622" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tr-TU [Dim]:Accounts (All Levels)" />
+      </sources>
+      <target>
+        <parent>
+          <input nameref=":parent" />
+        </parent>
+        <child>
+          <input nameref=":child" />
+        </child>
+        <weight>
+          <input nameref=":weight" />
+        </weight>
+        <attributes>
+          <attribute name="Name" type="string">
+            <input nameref="Name" />
+          </attribute>
+        </attributes>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tr-FT [Dim]: ProfCen (Hierarchy2) ExOutlets and Ecomm" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Business division concatinated to (All Stores) to build the required format for Hierarchy2 of the [Dim]:profit/Cost Center]]></comment>
+      <sources>
+        <source nameref="tf-TJ [Attr]: ProfCenType Excl-Outlets and Ecomm" />
+      </sources>
+      <functions>
+        <function name="ProfCenTyFull" type="Map">
+          <inputs>
+            <input nameref="ProfitCenterTy" />
+          </inputs>
+          <parameters>
+            <default>noProfCenType</default>
+            <mapping>
+              <map from="RT" to="Retail (Own Stores)" />
+              <map from="SU" to="Support Centre" />
+              <map from="RH" to="Retail Head Office" />
+              <map from="UN" to="Uncategorised" />
+              <map from="WS" to="Wholesale" />
+              <map from="CO" to="Concessions" />
+              <map from="EC" to="E-commerce" />
+            </mapping>
+          </parameters>
+        </function>
+        <function name="BusDivBusTy" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+            <input nameref="ProfCenTyFull" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} - #{ProfCenTyFull}</template>
+          </parameters>
+        </function>
+        <function name="BusDivAllStoresExEcomm" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} (All Standalone and Concession Stores)</template>
+          </parameters>
+        </function>
+        <function name="BusDivAllStoreExOutlets" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} (All Stores Excl Outlets)</template>
+          </parameters>
+        </function>
+        <function name="BusDivAllStores" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} (All Stores)</template>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="BusDevCode">
+            <input nameref="BusDevCode" />
+          </coordinate>
+          <coordinate name="BusDevDesc">
+            <input nameref="BusDevDesc" />
+          </coordinate>
+          <coordinate name="ProfCenDesc">
+            <input nameref="ProfCenDesc" />
+          </coordinate>
+          <coordinate name="ProfCenTyFull">
+            <input nameref="ProfCenTyFull" />
+          </coordinate>
+          <coordinate name="ProfitCenter">
+            <input nameref="ProfitCenter" />
+          </coordinate>
+          <coordinate name="ProfitCenterTy">
+            <input nameref="ProfitCenterTy" />
+          </coordinate>
+          <coordinate name="BusDivBusTy">
+            <input nameref="BusDivBusTy" />
+          </coordinate>
+          <coordinate name="OpenDate">
+            <input nameref="OpenDate" />
+          </coordinate>
+          <coordinate name="CloseDate">
+            <input nameref="CloseDate" />
+          </coordinate>
+          <coordinate name="BRefStartDate">
+            <input nameref="BRefStartDate" />
+          </coordinate>
+          <coordinate name="BRefEndDate">
+            <input nameref="BRefEndDate" />
+          </coordinate>
+          <coordinate name="BOpenDate">
+            <input nameref="BOpenDate" />
+          </coordinate>
+          <coordinate name="BCloseDate">
+            <input nameref="BCloseDate" />
+          </coordinate>
+          <coordinate name="FOpenDate">
+            <input nameref="FOpenDate" />
+          </coordinate>
+          <coordinate name="FCloseDate">
+            <input nameref="FCloseDate" />
+          </coordinate>
+          <coordinate name="FRefStartDate">
+            <input nameref="FRefStartDate" />
+          </coordinate>
+          <coordinate name="FRefEndDate">
+            <input nameref="FRefEndDate" />
+          </coordinate>
+          <coordinate name="Area">
+            <input nameref="Area" />
+          </coordinate>
+          <coordinate name="CurrLegalEnt">
+            <input nameref="CurrLegalEnt" />
+          </coordinate>
+          <coordinate name="LegalEntityDesc">
+            <input nameref="LegalEntityDesc" />
+          </coordinate>
+          <coordinate name="Grading">
+            <input nameref="Grading" />
+          </coordinate>
+          <coordinate name="SCapex">
+            <input nameref="SCapex" />
+          </coordinate>
+          <coordinate name="State">
+            <input nameref="State" />
+          </coordinate>
+          <coordinate name="StoreType">
+            <input nameref="StoreType" />
+          </coordinate>
+          <coordinate name="Country">
+            <input nameref="Country" />
+          </coordinate>
+          <coordinate name="RefStartDate">
+            <input nameref="RefStartDate" />
+          </coordinate>
+          <coordinate name="RefEndDate">
+            <input nameref="RefEndDate" />
+          </coordinate>
+          <coordinate name="BusDivAllStoresExEcomm">
+            <input nameref="BusDivAllStoresExEcomm" />
+          </coordinate>
+          <coordinate name="BusDivAllstoresExOutlets">
+            <input nameref="BusDivAllStoreExOutlets" />
+          </coordinate>
+          <coordinate name="BusDivAllStores">
+            <input nameref="BusDivAllStores" />
+          </coordinate>
+          <coordinate name="Long Description">
+            <input nameref="ProfitCentreLongDesc" />
+          </coordinate>
+          <coordinate name="Latitude">
+            <input nameref="Latitude" />
+          </coordinate>
+          <coordinate name="Longitude">
+            <input nameref="Longitude" />
+          </coordinate>
+          <coordinate name="Geozone">
+            <input nameref="GeographyZone" />
+          </coordinate>
+          <coordinate name="Floor Capacity">
+            <input nameref="FloorCapacity" />
+          </coordinate>
+          <coordinate name="External Partner">
+            <input nameref="ExternalPartner" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-TJ [Attr]: ProfCenType Excl-Outlets and Ecomm" type="TableJoin" modified="1508972351622" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW [Dim]: ProfCen (Retail)" />
+        <source nameref="ex-Jedox [Attr]: (ProfCenType) Excl-OutLets and Ecomm" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="ex-DW [Dim]: ProfCen (Retail)">
+            <key nameref="ProfitCenterTy" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: (ProfCenType) Excl-OutLets and Ecomm">
+            <key nameref="level1" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform name="tf-TJ [Attr]: ProfCenType Outlets" type="TableJoin" modified="1508972351622" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-DW [Dim]: ProfCen (Retail)" />
+        <source nameref="ex-Jedox [Attr]: (ProfCenType) OutLets" />
+      </sources>
+      <joins>
+        <join type="inner">
+          <left nameref="ex-DW [Dim]: ProfCen (Retail)">
+            <key nameref="ProfitCenterTy" />
+          </left>
+          <right nameref="ex-Jedox [Attr]: (ProfCenType) OutLets">
+            <key nameref="level1" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972351622" name="tr-FT [Dim]: ProfCen (Hierarchy2) Outlets" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Business division concatinated to (All Stores) to build the required format for Hierarchy2 of the [Dim]:profit/Cost Center]]></comment>
+      <sources>
+        <source nameref="tf-TJ [Attr]: ProfCenType Outlets" />
+      </sources>
+      <functions>
+        <function name="ProfCenTyFull" type="Map">
+          <inputs>
+            <input nameref="ProfitCenterTy" />
+          </inputs>
+          <parameters>
+            <default>noProfCenType</default>
+            <mapping>
+              <map from="RT" to="Retail (Own Stores)" />
+              <map from="SU" to="Support Centre" />
+              <map from="OU" to="Outlets" />
+              <map from="RH" to="Retail Head Office" />
+              <map from="UN" to="Uncategorised" />
+              <map from="WS" to="Wholesale" />
+              <map from="CO" to="Concessions" />
+              <map from="EC" to="E-commerce" />
+            </mapping>
+          </parameters>
+        </function>
+        <function name="BusDivBusTy" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+            <input nameref="ProfCenTyFull" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} - #{ProfCenTyFull}</template>
+          </parameters>
+        </function>
+        <function name="BusDivAllStores" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} (All Stores)</template>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="BusDevCode">
+            <input nameref="BusDevCode" />
+          </coordinate>
+          <coordinate name="BusDevDesc">
+            <input nameref="BusDevDesc" />
+          </coordinate>
+          <coordinate name="ProfCenDesc">
+            <input nameref="ProfCenDesc" />
+          </coordinate>
+          <coordinate name="ProfCenTyFull">
+            <input nameref="ProfCenTyFull" />
+          </coordinate>
+          <coordinate name="ProfitCenter">
+            <input nameref="ProfitCenter" />
+          </coordinate>
+          <coordinate name="ProfitCenterTy">
+            <input nameref="ProfitCenterTy" />
+          </coordinate>
+          <coordinate name="BusDivBusTy">
+            <input nameref="BusDivBusTy" />
+          </coordinate>
+          <coordinate name="OpenDate">
+            <input nameref="OpenDate" />
+          </coordinate>
+          <coordinate name="CloseDate">
+            <input nameref="CloseDate" />
+          </coordinate>
+          <coordinate name="BRefStartDate">
+            <input nameref="BRefStartDate" />
+          </coordinate>
+          <coordinate name="BRefEndDate">
+            <input nameref="BRefEndDate" />
+          </coordinate>
+          <coordinate name="BOpenDate">
+            <input nameref="BOpenDate" />
+          </coordinate>
+          <coordinate name="BCloseDate">
+            <input nameref="BCloseDate" />
+          </coordinate>
+          <coordinate name="FOpenDate">
+            <input nameref="FOpenDate" />
+          </coordinate>
+          <coordinate name="FCloseDate">
+            <input nameref="FCloseDate" />
+          </coordinate>
+          <coordinate name="FRefStartDate">
+            <input nameref="FRefStartDate" />
+          </coordinate>
+          <coordinate name="FRefEndDate">
+            <input nameref="FRefEndDate" />
+          </coordinate>
+          <coordinate name="Area">
+            <input nameref="Area" />
+          </coordinate>
+          <coordinate name="CurrLegalEnt">
+            <input nameref="CurrLegalEnt" />
+          </coordinate>
+          <coordinate name="LegalEntityDesc">
+            <input nameref="LegalEntityDesc" />
+          </coordinate>
+          <coordinate name="Grading">
+            <input nameref="Grading" />
+          </coordinate>
+          <coordinate name="SCapex">
+            <input nameref="SCapex" />
+          </coordinate>
+          <coordinate name="State">
+            <input nameref="State" />
+          </coordinate>
+          <coordinate name="StoreType">
+            <input nameref="StoreType" />
+          </coordinate>
+          <coordinate name="Country">
+            <input nameref="Country" />
+          </coordinate>
+          <coordinate name="RefStartDate">
+            <input nameref="RefStartDate" />
+          </coordinate>
+          <coordinate name="RefEndDate">
+            <input nameref="RefEndDate" />
+          </coordinate>
+          <coordinate name="BusDivAllStores">
+            <input nameref="BusDivAllStores" />
+          </coordinate>
+          <coordinate name="Long Description">
+            <input nameref="ProfitCentreLongDesc" />
+          </coordinate>
+          <coordinate name="Latitude">
+            <input nameref="Latitude" />
+          </coordinate>
+          <coordinate name="Longitude">
+            <input nameref="Longitude" />
+          </coordinate>
+          <coordinate name="Geozone">
+            <input nameref="GeographyZone" />
+          </coordinate>
+          <coordinate name="Floor Capacity">
+            <input nameref="FloorCapacity" />
+          </coordinate>
+          <coordinate name="External Partner">
+            <input nameref="ExternalPartner" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-FH [Dim]: ProfCen (Hierarchy2)" type="TreeFH" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[This is to build the second hierarchy of [Dim]: ProfCen hierarchies:
+1. ProfCen Ty by BusDiv
+2. BusDiv by ProfCen Ty]]></comment>
+      <sources>
+        <source nameref="tf-TU [Dim]:ProfCen (Hierarchy 2)" />
+      </sources>
+      <target skipEmpty="true" type="numeric">
+        <attributes>
+          <attribute name="Name" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input constant="Total Retail (by BusinessDiv)" />
+          </level>
+          <level>
+            <input nameref="BusDivAllStores" />
+          </level>
+          <level>
+            <input nameref="BusDivAllstoresExOutlets" />
+          </level>
+          <level>
+            <input nameref="BusDivAllStoresExEcomm" />
+          </level>
+          <level>
+            <input nameref="BusDivBusTy" />
+          </level>
+          <level>
+            <input nameref="ProfitCenter" />
+            <attributes>
+              <attribute name="Name">
+                <input nameref="ProfCenDesc" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform name="tf-TU [Dim]:ProfCen (Hierarchy 2)" type="TableUnion" modified="1508972351622" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="tr-FT [Dim]: ProfCen (Hierarchy2) Outlets" />
+        <source nameref="tr-FT [Dim]: ProfCen (Hierarchy2) Ecomm" />
+        <source nameref="tr-FT [Dim]: ProfCen (Hierarchy2) ExOutlets and Ecomm" />
+      </sources>
+    </transform>
+    <transform name="tf-TJ [Attr]: ProfCenType Ecomm" type="TableJoin" modified="1508972351622" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Attr]: (ProfCenType) Ecomm" />
+        <source nameref="ex-DW [Dim]: ProfCen (Retail)" />
+      </sources>
+      <joins persist="false">
+        <join type="inner">
+          <left nameref="ex-Jedox [Attr]: (ProfCenType) Ecomm">
+            <key nameref="level1" />
+          </left>
+          <right nameref="ex-DW [Dim]: ProfCen (Retail)">
+            <key nameref="ProfitCenterTy" />
+          </right>
+        </join>
+      </joins>
+    </transform>
+    <transform modified="1508972351622" name="tr-FT [Dim]: ProfCen (Hierarchy2) Ecomm" type="FieldTransform" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Business division concatinated to (All Stores) to build the required format for Hierarchy2 of the [Dim]:profit/Cost Center]]></comment>
+      <sources>
+        <source nameref="tf-TJ [Attr]: ProfCenType Ecomm" />
+      </sources>
+      <functions>
+        <function name="ProfCenTyFull" type="Map">
+          <inputs>
+            <input nameref="ProfitCenterTy" />
+          </inputs>
+          <parameters>
+            <default>noProfCenType</default>
+            <mapping>
+              <map from="RT" to="Retail (Own Stores)" />
+              <map from="SU" to="Support Centre" />
+              <map from="RH" to="Retail Head Office" />
+              <map from="UN" to="Uncategorised" />
+              <map from="WS" to="Wholesale" />
+              <map from="CO" to="Concessions" />
+              <map from="EC" to="E-commerce" />
+            </mapping>
+          </parameters>
+        </function>
+        <function name="BusDivBusTy" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+            <input nameref="ProfCenTyFull" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} - #{ProfCenTyFull}</template>
+          </parameters>
+        </function>
+        <function name="BusDivAllStoreExOutlets" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} (All Stores Excl Outlets)</template>
+          </parameters>
+        </function>
+        <function name="BusDivAllStores" type="Concatenation">
+          <inputs>
+            <input nameref="BusDevDesc" />
+          </inputs>
+          <parameters>
+            <template>#{BusDevDesc} (All Stores)</template>
+          </parameters>
+        </function>
+      </functions>
+      <target>
+        <coordinates>
+          <coordinate name="BusDevCode">
+            <input nameref="BusDevCode" />
+          </coordinate>
+          <coordinate name="BusDevDesc">
+            <input nameref="BusDevDesc" />
+          </coordinate>
+          <coordinate name="ProfCenDesc">
+            <input nameref="ProfCenDesc" />
+          </coordinate>
+          <coordinate name="ProfCenTyFull">
+            <input nameref="ProfCenTyFull" />
+          </coordinate>
+          <coordinate name="ProfitCenter">
+            <input nameref="ProfitCenter" />
+          </coordinate>
+          <coordinate name="ProfitCenterTy">
+            <input nameref="ProfitCenterTy" />
+          </coordinate>
+          <coordinate name="BusDivBusTy">
+            <input nameref="BusDivBusTy" />
+          </coordinate>
+          <coordinate name="OpenDate">
+            <input nameref="OpenDate" />
+          </coordinate>
+          <coordinate name="CloseDate">
+            <input nameref="CloseDate" />
+          </coordinate>
+          <coordinate name="BRefStartDate">
+            <input nameref="BRefStartDate" />
+          </coordinate>
+          <coordinate name="BRefEndDate">
+            <input nameref="BRefEndDate" />
+          </coordinate>
+          <coordinate name="BOpenDate">
+            <input nameref="BOpenDate" />
+          </coordinate>
+          <coordinate name="BCloseDate">
+            <input nameref="BCloseDate" />
+          </coordinate>
+          <coordinate name="FOpenDate">
+            <input nameref="FOpenDate" />
+          </coordinate>
+          <coordinate name="FCloseDate">
+            <input nameref="FCloseDate" />
+          </coordinate>
+          <coordinate name="FRefStartDate">
+            <input nameref="FRefStartDate" />
+          </coordinate>
+          <coordinate name="FRefEndDate">
+            <input nameref="FRefEndDate" />
+          </coordinate>
+          <coordinate name="Area">
+            <input nameref="Area" />
+          </coordinate>
+          <coordinate name="CurrLegalEnt">
+            <input nameref="CurrLegalEnt" />
+          </coordinate>
+          <coordinate name="LegalEntityDesc">
+            <input nameref="LegalEntityDesc" />
+          </coordinate>
+          <coordinate name="Grading">
+            <input nameref="Grading" />
+          </coordinate>
+          <coordinate name="SCapex">
+            <input nameref="SCapex" />
+          </coordinate>
+          <coordinate name="State">
+            <input nameref="State" />
+          </coordinate>
+          <coordinate name="StoreType">
+            <input nameref="StoreType" />
+          </coordinate>
+          <coordinate name="Country">
+            <input nameref="Country" />
+          </coordinate>
+          <coordinate name="RefStartDate">
+            <input nameref="RefStartDate" />
+          </coordinate>
+          <coordinate name="RefEndDate">
+            <input nameref="RefEndDate" />
+          </coordinate>
+          <coordinate name="BusDivAllstoresExOutlets">
+            <input nameref="BusDivAllStoreExOutlets" />
+          </coordinate>
+          <coordinate name="BusDivAllStores">
+            <input nameref="BusDivAllStores" />
+          </coordinate>
+          <coordinate name="Long Description">
+            <input nameref="ProfitCentreLongDesc" />
+          </coordinate>
+          <coordinate name="Latitude">
+            <input nameref="Latitude" />
+          </coordinate>
+          <coordinate name="Longitude">
+            <input nameref="Longitude" />
+          </coordinate>
+          <coordinate name="Geozone">
+            <input nameref="GeographyZone" />
+          </coordinate>
+          <coordinate name="Floor Capacity">
+            <input nameref="FloorCapacity" />
+          </coordinate>
+          <coordinate name="External Partner">
+            <input nameref="ExternalPartner" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-FT [Cube]: Fin (Budget Copy)" type="FieldTransform" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Transforms the version of the budget copy from Budget to what ever the variable ${Budget Target Copy} is set to.
+To change the target change the version in the variable.]]></comment>
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Fin (Budget) - Budget Copy" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input constant="${Budget Copy Target}" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="Profit-Cost Centre">
+            <input nameref="Profit-Cost Centre" />
+          </coordinate>
+          <coordinate name="Account">
+            <input nameref="Account" />
+          </coordinate>
+          <coordinate name="Fin Measure">
+            <input nameref="Fin Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1510290163022" name="tf-FT [Cube]: Fin (Manual Load) - LC &amp; Guarantees - Actual" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Fin (Manual Load) - LCs &amp; Guarantee" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input constant="Actual" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="Profit-Cost Centre">
+            <input nameref="Profit-Cost Centre" />
+          </coordinate>
+          <coordinate name="Account">
+            <input nameref="Account" />
+          </coordinate>
+          <coordinate name="Fin Measure">
+            <input nameref="Fin Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform name="tf-FT [Cube]: Fin (Manual Load) - Eliminations" type="FieldTransform" modified="1508972351622" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Fin (Manual Load) - Eliminations" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input constant="Actual" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="Profit-Cost Centre">
+            <input nameref="Profit-Cost Centre" />
+          </coordinate>
+          <coordinate name="Account">
+            <input nameref="Account" />
+          </coordinate>
+          <coordinate name="Fin Measure">
+            <input nameref="Fin Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1508972351622" name="tf-FT [Attr]: Fin (Z-Out) 1" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Attr]: Company" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1510290318876" name="tf-FT [Cube]: Fin (Manual Load) - LC &amp; Guarantees - Forecast" type="FieldTransform" modifiedBy="richardsADMIN">
+      <sources>
+        <source nameref="ex-Jedox [Cube]: Fin (Manual Load) - LCs &amp; Guarantee" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Currency">
+            <input nameref="Currency" />
+          </coordinate>
+          <coordinate name="FYear">
+            <input nameref="FYear" />
+          </coordinate>
+          <coordinate name="Period">
+            <input nameref="Period" />
+          </coordinate>
+          <coordinate name="Version">
+            <input constant="Forecast" />
+          </coordinate>
+          <coordinate name="Business Division">
+            <input nameref="Business Division" />
+          </coordinate>
+          <coordinate name="Company">
+            <input nameref="Company" />
+          </coordinate>
+          <coordinate name="Profit-Cost Centre">
+            <input nameref="Profit-Cost Centre" />
+          </coordinate>
+          <coordinate name="Account">
+            <input nameref="Account" />
+          </coordinate>
+          <coordinate name="Fin Measure">
+            <input nameref="Fin Measure" />
+          </coordinate>
+          <coordinate name="#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+  </transforms>
+  <loads>
+    <load name="ld-Jedox [Dim]: Company" type="Dimension" modified="1508972351622" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: Company" />
+      <connection nameref="Jedox" />
+      <dimension name="Company">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Dim]: BusDiv" type="Dimension" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Loads business division code to [Dim]: Business Division]]></comment>
+      <source nameref="tf-FH [Dim]: BusDiv" />
+      <connection nameref="Jedox" />
+      <dimension name="Business Division">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Dim]: Currency" type="Dimension" modified="1508972351622" modifiedBy="richardsADMIN">
+      <source nameref="tf-FH [Dim]: Currency" />
+      <connection nameref="Jedox" />
+      <dimension name="Currency">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Cube]: Fin" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Fin 2" />
+      <connection nameref="Jedox" />
+      <cube name="Financials" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite" />
+      <mode>add</mode>
+    </load>
+    <load name="ld-Jedox [Cube]: Fin (Z-Out)" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Fin (Z-Out) 2" />
+      <connection nameref="Jedox" />
+      <cube name="Financials" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite" />
+      <mode>delete</mode>
+    </load>
+    <load name="ld-Jedox [Cube]: Fin (Act 2  Fcst)" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Backup current forecast into Forecast_Mmm]]></comment>
+      <source nameref="tf-FT [Cube]: Fin (Act 2 Fcst) 2" />
+      <connection nameref="Jedox" />
+      <cube name="Financials" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite" />
+      <mode>add</mode>
+    </load>
+    <load name="ld-Jedox [Cube]: Fin (Fcst Z-Out)" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Zero out Actual months for the current Forecast]]></comment>
+      <source nameref="tf-FT [Cube]: Fin (Fcst Z-Out) 2" />
+      <connection nameref="Jedox" />
+      <cube name="Financials" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite" />
+      <mode>delete</mode>
+    </load>
+    <load name="ld-Jedox [Dim]: ProfCen (Non-Retail)" type="Dimension" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Build two hierarchies:
+1. ProfCen Ty by BusDiv
+2. BusDiv by ProfCen Ty]]></comment>
+      <source nameref="tf-FH [Dim]: ProfCen (Non-Retail)" />
+      <connection nameref="Jedox" />
+      <dimension name="Profit-Cost Centre">
+        <elements mode="insert" />
+        <consolidations mode="add" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Dim]: ProfCen (Hierarchy2)" type="Dimension" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Build two hierarchies:
+1. ProfCen Ty by BusDiv
+2. BusDiv by ProfCen Ty]]></comment>
+      <source nameref="tf-FH [Dim]: ProfCen (Hierarchy2)" />
+      <connection nameref="Jedox" />
+      <dimension name="Profit-Cost Centre">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="inactive" />
+      </dimension>
+    </load>
+    <load modified="1508972351622" name="z_ld-Test" type="File" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Fin (Fcst Z-Out) 2" />
+      <connection nameref="z_File-Test" />
+      <mode>create</mode>
+    </load>
+    <load name="ld-Jedox [Dim]: ProfCen (Retail)" type="Dimension" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Build two hierarchies:
+1. ProfCen Ty by BusDiv
+2. BusDiv by ProfCen Ty]]></comment>
+      <source nameref="tf-FH [Dim]: ProfCen (Retail)" />
+      <connection nameref="Jedox" />
+      <dimension name="Profit-Cost Centre">
+        <elements mode="insert" />
+        <consolidations mode="add" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+    <load modified="1525845312267" name="ld-Jedox [Cube]: Fin (Fcst_Mmm Z-Out)" type="Cube" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Forecast_Mmm = e.g. Forecast_Jul]]></comment>
+      <source nameref="tf-TJ [Cube]: Fin (Fcst_mmm Z-Out) 1" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube cubeLayoutChangeMode="noneWithDefaultWrite" name="Financials" splash="disabled">
+        <dimensions>
+          <dimension input="Currency" name="Currency" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Company" name="Company" />
+          <dimension input="Profit-Cost Centre" name="Profit-Cost Centre" />
+          <dimension input="Account" name="Account" />
+          <dimension input="Fin Measure" name="Fin Measure" />
+          <dimension input="#Value" />
+          <dimension input="Attr#_Period_" />
+          <dimension input="AttrPeriod" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Fin (Fcst 2 Fcst_Mmm)" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Backup current forecast into Forecast_Mmm]]></comment>
+      <source nameref="tf-FT [Cube]: Fin (Fcst 2 Fcst_Mmm)" />
+      <connection nameref="Jedox" />
+      <cube name="Financials" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite" />
+      <mode>add</mode>
+    </load>
+    <load name="ld-Jedox [Dim]: Account (All Levels)" type="Dimension" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Account load only at base levels. Keep the top levels untouched since they are manually created through excel spreedsheet.]]></comment>
+      <source nameref="tr-PC [Dim]:Accounts (AllLevels)" />
+      <connection nameref="Jedox" />
+      <dimension name="Account">
+        <elements mode="insert" />
+        <consolidations mode="update" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
+    <load modified="1508972351622" name="ld-DW [Dim]: Account (Jedox Root to Consol)" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Create a table that houses the account dimension in Jedox.
+This is the first pass that loads from the top of the tree down to the immediate parents of the base members - but not the base members. These will come from AP21
+There is another step that will load the alternate hierarchies in total and will append to this table.]]></comment>
+      <source format="pcwa" nameref="ex-Jedox [Dim]: Accounts (Jedox - Main Hierarchies To ConsLevel)" />
+      <connection nameref="DW Raw" />
+      <mode>update</mode>
+      <table name="JEDOX_ACCOUNTS_ATTRIBUTES" schema="dbo" />
+    </load>
+    <load modified="1508972351622" name="ld-DW [Dim]: Account (Jedox Alternate Hierarchies)" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[APPEND to the table that houses the account dimension in Jedox.
+This is the second pass that loads all the alternate structures in their entirety. These will be reloaded when integrated with the accounts coming from AP21.]]></comment>
+      <source format="pcwa" nameref="ex-Jedox [Dim]: Accounts (Jedox - Alternate Hierarchies)" />
+      <connection nameref="DW Raw" />
+      <mode>insert</mode>
+      <table aggregate="true" name="JEDOX_ACCOUNTS_ATTRIBUTES" schema="dbo" />
+    </load>
+    <load name="ld-Jedox [Cube]: Fin - Budget Copy" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Second step in the budget copy process
+Copies the Budget to the Budget target version (as defined in the variable Budget Copy Target) for the budget year (as defined in the variable BudgetYear).]]></comment>
+      <source nameref="tf-FT [Cube]: Fin (Budget Copy)" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Financials" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Currency" name="Currency" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Company" name="Company" />
+          <dimension input="Profit-Cost Centre" name="Profit-Cost Centre" />
+          <dimension input="Account" name="Account" />
+          <dimension input="Fin Measure" name="Fin Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Fin - Budget Copy Z-Out" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[First step in the budget copy process
+Zeros out the Budget target version (as defined in the variable Budget Copy Target) for the budget year (as defined in the variable BudgetYear).]]></comment>
+      <source nameref="tf-FT [Cube]: Fin (Budget Copy)" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Financials" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Currency" name="Currency" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Company" name="Company" />
+          <dimension input="Profit-Cost Centre" name="Profit-Cost Centre" />
+          <dimension input="Account" name="Account" />
+          <dimension input="Fin Measure" name="Fin Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1508972351622" name="ld-DW [Dim]: Account (Jedox Root to Consol - Levels Only)" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Create a table that houses the account dimension in Jedox.
+This is the first pass that loads from the top of the tree down to the immediate parents of the base members - but not the base members. These will come from AP21
+There is another step that will load the alternate hierarchies in total and will append to this table.]]></comment>
+      <source format="fh" nameref="ex-Jedox [Dim]: Accounts (Jedox - Main Hierarchies To ConsLevel)" />
+      <connection nameref="DW Raw" />
+      <mode>update</mode>
+      <table name="JEDOX_ACCOUNTS_HIERARCHY" schema="dbo" />
+    </load>
+    <load modified="1508972351622" name="ld-DW [Dim]: Account (Jedox Alternate Hierarchies - Levels Only)" type="Relational" modifiedBy="richardsADMIN">
+      <comment><![CDATA[APPEND to the table that houses the account dimension in Jedox.
+This is the second pass that loads all the alternate structures in their entirety. These will be reloaded when integrated with the accounts coming from AP21.]]></comment>
+      <source format="fh" nameref="ex-Jedox [Dim]: Accounts (Jedox - Alternate Hierarchies)" />
+      <connection nameref="DW Raw" />
+      <mode>insert</mode>
+      <table aggregate="true" name="JEDOX_ACCOUNTS_HIERARCHY" schema="dbo" />
+    </load>
+    <load name="ld-Jedox [Cube]: Fin (Manual Load) - LC &amp; Guarantees - Actual" type="Cube" modified="1510290205799" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Fin (Manual Load) - LC &amp; Guarantees - Actual" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Financials" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite" />
+    </load>
+    <load modified="1508972351622" name="ld-Jedox [Cube]: Fin (Actual Z-Out) - LCs &amp; Guarantees" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="ex-Jedox [Cube]: Fin (Manual Load) - LCs &amp; Guarantee - Z-Out" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Financials" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite">
+        <dimensions>
+          <dimension input="Currency" name="Currency" />
+          <dimension input="FYear" name="FYear" />
+          <dimension input="Period" name="Period" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Company" name="Company" />
+          <dimension input="Profit-Cost Centre" name="Profit-Cost Centre" />
+          <dimension input="Account" name="Account" />
+          <dimension input="Fin Measure" name="Fin Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load name="ld-Jedox [Cube]: Fin (Manual Load) - Eliminations" type="Cube" modified="1508972351622" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Fin (Manual Load) - Eliminations" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube name="Financials" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite" />
+    </load>
+    <load modified="1508972351622" name="ld-Jedox [Cube]: Fin (Actual Z-Out)" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="ex-Jedox [Cube Slice]: Fin (Actual) - Z-Out" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <cube name="Financials" splash="default" cubeLayoutChangeMode="noneWithDefaultWrite" />
+    </load>
+    <load modified="1510290245312" name="ld-Jedox [Cube]: Fin (Manual Load) - LC &amp; Guarantees - Forecast" type="Cube" modifiedBy="richardsADMIN">
+      <source nameref="tf-FT [Cube]: Fin (Manual Load) - LC &amp; Guarantees - Forecast" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <cube cubeLayoutChangeMode="noneWithDefaultWrite" name="Financials" splash="disabled" />
+    </load>
+  </loads>
+  <jobs>
+    <job name="[01-05-00]-load[Dim]:Company" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Dim]: Company" type="load" />
+    </job>
+    <job name="[01-02-00]-load[Dim]:BusDiv" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Dim]: BusDiv" type="load" />
+    </job>
+    <job name="[01-01-00]-load[Dim]:Currency" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Dim]: Currency" type="load" />
+    </job>
+    <job modified="1508972351622" name="[02-01-00]-load[Cube]:Fin" type="Standard" modifiedBy="richardsADMIN">
+      <execution nameref="[02-01-01]-load[Cube]:Fin (Actual Z-Out)" type="job" />
+      <execution nameref="ld-Jedox [Cube]: Fin" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+    <job name="[03-01-00]-load[Cube]:Forecast(All)" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[1. Copies Actual into Forecast (Actual Months only - based on the Parameter Attributes)
+
+2. Copy Forecast into Forecast_Mmm (e.g. Forecast_Oct) - based on the VARIABLE (will be automated).]]></comment>
+      <execution nameref="ld-Jedox [Cube]: Fin (Fcst Z-Out)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Fin (Act 2  Fcst)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Fin (Fcst_Mmm Z-Out)" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Fin (Fcst 2 Fcst_Mmm)" type="load" />
+    </job>
+    <job name="[01-03-00]-load[Dim]:ProfCen(All)" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="[01-03-01]-load[Dim]:ProfCen(Non-Retail)" type="job" />
+      <execution nameref="[01-03-02]-load[Dim]:ProfCen(Retail)" type="job" />
+      <execution nameref="[01-03-03]-load[Dim]:ProfCen(Hierarchy2)" type="job" />
+    </job>
+    <job name="z_Test" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="z_ld-Test" type="load" />
+    </job>
+    <job name="[01-03-01]-load[Dim]:ProfCen(Non-Retail)" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Dim]: ProfCen (Non-Retail)" type="load" />
+    </job>
+    <job name="[01-03-03]-load[Dim]:ProfCen(Hierarchy2)" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Dim]: ProfCen (Hierarchy2)" type="load" />
+    </job>
+    <job name="[01-03-02]-load[Dim]:ProfCen(Retail)" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Dim]: ProfCen (Retail)" type="load" />
+    </job>
+    <job name="[03-01-01]-load[Cube]:Forecast(Z-Out)" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Fin (Fcst Z-Out)" type="load" />
+    </job>
+    <job name="[03-01-02]-load[Cube]:Forecast(Act2Fcst)" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Fin (Act 2  Fcst)" type="load" />
+    </job>
+    <job name="[03-01-03]-load[Cube]:Forecast(Fcst_mmm Z-Out)" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Fin (Fcst_Mmm Z-Out)" type="load" />
+    </job>
+    <job name="[03-01-04]-load[Cube]:Forecast(Fcst2Fcst_mmm)" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Fin (Fcst 2 Fcst_Mmm)" type="load" />
+    </job>
+    <job name="Fin Nightly" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="[04-01-01]-load[DW]:Dim_Account_Jedox" type="job" />
+      <execution nameref="[01-01-00]-load[Dim]:Currency" type="job" />
+      <execution nameref="[01-02-00]-load[Dim]:BusDiv" type="job" />
+      <execution nameref="[01-03-00]-load[Dim]:ProfCen(All)" type="job" />
+      <execution nameref="[01-04-00]-load[Dim]:Account" type="job" />
+      <execution nameref="[01-05-00]-load[Dim]:Company" type="job" />
+      <execution nameref="[02-01-00]-load[Cube]:Fin" type="job" />
+      <execution nameref="[03-01-00]-load[Cube]:Forecast(All)" type="job" />
+    </job>
+    <job name="[01-04-02]-load[Jedox]:Dim_Account(All Levels)" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Update Dim_Account in DW (From Current Dim in Jedox)]]></comment>
+      <execution nameref="ld-Jedox [Dim]: Account (All Levels)" type="load" />
+    </job>
+    <job modified="1508972351622" name="[01-04-00]-load[Dim]:Account" type="Standard" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Read the Account Hierarchy from the DW.Fin and merge it with base levels from AP21(also in DW) and updates the Account Dimension inside Jedox.]]></comment>
+      <execution nameref="[01-04-02]-load[Jedox]:Dim_Account(All Levels)" type="job" />
+      <failStatus>error</failStatus>
+    </job>
+    <job name="[04-01-01]-load[DW]:Dim_Account_Jedox" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Update Dim_Account in DW (From Current Dim in Jedox)]]></comment>
+      <execution nameref="ld-DW [Dim]: Account (Jedox Root to Consol)" type="load" />
+      <execution nameref="ld-DW [Dim]: Account (Jedox Alternate Hierarchies)" type="load" />
+    </job>
+    <job modified="1527719071886" name="Database Save" type="Groovy" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Saves all Palo Cubes and the Database to disk in aggregated form in order to reduce disk space and time to start server
+Variables: PaloTargetDB]]></comment>
+      <jobscript><![CDATA[LOG.info("Starting Palo Database Save");
+
+LOG.info("Saving PAS-Financials Database");
+IDatabase dbpasf = OLAP.getDatabase("Jedox");
+dbpasf.save();
+for(ICube c : dbpasf.getCubes()){
+	if(c.getType().equals(ICube.CubeType.CUBE_ATTRIBUTE) || c.getType().equals(ICube.CubeType.CUBE_NORMAL)){
+		c.save();
+	}
+}
+
+LOG.info("Finished Jedox Database Save");]]></jobscript>
+      <failStatus>error</failStatus>
+    </job>
+    <job name="[99-00-00]-load[Cube]:Forecast_mmm" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Special job to be run by Jedox users to update the current forecast (Forecast_mmm) with what has been submitted to Forecast.]]></comment>
+      <execution nameref="[03-01-03]-load[Cube]:Forecast(Fcst_mmm Z-Out)" type="job" />
+      <execution nameref="[03-01-04]-load[Cube]:Forecast(Fcst2Fcst_mmm)" type="job" />
+    </job>
+    <job name="[99-00-01]-load[Cube]:Budget Copy" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <comment><![CDATA[Zeros out and then performs a copy using the Variables BudgetYear and Budget Target Version from the Budget version to the version set in Budget Target Version for the variable BudgetYear.]]></comment>
+      <execution nameref="ld-Jedox [Cube]: Fin - Budget Copy Z-Out" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Fin - Budget Copy" type="load" />
+    </job>
+    <job modified="1508972351622" name="Load Financials from AP21" type="Groovy" modifiedBy="richardsADMIN">
+      <jobscript><![CDATA[LOG.info("Calling the load targets batch file");
+
+Runtime.runtime.exec("D:\\Jedox\\UpdateFinancials.bat");
+
+LOG.info("The load targets batch file has been called");]]></jobscript>
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1510290290001" name="[05-00-01]-load[Cube]:Manual Load - Guarantees &amp; LCs" type="Standard" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Fin (Actual Z-Out) - LCs &amp; Guarantees" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Fin (Manual Load) - LC &amp; Guarantees - Actual" type="load" />
+      <execution nameref="ld-Jedox [Cube]: Fin (Manual Load) - LC &amp; Guarantees - Forecast" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+    <job name="[05-00-02]-load[Cube]:Manual Load - Eliminations" type="Standard" modified="1508972351622" modifiedBy="richardsADMIN">
+      <execution nameref="ld-Jedox [Cube]: Fin (Manual Load) - Eliminations" type="load" />
+    </job>
+    <job modified="1508972351622" name="[02-01-01]-load[Cube]:Fin (Actual Z-Out)" type="Loop" modifiedBy="richardsADMIN">
+      <loops>
+        <loop nameref="tf-FT [Attr]: Fin (Z-Out) 1" />
+      </loops>
+      <execution nameref="ld-Jedox [Cube]: Fin (Actual Z-Out)" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+  </jobs>
+</project>

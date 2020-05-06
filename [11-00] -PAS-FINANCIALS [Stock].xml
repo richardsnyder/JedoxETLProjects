@@ -1,0 +1,320 @@
+<project name="[11-00] -PAS-FINANCIALS [Stock]" version="7.3" modified="1588221242669" modifiedBy="ONEPAS\richards" olapId="p45">
+  <headers>
+    <header name="comment" modified="1588220653691" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Project description]]></comment>
+    </header>
+  </headers>
+  <variables />
+  <connections>
+    <connection modified="1588220949699" name="PAS-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DataWarehouse</database>
+      <parameters>
+        <parameter name="autoCommit">true</parameter>
+        <parameter name="integratedSecurity">true</parameter>
+      </parameters>
+    </connection>
+    <connection modified="1588220869995" name="Jedox" type="JedoxGlobal" modifiedBy="ONEPAS\richards">
+      <globalReference>localhost</globalReference>
+      <database>PAS-FINANCIALS</database>
+      <ssl>off</ssl>
+    </connection>
+  </connections>
+  <extracts>
+    <extract modified="1588221139435" name="FactStock" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[IF OBJECT_ID('tempdb.dbo.#TempJedoxStock') IS NOT NULL
+  DROP TABLE #TempJedoxStock
+
+IF OBJECT_ID('tempdb.dbo.#StockDate') IS NOT NULL
+	DROP TABLE #StockDate
+
+SELECT DISTINCT
+  CASE
+    WHEN DimDate.FinancialMonthEnd < CAST(GETDATE() AS DATE) THEN DimDate.FinancialMonthEnd
+    ELSE DATEADD(DAY, -1, CAST(GETDATE() AS DATE))
+  END StockDate
+INTO #StockDate
+FROM DimDate
+WHERE DimDate.FinancialYear = 2020
+AND DimDate.CalendarDate < CAST(GETDATE() AS DATE)
+
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows loaded into #StockDate'
+
+
+DECLARE @CurrentDate DATE,
+        @StockFinancialYear INT,
+        @EndOfMonthDate DATE
+
+SET @CurrentDate = '20200331'
+
+CREATE TABLE #TempJedoxStock (
+  StockDate DATE NOT NULL,
+  ProductId INT NOT NULL,
+  WarehouseId INT NOT NULL,
+  SalesPriceSchemeId INT NULL,
+  CostingZoneId INT NULL,
+  CostingCurrencyId INT NULL,
+  TransactionCurrencyId INT NULL,
+  TransactionExchangeRate NUMERIC(7, 5) NULL,
+  LocationDiv INT NOT NULL,
+  ProfitCentreCode INT NOT NULL,
+  FYear INT NOT NULL,
+  EndOfMonthDate DATE NOT NULL,
+  SubCategory VARCHAR(150) NULL,
+  Colour VARCHAR(150) NULL,
+  Size VARCHAR(150) NULL,
+  InTransitQuantity NUMERIC(38, 4) NULL,
+  OnHandQuantity NUMERIC(38, 4) NULL,
+  TotalQuantity NUMERIC(38, 4) NULL,
+  OriginalPrice NUMERIC(18, 4) NULL,
+  CurrentPrice NUMERIC(18, 4) NULL,
+  StockAtRetailLocal NUMERIC(18, 4) NULL,
+  TaxRate NUMERIC(18, 4) NULL,
+  TaxRateDivisor NUMERIC(18, 4) NULL,
+  OriginalPriceExTaxLocal NUMERIC(18, 4) NULL,
+  CurrentPriceExTaxLocal NUMERIC(18, 4) NULL,
+  ProductCost NUMERIC(18, 4) NULL,
+  StockAtCostLocal NUMERIC(18, 4),
+  OriginalPriceExTaxForeign NUMERIC(18, 4) NULL,
+  CurrentPriceExTaxForeign NUMERIC(18, 4) NULL,
+  StockAtRetailForeign NUMERIC(18, 4) NULL,
+  StockAtCostForeign NUMERIC(18, 4) NULL
+)
+
+-- Capture Stock quantities
+
+INSERT
+INTO #TempJedoxStock (StockDate,
+ProductId,
+WarehouseId,
+SalesPriceSchemeId,
+CostingZoneId,
+CostingCurrencyId,
+TransactionCurrencyId,
+TransactionExchangeRate,
+LocationDiv,
+ProfitCentreCode,
+FYear,
+EndOfMonthDate,
+SubCategory,
+Colour,
+Size,
+InTransitQuantity,
+OnHandQuantity,
+TotalQuantity,
+OriginalPrice,
+CurrentPrice,
+StockAtRetailLocal,
+TaxRate,
+TaxRateDivisor,
+OriginalPriceExTaxLocal,
+CurrentPriceExTaxLocal,
+ProductCost,
+StockAtCostLocal,
+OriginalPriceExTaxForeign,
+CurrentPriceExTaxForeign,
+StockAtRetailForeign,
+StockAtCostForeign)
+
+  SELECT
+    --TOP 1000
+    FactStock.StockDate,
+    FactStock.ProductId,
+    FactStock.WarehouseId,
+    MatWarehouse.SalesPriceSchemeId,
+    MatWarehouse.CostingZoneId,
+    MatWarehouse.CostingCurrencyId,
+    MatWarehouse.TransactionCurrencyId,
+    NULL TransactionExchangeRate,
+    MatWarehouse.BusinessDivisionCode LocationDiv,
+    MatWarehouse.ProfitCentreCode,
+    DimDate.FinancialYear FYear,
+    DimDate.FinancialMonthEnd EndOfMonthDate,
+    ProductBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + MatProduct.DepartmentName + ' - ' + MatProduct.CategoryName + ' - ' + MatProduct.SubCategoryName AS SubCategory,
+    ProductBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.ColourTypeName, 'Colour - NA') AS 'Colour',
+    ProductBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(NULLIF(MatProduct.SizeRange,''), 'Size - NA') AS 'Size', 
+    FactStock.InTransitQuantity,
+    FactStock.OnHandQuantity,
+    FactStock.InTransitQuantity + FactStock.OnHandQuantity AS TotalQuantity,
+    CAST(NULL AS NUMERIC(18, 4)) AS OriginalPrice,
+    CAST(NULL AS NUMERIC(18, 4)) AS CurrentPrice,
+    CAST(NULL AS NUMERIC(18, 4)) AS StockAtRetailLocal,
+    CAST(NULL AS NUMERIC(18, 4)) AS TaxRate,
+    CAST(NULL AS NUMERIC(18, 4)) AS TaxRateDivisor,
+    CAST(NULL AS NUMERIC(18, 4)) AS OriginalPriceExTaxLocal,
+    CAST(NULL AS NUMERIC(18, 4)) AS CurrentPriceExTaxLocal,
+    CAST(NULL AS NUMERIC(18, 4)) AS ProductCost,
+    CAST(NULL AS NUMERIC(18, 4)) AS StockAtCostLocal,
+    CAST(NULL AS NUMERIC(18, 4)) AS OriginalPriceExTaxForeign,
+    CAST(NULL AS NUMERIC(18, 4)) AS CurrentPriceExTaxForeign,
+    CAST(NULL AS NUMERIC(18, 4)) AS StockAtRetailForeign,
+    CAST(NULL AS NUMERIC(18, 4)) AS StockAtCostForeign
+  FROM dbo.FactStock
+  INNER JOIN dbo.MatProduct
+    ON MatProduct.ProductId = FactStock.ProductId
+  INNER JOIN dbo.DimDate
+    ON FactStock.StockDate = DimDate.CalendarDate
+  INNER JOIN #StockDate StockDate
+  ON DimDate.FinancialMonthEnd = StockDate.StockDate
+  LEFT JOIN dbo.DimBusinessDivision ProductBusinessDivision
+    ON ProductBusinessDivision.Id = MatProduct.BusinessDivisionId
+  LEFT JOIN dbo.MatWarehouse
+    ON FactStock.WarehouseId = MatWarehouse.WarehouseId
+  WHERE FactStock.StockDate = StockDate.StockDate
+  AND StockDate.StockDate = @CurrentDate
+  --  AND MatProduct.BusinessDivisionCode IN (18, 26, 25)
+  AND MatProduct.IsReported = 1
+--  AND MatProduct.BusinessDivisionCode <> MatWarehouse.BusinessDivisionCode
+
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows loaded into #TempJedoxStock'
+
+
+-- Add original and current prices for each product
+UPDATE #TempJedoxStock
+SET OriginalPrice = COALESCE(NULLIF(FactProductPrice.OriginalPrice, 0), BackupProductPrice.OriginalPrice),
+    CurrentPrice = COALESCE(NULLIF(FactProductPrice.CurrentPrice, 0), COALESCE(BackupProductPrice.CurrentPrice, 0)),
+    StockAtRetailLocal = #TempJedoxStock.TotalQuantity * CAST(COALESCE(NULLIF(FactProductPrice.CurrentPrice, 0), COALESCE(BackupProductPrice.CurrentPrice, 0)) / (1 + DimSalesPriceScheme.TaxRate) AS NUMERIC(18, 4)),
+    TaxRate = (DimSalesPriceScheme.TaxRate),
+    TaxRateDivisor = (1 + DimSalesPriceScheme.TaxRate),
+    OriginalPriceExTaxLocal = CAST(COALESCE(NULLIF(FactProductPrice.OriginalPrice, 0), COALESCE(BackupProductPrice.OriginalPrice, 0)) / (1 + DimSalesPriceScheme.TaxRate) AS NUMERIC(18, 4)),
+    CurrentPriceExTaxLocal = CAST(COALESCE(NULLIF(FactProductPrice.CurrentPrice, 0), COALESCE(BackupProductPrice.CurrentPrice, 0)) / (1 + DimSalesPriceScheme.TaxRate) AS NUMERIC(18, 4))
+FROM #TempJedoxStock
+LEFT JOIN MatWarehouse
+  ON #TempJedoxStock.WarehouseId = MatWarehouse.WarehouseId
+LEFT JOIN dbo.FactProductPrice
+  ON #TempJedoxStock.StockDate = FactProductPrice.PriceDate
+  AND #TempJedoxStock.ProductId = FactProductPrice.ProductId
+  AND #TempJedoxStock.SalesPriceSchemeId = FactProductPrice.SalesPriceSchemeId
+LEFT JOIN FactProductPrice AS BackupProductPrice
+  ON BackupProductPrice.PriceDate = #TempJedoxStock.StockDate
+  AND BackupProductPrice.ProductId = #TempJedoxStock.ProductId
+  AND BackupProductPrice.SalesPriceSchemeId = MatWarehouse.BackupSalesPriceSchemeId
+INNER JOIN DimSalesPriceScheme
+  ON #TempJedoxStock.SalesPriceSchemeId = DimSalesPriceScheme.Id
+
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows updated with Original and Current Price in #TempJedoxStock'
+
+
+-- Add the Exchange rate to currency convert to AUD
+UPDATE #TempJedoxStock
+SET TransactionExchangeRate = COALESCE(FactExchangeRate.ExchangeRate, 1)
+FROM #TempJedoxStock
+INNER JOIN DimCurrency
+  ON DimCurrency.Code = 'AUD'
+LEFT JOIN FactExchangeRate
+  ON FactExchangeRate.FromCurrencyId = #TempJedoxStock.TransactionCurrencyId
+  AND FactExchangeRate.ToCurrencyId = DimCurrency.Id
+  AND FactExchangeRate.RateDate = @CurrentDate
+
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows updated with Transaction Exchange rate in #TempJedoxStock'
+
+-- Add the cost for each product
+UPDATE #TempJedoxStock
+SET ProductCost = COALESCE(FactProductCost.Cost, 0),
+    StockAtCostLocal = #TempJedoxStock.TotalQuantity * COALESCE(FactProductCost.Cost, 0)
+FROM #TempJedoxStock
+LEFT JOIN dbo.FactProductCost
+  ON #TempJedoxStock.ProductId = FactProductCost.ProductId
+  AND #TempJedoxStock.CostingZoneId = FactProductCost.CostingZoneId
+  AND FactProductCost.CostDate = @CurrentDate
+
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows updated with Cost Price in #TempJedoxStock'
+
+-- Convert to AUD
+-- Add original and current prices for each product
+UPDATE #TempJedoxStock
+SET OriginalPriceExTaxForeign = #TempJedoxStock.OriginalPriceExTaxLocal
+    /
+    CASE
+      WHEN #TempJedoxStock.CostingCurrencyId = DimCurrency.Id THEN 1
+      ELSE #TempJedoxStock.TransactionExchangeRate
+    END,
+    CurrentPriceExTaxForeign = #TempJedoxStock.CurrentPriceExTaxLocal
+    /
+    CASE
+      WHEN #TempJedoxStock.CostingCurrencyId = DimCurrency.Id THEN 1
+      ELSE #TempJedoxStock.TransactionExchangeRate
+    END,
+    StockAtRetailForeign = #TempJedoxStock.TotalQuantity * (#TempJedoxStock.CurrentPriceExTaxLocal
+    /
+    CASE
+      WHEN #TempJedoxStock.CostingCurrencyId = DimCurrency.Id THEN 1
+      ELSE #TempJedoxStock.TransactionExchangeRate
+    END),
+    StockAtCostForeign = (#TempJedoxStock.StockAtCostLocal
+    /
+    CASE
+      WHEN #TempJedoxStock.CostingCurrencyId = DimCurrency.Id THEN 1
+      ELSE #TempJedoxStock.TransactionExchangeRate
+    END)
+FROM #TempJedoxStock
+INNER JOIN DimCurrency
+  ON DimCurrency.Code = 'AUD'
+
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows converted from local currency to AUD in #TempJedoxStock'
+
+------ Set the markdown flag
+----UPDATE #TempJedoxStock
+----SET IsMarkedDown = 1
+----WHERE #TempJedoxStock.CurrentPrice < #TempJedoxStock.OriginalPrice
+
+SELECT
+  #TempJedoxStock.FYear,
+  #TempJedoxStock.EndOfMonthDate,
+  'Actual' AS Version,
+  'AUD' AS Currency,
+  #TempJedoxStock.LocationDiv AS 'Business Division',
+  #TempJedoxStock.ProfitCentreCode AS 'Profit-Cost Centre',
+  #TempJedoxStock.SubCategory AS Product,
+  #TempJedoxStock.Colour AS Colour,
+  #TempJedoxStock.Size AS Size,
+  --  SUM(#TempJedoxStock.OnHandQuantity) AS 'Stock On Hand - Unit',
+  --  SUM(#TempJedoxStock.InTransitQuantity) AS 'Stock InTransit - Unit',
+  SUM(#TempJedoxStock.TotalQuantity) AS 'Total Stock - Unit',
+  SUM(#TempJedoxStock.StockAtCostForeign) StockAtCost,
+  SUM(#TempJedoxStock.StockAtRetailForeign) StockAtRetail
+FROM #TempJedoxStock
+INNER JOIN MatProduct
+  ON #TempJedoxStock.ProductId = MatProduct.ProductId
+WHERE 1 = 1
+--AND #TempJedoxStock.ProfitCentreCode = 1362
+--AND #TempJedoxStock.SubCategory LIKE '%pant - pant - pant'
+GROUP BY
+  #TempJedoxStock.FYear,
+  #TempJedoxStock.EndOfMonthDate,
+  #TempJedoxStock.LocationDiv,
+  #TempJedoxStock.ProfitCentreCode,
+  #TempJedoxStock.SubCategory,
+  #TempJedoxStock.Colour,
+  #TempJedoxStock.Size
+ORDER BY #TempJedoxStock.FYear, #TempJedoxStock.EndOfMonthDate, [Business Division], [Profit-Cost Centre], #TempJedoxStock.SubCategory]]></query>
+    </extract>
+  </extracts>
+  <transforms />
+  <loads>
+    <load modified="1588221242669" name="ld-Stock Fact Data" type="Cube" modifiedBy="ONEPAS\richards">
+      <source nameref="FactStock" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <bulksize>100000</bulksize>
+      <cube name="Stock" splash="disabled">
+        <dimensions>
+          <dimension input="FYear" />
+          <dimension input="EndOfMonthDate" />
+          <dimension input="Version" name="Version" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Profit-Cost Centre" />
+          <dimension input="Product" name="Product" />
+          <dimension input="Colour" name="Colour" />
+          <dimension input="Size" name="Size" />
+          <dimension input="Total Stock - Unit" />
+          <dimension input="StockAtCost" />
+        </dimensions>
+      </cube>
+    </load>
+  </loads>
+  <jobs />
+</project>
