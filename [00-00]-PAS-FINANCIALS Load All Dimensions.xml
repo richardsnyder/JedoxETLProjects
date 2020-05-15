@@ -1,4 +1,4 @@
-<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="7.3" modified="1589501972375" modifiedBy="ONEPAS\richards" olapId="p65">
+<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="7.3" modified="1589510906416" modifiedBy="ONEPAS\richards" olapId="p65">
   <headers>
     <header name="comment" modified="1589428121315" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
@@ -1238,7 +1238,7 @@ WHERE IsActive = 1
         <alias origin="weight">5</alias>
       </alias_map>
     </extract>
-    <extract modified="1589501972375" name="ex-DW [Dim]: PAS StyleColour PC" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1589510906416" name="ex-DW [Dim]: PAS StyleColour PC" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[SELECT
   1 AS Sort,
@@ -1282,7 +1282,12 @@ UNION ALL
 SELECT DISTINCT
   4 Sort,
   CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(50)) + '-' + CAST(MatProduct.DepartmentName AS VARCHAR(255)) AS Parent,
-  CAST(BusinessDivisionTranslation.FinancialBusinessDivisionDescription AS VARCHAR(50)) + '-' + CASE WHEN MatProduct.CategoryName IN ('Promotional Items' , 'Accessories','MISCELLANEOUS') THEN  CAST(MatProduct.CategoryCode AS VARCHAR(255)) ELSE CAST(MatProduct.CategoryName AS VARCHAR(255)) END AS Child,
+  CAST(BusinessDivisionTranslation.FinancialBusinessDivisionDescription AS VARCHAR(50)) + '-' +
+  CASE
+    WHEN MatProduct.BusinessDivisionCode IN (10, 26) THEN CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    WHEN CAST(MatProduct.DepartmentName AS VARCHAR(255)) = CAST(MatProduct.CategoryName AS VARCHAR(255)) THEN CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    ELSE CAST(MatProduct.CategoryName AS VARCHAR(255))
+  END AS Child,
   NULL AS StyleSeason,
   NULL AS StyleColourSeason
 FROM dbo.MatProduct
@@ -1297,8 +1302,17 @@ WHERE MatProduct.IsActive = 1
 UNION ALL
 SELECT DISTINCT
   5 Sort,
-  CAST(BusinessDivisionTranslation.FinancialBusinessDivisionDescription AS VARCHAR(50)) + '-' + CASE WHEN MatProduct.CategoryName IN ('Promotional Items' , 'Accessories','MISCELLANEOUS') THEN  CAST(MatProduct.CategoryCode AS VARCHAR(255)) ELSE CAST(MatProduct.CategoryName AS VARCHAR(255)) END AS Parent,
-  CAST(BusinessDivisionTranslation.FinancialBusinessDivisionDescription AS VARCHAR(50)) + '-' + CASE WHEN MatProduct.CategoryName IN ('Promotional Items' , 'Accessories','MISCELLANEOUS') THEN  CAST(MatProduct.CategoryCode AS VARCHAR(255)) ELSE CAST(MatProduct.CategoryName AS VARCHAR(255)) END +'-' +
+  CAST(BusinessDivisionTranslation.FinancialBusinessDivisionDescription AS VARCHAR(50)) + '-' +
+  CASE
+    WHEN MatProduct.BusinessDivisionCode IN (10, 26) THEN CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    WHEN CAST(MatProduct.DepartmentName AS VARCHAR(255)) = CAST(MatProduct.CategoryName AS VARCHAR(255)) THEN CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    ELSE CAST(MatProduct.CategoryName AS VARCHAR(255))
+  END AS Parent,
+  CAST(BusinessDivisionTranslation.FinancialBusinessDivisionDescription AS VARCHAR(50)) + '-' +
+  CASE
+    WHEN MatProduct.BusinessDivisionCode IN (10,26) THEN CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    ELSE CAST(MatProduct.CategoryName AS VARCHAR(255))
+  END + '-' +
   CASE
     WHEN BusinessDivisionTranslation.FinancialBusinessDivisionDescription = 'Designworks' AND
       MatProduct.CategoryName LIKE '%PAS Group Miscellaneous%' THEN UPPER(CAST(MatProduct.SubCategoryName AS VARCHAR(255)))
@@ -1318,7 +1332,11 @@ WHERE MatProduct.IsActive = 1
 UNION ALL
 SELECT DISTINCT
   6 Sort,
-  CAST(BusinessDivisionTranslation.FinancialBusinessDivisionDescription AS VARCHAR(50)) + '-' + CASE WHEN MatProduct.CategoryName IN ('Promotional Items' , 'Accessories','MISCELLANEOUS') THEN  CAST(MatProduct.CategoryCode AS VARCHAR(255)) ELSE CAST(MatProduct.CategoryName AS VARCHAR(255)) END +'-' +
+  CAST(BusinessDivisionTranslation.FinancialBusinessDivisionDescription AS VARCHAR(50)) + '-' +
+  CASE
+    WHEN MatProduct.BusinessDivisionCode IN (10,26) THEN CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    ELSE CAST(MatProduct.CategoryName AS VARCHAR(255))
+  END + '-' +
   CASE
     WHEN BusinessDivisionTranslation.FinancialBusinessDivisionDescription = 'Designworks' AND
       MatProduct.CategoryName LIKE '%PAS Group Miscellaneous%' THEN UPPER(CAST(MatProduct.SubCategoryName AS VARCHAR(255)))
