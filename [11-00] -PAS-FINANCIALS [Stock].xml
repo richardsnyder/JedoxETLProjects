@@ -1,19 +1,19 @@
-<project name="[11-00] -PAS-FINANCIALS [Stock]" version="7.3" modified="1589415728150" modifiedBy="ONEPAS\richards" olapId="p45">
+<project name="[11-00] -PAS-FINANCIALS [Stock]" version="7.3" modified="1589938409966" modifiedBy="ONEPAS\richards" olapId="p66">
   <headers>
-    <header name="comment" modified="1589339432584" modifiedBy="ONEPAS\richards">
+    <header name="comment" modified="1589427930287" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
     </header>
   </headers>
   <variables>
-    <variable modified="1589339432584" name="StockPeriod" modifiedBy="ONEPAS\richards">
+    <variable modified="1589427930287" name="StockPeriod" modifiedBy="ONEPAS\richards">
       <comment />
     </variable>
-    <variable modified="1589339432584" name="StockWeek" modifiedBy="ONEPAS\richards">
+    <variable modified="1589427930287" name="StockWeek" modifiedBy="ONEPAS\richards">
       <comment />
     </variable>
   </variables>
   <connections>
-    <connection modified="1589339432584" name="PAS-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1589427930287" name="PAS-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <host>MTWSQL06</host>
       <port>1433</port>
       <database>DataWarehouse</database>
@@ -22,13 +22,13 @@
         <parameter name="integratedSecurity">true</parameter>
       </parameters>
     </connection>
-    <connection modified="1589414796868" name="Jedox" type="JedoxGlobal" modifiedBy="ONEPAS\richards">
+    <connection modified="1589427930287" name="Jedox" type="JedoxGlobal" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
       <globalReference>localhost</globalReference>
       <database>PAS-Financials</database>
       <ssl>off</ssl>
     </connection>
-    <connection modified="1589414796868" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1589427930287" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <host>MTWSQL06</host>
       <port>1433</port>
       <database>DataWarehouse</database>
@@ -37,7 +37,7 @@
         <parameter name="integratedSecurity">true</parameter>
       </parameters>
     </connection>
-    <connection name="CurrentWeekTextFile" type="File" modified="1589414697603" modifiedBy="ONEPAS\richards">
+    <connection name="CurrentWeekTextFile" type="File" modified="1589427930287" modifiedBy="ONEPAS\richards">
       <location type="FileSystem" />
       <database>C:\Progra~1\Jedox\Jedox Suite\tomcat\client\CurrentWeek.txt</database>
       <header>false</header>
@@ -45,9 +45,27 @@
       <quote>#none</quote>
       <enableEscape>false</enableEscape>
     </connection>
+    <connection modified="1589520631216" name="DW-RawData" type="Sqlserver" modifiedBy="ONEPAS\richards">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DataWarehouseRawData</database>
+      <parameters>
+        <parameter name="integratedSecurity">true</parameter>
+        <parameter name="autocommit">true</parameter>
+      </parameters>
+    </connection>
+    <connection modified="1589863656503" name="Jets-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>JetsDataWarehouse</database>
+      <parameters>
+        <parameter name="integratedSecurity">true</parameter>
+        <parameter name="autoCommit">true</parameter>
+      </parameters>
+    </connection>
   </connections>
   <extracts>
-    <extract modified="1589339871222" name="FactStock" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1589863481810" name="FactStock - PAS CurrentWeek - Period" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW" />
       <query><![CDATA[IF OBJECT_ID('tempdb.dbo.#TempJedoxStock') IS NOT NULL
   DROP TABLE #TempJedoxStock
@@ -449,7 +467,7 @@ UNPIVOT (
         <alias origin="#Value">9</alias>
       </alias_map>
     </extract>
-    <extract modified="1589339679103" name="exJedox[CubeSlice - Period] Stock Actual Z-Out" type="CubeSlice" modifiedBy="ONEPAS\richards">
+    <extract modified="1589427930287" name="exJedox[CubeSlice - Period] Stock Actual Z-Out" type="CubeSlice" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query mode="exclude" randomPaths="false">
         <dimensions>
@@ -463,7 +481,7 @@ UNPIVOT (
         <cube name="Stock" />
       </query>
     </extract>
-    <extract modified="1589348945239" name="ex-[Parameter] - Stock Period" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1589427930287" name="ex-[Parameter] - Stock Period" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -477,7 +495,7 @@ UNPIVOT (
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1589348992972" name="ex-[Parameter] - Stock Week" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1589427930287" name="ex-[Parameter] - Stock Week" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -491,7 +509,7 @@ UNPIVOT (
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1589339691328" name="exJedox[CubeSlice - Week] Stock Actual Z-Out" type="CubeSlice" modifiedBy="ONEPAS\richards">
+    <extract modified="1589427930287" name="exJedox[CubeSlice - Week] Stock Actual Z-Out" type="CubeSlice" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query mode="exclude" randomPaths="false">
         <dimensions>
@@ -505,26 +523,74 @@ UNPIVOT (
         <cube name="Stock" />
       </query>
     </extract>
-    <extract modified="1589412960338" name="FactStock History Load - Current Year" type="Relational" modifiedBy="ONEPAS\richards">
-      <connection nameref="PAS-DW" />
-      <query><![CDATA[IF OBJECT_ID('tempdb.dbo.#TempJedoxStock') IS NOT NULL
-  DROP TABLE #TempJedoxStock
+    <extract modified="1589938409966" name="FactStock History Load - Current Year" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW-RawData" />
+      <query><![CDATA[SELECT
+  [Stock Years],
+  [Stock Periods],
+  [Business Division],
+  [Profit-Cost Centre],
+  [StyleColour],
+  [Size],
+  [Stock Age Buckets],
+  [Stock Measures],
+  [#Value]
+FROM DataWarehouseRawData.dbo.JedoxStock
+--where [Business Division] = 37]]></query>
+      <alias_map>
+        <alias origin="Stock Years">1</alias>
+        <alias origin="Stock Periods">2</alias>
+        <alias origin="Business Division">3</alias>
+        <alias origin="Profit-Cost Centre">4</alias>
+        <alias origin="StyleColour">5</alias>
+        <alias origin="Size">6</alias>
+        <alias origin="Stock Age Buckets">7</alias>
+        <alias origin="Stock Measures">8</alias>
+        <alias origin="#Value">9</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1589427930287" name="ex-DW [Attr] Financial Period - Stock Period" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
+      <query><![CDATA[select 'Item' [#_Parameter_]
+, 'Stock Period'  Parameter
+,Format(DimDate.FinancialMonth, '\P00')  [#Value]
+from DataWarehouse.dbo.DimDate DimDate
+where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query>
+    </extract>
+    <extract modified="1589427930287" name="ex-DW [Dim] Week - Stock Week" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Extract the current retail week based on the current date.]]></comment>
+      <connection nameref="DW" />
+      <query><![CDATA[select 'Item' [#_Parameter_]
+, 'Stock Week'  Parameter
+,Format(DimDate.RetailWeek, 'WK00')  [#Value]
+from DataWarehouse.dbo.DimDate DimDate
+where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query>
+      <alias_map>
+        <alias origin="#_Parameter_">1</alias>
+        <alias origin="Parameter">2</alias>
+        <alias origin="#Value">3</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1589935512343" name="FactStock - Jets CurrentWeek - Period" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jets-DW" />
+      <query><![CDATA[IF OBJECT_ID('tempdb.dbo.#TempJetsJedoxStock') IS NOT NULL
+  DROP TABLE #TempJetsJedoxStock
 
-IF OBJECT_ID('tempdb.dbo.#TempReceipts') IS NOT NULL
-  DROP TABLE #TempReceipts
+IF OBJECT_ID('tempdb.dbo.#TempJetsReceipts') IS NOT NULL
+  DROP TABLE #TempJetsReceipts
 
-IF OBJECT_ID('tempdb.dbo.#TempReceiptDate') IS NOT NULL
-  DROP TABLE #TempReceiptDate
+IF OBJECT_ID('tempdb.dbo.#TempJetsReceiptDate') IS NOT NULL
+  DROP TABLE #TempJetsReceiptDate
 
-IF OBJECT_ID('tempdb.dbo.#LastReceiptDate') IS NOT NULL
-  DROP TABLE #LastReceiptDate
+IF OBJECT_ID('tempdb.dbo.#LastJetsReceiptDate') IS NOT NULL
+  DROP TABLE #LastJetsReceiptDate
 
 DECLARE @ReportDate DATE
 SELECT
-  @ReportDate = '20200510'
+  @ReportDate = DATEADD(DAY, -1, CAST(GETDATE() AS DATE))
 PRINT @ReportDate
 
-CREATE TABLE #TempJedoxStock (
+CREATE TABLE #TempJetsJedoxStock (
   StockDate DATE NOT NULL,
   RetailWeek INT NOT NULL,
   FinancialPeriod INT NOT NULL,
@@ -562,7 +628,7 @@ CREATE TABLE #TempJedoxStock (
 
 -- Capture Stock quantities
 
-INSERT INTO #TempJedoxStock (StockDate,
+INSERT INTO #TempJetsJedoxStock (StockDate,
 RetailWeek,
 FinancialPeriod,
 ProductId,
@@ -602,18 +668,22 @@ StockAgeDays)
     DimDate.FinancialMonth,
     FactStock.ProductId,
     FactStock.WarehouseId,
-    MatWarehouse.SalesPriceSchemeId,
+    COALESCE(MatWarehouse.SalesPriceSchemeId, 12) SalesPriceSchemeId, -- RRPAUD
     MatWarehouse.CostingZoneId,
     MatWarehouse.CostingCurrencyId,
     MatWarehouse.TransactionCurrencyId,
     NULL TransactionExchangeRate,
-    FinancialBusinessDivision.Code FinancialBusinessDivision,
-    MatWarehouse.ProfitCentreCode,
+    COALESCE(MapProfitCentre.PasBusinessDivisionCode, 37) FinancialBusinessDivision,  --Jets is 37 in PAS
+    COALESCE(MapProfitCentre.PasProfitCentreCode, 9500) ProfitCentreCode,
     CAST(MatProduct.StyleCode + ' - ' + MatProduct.StyleName + '.' + MatProduct.ColourName AS VARCHAR(255)) AS StyleColour,
-    MatProduct.SizeCode,
+    CASE
+      WHEN MatProduct.SizeCode = ''
+      THEN '$NA'
+      ELSE COALESCE(MatProduct.SizeCode, '$NA')
+    END AS SizeCode,
     FactStock.InTransitQuantity,
     FactStock.OnHandQuantity,
-    FactStock.InTransitQuantity + FactStock.OnHandQuantity AS TotalQuantity,
+    FactStock.OnHandQuantity AS TotalQuantity,
     CAST(NULL AS NUMERIC(18, 4)) AS OriginalPrice,
     CAST(NULL AS NUMERIC(18, 4)) AS CurrentPrice,
     CAST(NULL AS NUMERIC(18, 4)) AS StockAtRetailLocal,
@@ -635,105 +705,108 @@ StockAgeDays)
   ON MatProduct.ProductId = FactStock.ProductId
   INNER JOIN dbo.MatWarehouse
   ON FactStock.WarehouseId = MatWarehouse.WarehouseId
-  INNER JOIN dbo.DimBusinessDivision
-  ON MatWarehouse.BusinessDivisionId = DimBusinessDivision.Id
-  INNER JOIN dbo.DimBusinessDivision FinancialBusinessDivision
-  ON DimBusinessDivision.FinancialBusinessDivisionId = FinancialBusinessDivision.Id
   INNER JOIN dbo.DimDate
   ON FactStock.StockDate = DimDate.CalendarDate
+  LEFT JOIN MapProfitCentre
+  ON MatWarehouse.WarehouseId = MapProfitCentre.JetsWarehouseId
   WHERE FactStock.StockDate = @ReportDate
     AND MatProduct.IsReported = 1
-    AND MatProduct.ComponentGroupCode = 'FG'
+    AND MatProduct.StockTypeCode = 'Finished Goods'
     AND MatProduct.IsActive = 1
-    AND MatProduct.ColourId != 1
-    AND MatProduct.BusinessDivisionCode NOT IN (30, 19) -- White Runway and Metalicus
+    AND TunId IS NULL
+-- AND ColourId != 1
 
-PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows loaded into #TempJedoxStock'
 
+
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows loaded into #TempJetsJedoxStock'
 
 -- Add original and current prices for each product
-UPDATE #TempJedoxStock
+UPDATE #TempJetsJedoxStock
 SET OriginalPrice = COALESCE(NULLIF(FactProductPrice.OriginalPrice, 0), BackupProductPrice.OriginalPrice),
     CurrentPrice = COALESCE(NULLIF(FactProductPrice.CurrentPrice, 0), COALESCE(BackupProductPrice.CurrentPrice, 0)),
-    StockAtRetailLocal = #TempJedoxStock.TotalQuantity * CAST(COALESCE(NULLIF(FactProductPrice.CurrentPrice, 0), COALESCE(BackupProductPrice.CurrentPrice, 0)) / (1 + DimSalesPriceScheme.TaxRate) AS NUMERIC(18, 4)),
+    StockAtRetailLocal = #TempJetsJedoxStock.TotalQuantity * CAST(COALESCE(NULLIF(FactProductPrice.CurrentPrice, 0), COALESCE(BackupProductPrice.CurrentPrice, 0)) / (1 + DimSalesPriceScheme.TaxRate) AS NUMERIC(18, 4)),
     TaxRate = (DimSalesPriceScheme.TaxRate),
     TaxRateDivisor = (1 + DimSalesPriceScheme.TaxRate),
     OriginalPriceExTaxLocal = CAST(COALESCE(NULLIF(FactProductPrice.OriginalPrice, 0), COALESCE(BackupProductPrice.OriginalPrice, 0)) / (1 + DimSalesPriceScheme.TaxRate) AS NUMERIC(18, 4)),
     CurrentPriceExTaxLocal = CAST(COALESCE(NULLIF(FactProductPrice.CurrentPrice, 0), COALESCE(BackupProductPrice.CurrentPrice, 0)) / (1 + DimSalesPriceScheme.TaxRate) AS NUMERIC(18, 4))
-FROM #TempJedoxStock
+FROM #TempJetsJedoxStock
 LEFT JOIN MatWarehouse
-  ON #TempJedoxStock.WarehouseId = MatWarehouse.WarehouseId
+  ON #TempJetsJedoxStock.WarehouseId = MatWarehouse.WarehouseId
 LEFT JOIN dbo.FactProductPrice
-  ON #TempJedoxStock.StockDate = FactProductPrice.PriceDate
-  AND #TempJedoxStock.ProductId = FactProductPrice.ProductId
-  AND #TempJedoxStock.SalesPriceSchemeId = FactProductPrice.SalesPriceSchemeId
+  ON #TempJetsJedoxStock.StockDate = FactProductPrice.PriceDate
+  AND #TempJetsJedoxStock.ProductId = FactProductPrice.ProductId
+  AND #TempJetsJedoxStock.SalesPriceSchemeId = FactProductPrice.SalesPriceSchemeId
 LEFT JOIN FactProductPrice AS BackupProductPrice
-  ON BackupProductPrice.PriceDate = #TempJedoxStock.StockDate
-  AND BackupProductPrice.ProductId = #TempJedoxStock.ProductId
+  ON BackupProductPrice.PriceDate = #TempJetsJedoxStock.StockDate
+  AND BackupProductPrice.ProductId = #TempJetsJedoxStock.ProductId
   AND BackupProductPrice.SalesPriceSchemeId = MatWarehouse.BackupSalesPriceSchemeId
 INNER JOIN DimSalesPriceScheme
-  ON #TempJedoxStock.SalesPriceSchemeId = DimSalesPriceScheme.Id
+  ON #TempJetsJedoxStock.SalesPriceSchemeId = DimSalesPriceScheme.Id
 
 PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows updated with Original and Current Price in #TempJedoxStock'
 
 -- Add the Exchange rate to currency convert to AUD
-UPDATE #TempJedoxStock
+UPDATE #TempJetsJedoxStock
 SET TransactionExchangeRate = COALESCE(FactExchangeRate.ExchangeRate, 1)
-FROM #TempJedoxStock
+FROM #TempJetsJedoxStock
 INNER JOIN DimCurrency
   ON DimCurrency.Code = 'AUD'
 LEFT JOIN FactExchangeRate
-  ON FactExchangeRate.FromCurrencyId = #TempJedoxStock.TransactionCurrencyId
+  ON FactExchangeRate.FromCurrencyId = #TempJetsJedoxStock.TransactionCurrencyId
   AND FactExchangeRate.ToCurrencyId = DimCurrency.Id
   AND FactExchangeRate.RateDate = @ReportDate
 
-PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows updated with Transaction Exchange rate in #TempJedoxStock'
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows updated with Transaction Exchange rate in #TempJetsJedoxStock'
 
 -- Add the cost for each product
-UPDATE #TempJedoxStock
+UPDATE #TempJetsJedoxStock
 SET ProductCost = COALESCE(FactProductCost.Cost, 0),
-    StockAtCostLocal = #TempJedoxStock.TotalQuantity * COALESCE(FactProductCost.Cost, 0)
-FROM #TempJedoxStock
+    StockAtCostLocal = #TempJetsJedoxStock.TotalQuantity * COALESCE(FactProductCost.Cost, 0)
+FROM #TempJetsJedoxStock
 LEFT JOIN dbo.FactProductCost
-  ON #TempJedoxStock.ProductId = FactProductCost.ProductId
-  AND #TempJedoxStock.CostingZoneId = FactProductCost.CostingZoneId
+  ON #TempJetsJedoxStock.ProductId = FactProductCost.ProductId
+  AND #TempJetsJedoxStock.CostingZoneId = FactProductCost.CostingZoneId
   AND FactProductCost.CostDate = @ReportDate
 
-PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows updated with Cost Price in #TempJedoxStock'
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows updated with Cost Price in #TempJetsJedoxStock'
+
 
 -- Convert to AUD
 -- Add original and current prices for each product
-UPDATE #TempJedoxStock
-SET OriginalPriceExTaxForeign = #TempJedoxStock.OriginalPriceExTaxLocal
+UPDATE #TempJetsJedoxStock
+SET OriginalPriceExTaxForeign = #TempJetsJedoxStock.OriginalPriceExTaxLocal
     /
-    CASE
-      WHEN #TempJedoxStock.CostingCurrencyId = DimCurrency.Id THEN 1
-      ELSE #TempJedoxStock.TransactionExchangeRate
-    END,
-    CurrentPriceExTaxForeign = #TempJedoxStock.CurrentPriceExTaxLocal
+     CASE
+       WHEN #TempJetsJedoxStock.CostingCurrencyId = DimCurrency.Id
+       THEN 1
+       ELSE #TempJetsJedoxStock.TransactionExchangeRate
+     END,
+    CurrentPriceExTaxForeign = #TempJetsJedoxStock.CurrentPriceExTaxLocal
     /
-    CASE
-      WHEN #TempJedoxStock.CostingCurrencyId = DimCurrency.Id THEN 1
-      ELSE #TempJedoxStock.TransactionExchangeRate
-    END,
-    StockAtRetailForeign = #TempJedoxStock.TotalQuantity * (#TempJedoxStock.CurrentPriceExTaxLocal
+     CASE
+       WHEN #TempJetsJedoxStock.CostingCurrencyId = DimCurrency.Id
+       THEN 1
+       ELSE #TempJetsJedoxStock.TransactionExchangeRate
+     END,
+    StockAtRetailForeign = #TempJetsJedoxStock.TotalQuantity * (#TempJetsJedoxStock.CurrentPriceExTaxLocal
     /
-    CASE
-      WHEN #TempJedoxStock.CostingCurrencyId = DimCurrency.Id THEN 1
-      ELSE #TempJedoxStock.TransactionExchangeRate
-    END),
-    StockAtCostForeign = (#TempJedoxStock.StockAtCostLocal
+     CASE
+       WHEN #TempJetsJedoxStock.CostingCurrencyId = DimCurrency.Id
+       THEN 1
+       ELSE #TempJetsJedoxStock.TransactionExchangeRate
+     END),
+    StockAtCostForeign = (#TempJetsJedoxStock.StockAtCostLocal
     /
-    CASE
-      WHEN #TempJedoxStock.CostingCurrencyId = DimCurrency.Id THEN 1
-      ELSE #TempJedoxStock.TransactionExchangeRate
-    END)
-FROM #TempJedoxStock
+     CASE
+       WHEN #TempJetsJedoxStock.CostingCurrencyId = DimCurrency.Id
+       THEN 1
+       ELSE #TempJetsJedoxStock.TransactionExchangeRate
+     END)
+FROM #TempJetsJedoxStock
 INNER JOIN DimCurrency
   ON DimCurrency.Code = 'AUD'
 
-PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows converted from local currency to AUD in #TempJedoxStock'
-
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows converted from local currency to AUD in #TempJetsJedoxStock'
 
 /* Capture the last receipt date for the product that we have stock for */
 /* Capture First/Last Receipt Date product for aging */
@@ -744,11 +817,12 @@ SELECT
   MAX(FactReceipts.ReceiptDate) LastReceiptDateOriginal,
   CASE
     WHEN MatWarehouse.BusinessDivisionCode IN (18, 31, 25, 26) AND
-      MatWarehouse.CostingZoneCode = 'China' THEN DATEADD(DAY, 28, MAX(FactReceipts.ReceiptDate))
+      MatWarehouse.CostingZoneCode = 'China'
+    THEN DATEADD(DAY, 28, MAX(FactReceipts.ReceiptDate))
     ELSE MAX(FactReceipts.ReceiptDate)
   END LastReceiptDate
-INTO #TempReceiptDate
-FROM #TempJedoxStock TempStock
+INTO #TempJetsReceiptDate
+FROM #TempJetsJedoxStock TempStock
 LEFT JOIN FactReceipts
 ON TempStock.ProductId = FactReceipts.ProductId
 INNER JOIN MatWarehouse
@@ -760,29 +834,36 @@ GROUP BY
   MatWarehouse.CostingZoneCode
 HAVING MAX(FactReceipts.ReceiptDate) < @ReportDate
 
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows loaded into #TempJetsReceiptDate'
+
 -- Capture only the First and last receipt dates independant of CostingZone
 SELECT
-  #TempReceiptDate.ProductId,
-  MIN(#TempReceiptDate.FirstReceiptDate) FirstReceiptDate,
-  MAX(#TempReceiptDate.LastReceiptDate) LastReceiptDate
-INTO #LastReceiptDate
-FROM #TempReceiptDate
+  #TempJetsReceiptDate.ProductId,
+  MIN(#TempJetsReceiptDate.FirstReceiptDate) FirstReceiptDate,
+  MAX(#TempJetsReceiptDate.LastReceiptDate) LastReceiptDate
+INTO #LastJetsReceiptDate
+FROM #TempJetsReceiptDate
 GROUP BY
-  #TempReceiptDate.ProductId
+  #TempJetsReceiptDate.ProductId
+
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows loaded into #LastJetsReceiptDate'
 
 ---- Add FirstReceiptDate
 UPDATE TempStock
 SET FirstReceiptDate = LastReceiptDate.FirstReceiptDate,
     LastReceiptDate = LastReceiptDate.LastReceiptDate
-FROM #TempJedoxStock TempStock
-INNER JOIN #LastReceiptDate LastReceiptDate
+FROM #TempJetsJedoxStock TempStock
+INNER JOIN #LastJetsReceiptDate LastReceiptDate
   ON TempStock.ProductId = LastReceiptDate.ProductId
 
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows updated  with last receipt date in  #TempJetsJedoxStock'
 
 ---- Stock Aged Days based on last receipt date
 ---- Calcualte the age in days/months for Fashion only
-UPDATE #TempJedoxStock
-SET StockAgeDays = COALESCE(DATEDIFF(DAY, #TempJedoxStock.LastReceiptDate, @ReportDate), 0)
+UPDATE #TempJetsJedoxStock
+SET StockAgeDays = COALESCE(DATEDIFF(DAY, #TempJetsJedoxStock.LastReceiptDate, @ReportDate), 0)
+
+PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows updated  with stock age in days in  #TempJetsJedoxStock'
 
 /* --------------------------------------------------------------------------------------------------------- */
 
@@ -797,45 +878,61 @@ SELECT
   Unpvt.Measure [Stock Measures],
   CAST(Unpvt.[#Value] AS NUMERIC(18, 4)) AS [#Value]
 FROM (SELECT
-    #TempJedoxStock.StockDate,
-    #TempJedoxStock.RetailWeek,
-    #TempJedoxStock.FinancialBusinessDivision,
-    #TempJedoxStock.ProfitCentreCode AS 'Profit-Cost Centre',
-    #TempJedoxStock.StyleColour AS StyleColour,
-    COALESCE(#TempJedoxStock.Size, 'Size N/A') AS Size,
-    CAST(SUM(#TempJedoxStock.TotalQuantity) AS VARCHAR(50)) AS [Total Stock - Units],
-    CAST(SUM(#TempJedoxStock.StockAtCostForeign) AS VARCHAR(50)) AS [Total Stock - Cost],
-    CAST(SUM(#TempJedoxStock.StockAtRetailForeign) AS VARCHAR(50)) AS [Total Stock - Retail],
-    --    CAST(#TempJedoxStock.LastReceiptDate  AS VARCHAR(50)) AS LastReceiptDate,
-    CAST(COALESCE(#TempJedoxStock.StockAgeDays, 999999) AS VARCHAR(50)) AS StockAgeDays,
+    #TempJetsJedoxStock.StockDate,
+    #TempJetsJedoxStock.RetailWeek,
+    #TempJetsJedoxStock.FinancialBusinessDivision,
+    #TempJetsJedoxStock.ProfitCentreCode AS 'Profit-Cost Centre',
+    #TempJetsJedoxStock.StyleColour AS StyleColour,
+    #TempJetsJedoxStock.Size AS Size,
+    CAST(SUM(#TempJetsJedoxStock.TotalQuantity) AS VARCHAR(50)) AS [Total Stock - Units],
+    CAST(SUM(#TempJetsJedoxStock.StockAtCostForeign) AS VARCHAR(50)) AS [Total Stock - Cost],
+    CAST(SUM(#TempJetsJedoxStock.StockAtRetailForeign) AS VARCHAR(50)) AS [Total Stock - Retail],
+    --    CAST(#TempJetsJedoxStock.LastReceiptDate  AS VARCHAR(50)) AS LastReceiptDate,
+    CAST(COALESCE(#TempJetsJedoxStock.StockAgeDays, 999999) AS VARCHAR(50)) AS StockAgeDays,
     CAST(CASE
-      WHEN #TempJedoxStock.StockAgeDays IS NULL THEN 'Age Bucket N/A'
-      WHEN #TempJedoxStock.StockAgeDays < 31 THEN '0 to 30 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 31 AND 60 THEN '31 to 60 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 61 AND 90 THEN '61 to 90 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 91 AND 120 THEN '91 to 120 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 121 AND 150 THEN '121 to 150 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 151 AND 180 THEN '151 to 180 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 181 AND 210 THEN '181 to 210 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 211 AND 240 THEN '211 to 240 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 241 AND 270 THEN '241 to 270 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 271 AND 300 THEN '271 to 300 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 301 AND 330 THEN '301 to 330 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 331 AND 365 THEN '331 to 365 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 366 AND 731 THEN '1 to 2 Years'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 732 AND 1097 THEN '2 to 3 Years'
-      WHEN #TempJedoxStock.StockAgeDays > 1097 THEN '> 3 Years'
+      WHEN #TempJetsJedoxStock.StockAgeDays IS NULL
+      THEN 'Age Bucket N/A'
+      WHEN #TempJetsJedoxStock.StockAgeDays < 31
+      THEN '0 to 30 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 31 AND 60
+      THEN '31 to 60 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 61 AND 90
+      THEN '61 to 90 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 91 AND 120
+      THEN '91 to 120 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 121 AND 150
+      THEN '121 to 150 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 151 AND 180
+      THEN '151 to 180 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 181 AND 210
+      THEN '181 to 210 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 211 AND 240
+      THEN '211 to 240 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 241 AND 270
+      THEN '241 to 270 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 271 AND 300
+      THEN '271 to 300 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 301 AND 330
+      THEN '301 to 330 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 331 AND 365
+      THEN '331 to 365 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 366 AND 731
+      THEN '1 to 2 Years'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 732 AND 1097
+      THEN '2 to 3 Years'
+      WHEN #TempJetsJedoxStock.StockAgeDays > 1097
+      THEN '> 3 Years'
     END AS VARCHAR(50)) AS AgeBucket
-  FROM #TempJedoxStock
+  FROM #TempJetsJedoxStock
   WHERE 1 = 1
-  AND #TempJedoxStock.TotalQuantity <> 0
-  GROUP BY #TempJedoxStock.StockDate,
-           #TempJedoxStock.RetailWeek,
-           #TempJedoxStock.FinancialBusinessDivision,
-           #TempJedoxStock.ProfitCentreCode,
-           #TempJedoxStock.StyleColour,
-           #TempJedoxStock.Size,
-           #TempJedoxStock.StockAgeDays) Driver
+  AND #TempJetsJedoxStock.TotalQuantity <> 0
+  GROUP BY #TempJetsJedoxStock.StockDate,
+           #TempJetsJedoxStock.RetailWeek,
+           #TempJetsJedoxStock.FinancialBusinessDivision,
+           #TempJetsJedoxStock.ProfitCentreCode,
+           #TempJetsJedoxStock.StyleColour,
+           #TempJetsJedoxStock.Size,
+           #TempJetsJedoxStock.StockAgeDays) Driver
 UNPIVOT (
 [#Value] FOR Measure IN (Driver.[Total Stock - Units], Driver.[Total Stock - Cost], Driver.[Total Stock - Retail])
 ) Unpvt
@@ -853,45 +950,61 @@ SELECT
   Unpvt.Measure [Stock Measures],
   CAST(Unpvt.[#Value] AS NUMERIC(18, 4)) AS [#Value]
 FROM (SELECT
-    #TempJedoxStock.StockDate,
-    #TempJedoxStock.FinancialPeriod,
-    #TempJedoxStock.FinancialBusinessDivision,
-    #TempJedoxStock.ProfitCentreCode AS 'Profit-Cost Centre',
-    #TempJedoxStock.StyleColour AS StyleColour,
-    COALESCE(#TempJedoxStock.Size, 'Size N/A') AS Size,
-    CAST(SUM(#TempJedoxStock.TotalQuantity) AS VARCHAR(50)) AS [Total Stock - Units],
-    CAST(SUM(#TempJedoxStock.StockAtCostForeign) AS VARCHAR(50)) AS [Total Stock - Cost],
-    CAST(SUM(#TempJedoxStock.StockAtRetailForeign) AS VARCHAR(50)) AS [Total Stock - Retail],
-    --    CAST(#TempJedoxStock.LastReceiptDate  AS VARCHAR(50)) AS LastReceiptDate,
-    CAST(COALESCE(#TempJedoxStock.StockAgeDays, 999999) AS VARCHAR(50)) AS StockAgeDays,
+    #TempJetsJedoxStock.StockDate,
+    #TempJetsJedoxStock.FinancialPeriod,
+    #TempJetsJedoxStock.FinancialBusinessDivision,
+    #TempJetsJedoxStock.ProfitCentreCode AS 'Profit-Cost Centre',
+    #TempJetsJedoxStock.StyleColour AS StyleColour,
+    #TempJetsJedoxStock.Size AS Size,
+    CAST(SUM(#TempJetsJedoxStock.TotalQuantity) AS VARCHAR(50)) AS [Total Stock - Units],
+    CAST(SUM(#TempJetsJedoxStock.StockAtCostForeign) AS VARCHAR(50)) AS [Total Stock - Cost],
+    CAST(SUM(#TempJetsJedoxStock.StockAtRetailForeign) AS VARCHAR(50)) AS [Total Stock - Retail],
+    --    CAST(#TempJetsJedoxStock.LastReceiptDate  AS VARCHAR(50)) AS LastReceiptDate,
+    CAST(COALESCE(#TempJetsJedoxStock.StockAgeDays, 999999) AS VARCHAR(50)) AS StockAgeDays,
     CAST(CASE
-      WHEN #TempJedoxStock.StockAgeDays IS NULL THEN 'Age Bucket N/A'
-      WHEN #TempJedoxStock.StockAgeDays < 31 THEN '0 to 30 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 31 AND 60 THEN '31 to 60 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 61 AND 90 THEN '61 to 90 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 91 AND 120 THEN '91 to 120 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 121 AND 150 THEN '121 to 150 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 151 AND 180 THEN '151 to 180 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 181 AND 210 THEN '181 to 210 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 211 AND 240 THEN '211 to 240 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 241 AND 270 THEN '241 to 270 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 271 AND 300 THEN '271 to 300 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 301 AND 330 THEN '301 to 330 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 331 AND 365 THEN '331 to 365 Days'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 366 AND 731 THEN '1 to 2 Years'
-      WHEN #TempJedoxStock.StockAgeDays BETWEEN 732 AND 1097 THEN '2 to 3 Years'
-      WHEN #TempJedoxStock.StockAgeDays > 1097 THEN '> 3 Years'
+      WHEN #TempJetsJedoxStock.StockAgeDays IS NULL
+      THEN 'Age Bucket N/A'
+      WHEN #TempJetsJedoxStock.StockAgeDays < 31
+      THEN '0 to 30 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 31 AND 60
+      THEN '31 to 60 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 61 AND 90
+      THEN '61 to 90 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 91 AND 120
+      THEN '91 to 120 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 121 AND 150
+      THEN '121 to 150 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 151 AND 180
+      THEN '151 to 180 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 181 AND 210
+      THEN '181 to 210 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 211 AND 240
+      THEN '211 to 240 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 241 AND 270
+      THEN '241 to 270 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 271 AND 300
+      THEN '271 to 300 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 301 AND 330
+      THEN '301 to 330 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 331 AND 365
+      THEN '331 to 365 Days'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 366 AND 731
+      THEN '1 to 2 Years'
+      WHEN #TempJetsJedoxStock.StockAgeDays BETWEEN 732 AND 1097
+      THEN '2 to 3 Years'
+      WHEN #TempJetsJedoxStock.StockAgeDays > 1097
+      THEN '> 3 Years'
     END AS VARCHAR(50)) AS AgeBucket
-  FROM #TempJedoxStock
+  FROM #TempJetsJedoxStock
   WHERE 1 = 1
-  AND #TempJedoxStock.TotalQuantity <> 0
-  GROUP BY #TempJedoxStock.StockDate,
-           #TempJedoxStock.FinancialPeriod,
-           #TempJedoxStock.FinancialBusinessDivision,
-           #TempJedoxStock.ProfitCentreCode,
-           #TempJedoxStock.StyleColour,
-           #TempJedoxStock.Size,
-           #TempJedoxStock.StockAgeDays) Driver
+  AND #TempJetsJedoxStock.TotalQuantity <> 0
+  GROUP BY #TempJetsJedoxStock.StockDate,
+           #TempJetsJedoxStock.FinancialPeriod,
+           #TempJetsJedoxStock.FinancialBusinessDivision,
+           #TempJetsJedoxStock.ProfitCentreCode,
+           #TempJetsJedoxStock.StyleColour,
+           #TempJetsJedoxStock.Size,
+           #TempJetsJedoxStock.StockAgeDays) Driver
 UNPIVOT (
 [#Value] FOR Measure IN (Driver.[Total Stock - Units], Driver.[Total Stock - Cost], Driver.[Total Stock - Retail])
 ) Unpvt]]></query>
@@ -907,31 +1020,9 @@ UNPIVOT (
         <alias origin="#Value">9</alias>
       </alias_map>
     </extract>
-    <extract modified="1589415728150" name="ex-DW [Attr] Financial Period - Stock Period" type="Relational" modifiedBy="ONEPAS\richards">
-      <connection nameref="DW" />
-      <query><![CDATA[select 'Item' [#_Parameter_]
-, 'Stock Period'  Parameter
-,Format(DimDate.FinancialMonth, '\P00')  [#Value]
-from DataWarehouse.dbo.DimDate DimDate
-where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query>
-    </extract>
-    <extract modified="1589415647855" name="ex-DW [Dim] Week - Stock Week" type="Relational" modifiedBy="ONEPAS\richards">
-      <comment><![CDATA[Extract the current retail week based on the current date.]]></comment>
-      <connection nameref="DW" />
-      <query><![CDATA[select 'Item' [#_Parameter_]
-, 'Stock Week'  Parameter
-,Format(DimDate.RetailWeek, 'WK00')  [#Value]
-from DataWarehouse.dbo.DimDate DimDate
-where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query>
-      <alias_map>
-        <alias origin="#_Parameter_">1</alias>
-        <alias origin="Parameter">2</alias>
-        <alias origin="#Value">3</alias>
-      </alias_map>
-    </extract>
   </extracts>
   <transforms>
-    <transform modified="1589348945239" name="tf-FT [Stock] Current Period Format for Loop" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1589427930287" name="tf-FT [Stock] Current Period Format for Loop" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-[Parameter] - Stock Period" />
       </sources>
@@ -943,7 +1034,7 @@ where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query
         </coordinates>
       </target>
     </transform>
-    <transform modified="1589348982165" name="tf-FT [Stock] Current Week Format for Loop" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1589427930287" name="tf-FT [Stock] Current Week Format for Loop" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-[Parameter] - Stock Week" />
       </sources>
@@ -955,7 +1046,7 @@ where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query
         </coordinates>
       </target>
     </transform>
-    <transform modified="1589415432869" name="tf-FT [Atr]: Current Financial Period forS tock Week Parameter Update" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1589427930287" name="tf-FT [Atr]: Current Financial Period forS tock Week Parameter Update" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the current period based on date from the DW that will be used to update the Parameter cube.]]></comment>
       <sources>
         <source nameref="ex-DW [Attr] Financial Period - Stock Period" />
@@ -974,7 +1065,7 @@ where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT [Atr]: Current Week for Stock Week Parameter" type="FieldTransform" modified="1589415444711" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Atr]: Current Week for Stock Week Parameter" type="FieldTransform" modified="1589427930287" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the current period based on date from the DW that will be used to update the Parameter cube.]]></comment>
       <sources>
         <source nameref="ex-DW [Dim] Week - Stock Week" />
@@ -995,8 +1086,8 @@ where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query
     </transform>
   </transforms>
   <loads>
-    <load modified="1589351905128" name="ld-Stock Fact Data" type="Cube" modifiedBy="ONEPAS\richards">
-      <source nameref="FactStock" />
+    <load modified="1589863508661" name="ld-Stock Fact Data - PAS CurrentWeek - Period" type="Cube" modifiedBy="ONEPAS\richards">
+      <source nameref="FactStock - PAS CurrentWeek - Period" />
       <connection nameref="Jedox" />
       <mode>add</mode>
       <bulksize>1000000</bulksize>
@@ -1013,21 +1104,21 @@ where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query
         </dimensions>
       </cube>
     </load>
-    <load modified="1589339432584" name="ld-[Stock]: (Current Year - Period) Z-Out" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1589427930287" name="ld-[Stock]: (Current Year - Period) Z-Out" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="exJedox[CubeSlice - Period] Stock Actual Z-Out" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
       <bulksize>100000</bulksize>
       <cube cubeLayoutChangeMode="none" name="Stock" splash="default" />
     </load>
-    <load modified="1589339432584" name="ld-[Stock]: (Current Year - Week) Z-Out" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1589427930287" name="ld-[Stock]: (Current Year - Week) Z-Out" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="exJedox[CubeSlice - Week] Stock Actual Z-Out" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
       <bulksize>100000</bulksize>
       <cube cubeLayoutChangeMode="none" name="Stock" splash="default" />
     </load>
-    <load modified="1589409982508" name="ld-Stock Fact History Data - Current Year" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1589864812137" name="ld-Stock Fact History Data - Current Year" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="FactStock History Load - Current Year" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -1045,7 +1136,7 @@ where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query
         </dimensions>
       </cube>
     </load>
-    <load modified="1589415403068" name="ld-Jedox [Cube] Parameters - Stock Period" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1589427930287" name="ld-Jedox [Cube] Parameters - Stock Period" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Updates the Current Period ETL parameter in the #_Parameters cube]]></comment>
       <source nameref="tf-FT [Atr]: Current Financial Period forS tock Week Parameter Update" />
       <connection nameref="Jedox" />
@@ -1057,7 +1148,7 @@ where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query
         </dimensions>
       </cube>
     </load>
-    <load name="ld-Jedox [Cube] Parameters - Stock Week" type="Cube" modified="1589415379468" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube] Parameters - Stock Week" type="Cube" modified="1589427930287" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Updates the Week parameter in the #_Parameters cube]]></comment>
       <source nameref="tf-FT [Atr]: Current Week for Stock Week Parameter" />
       <connection nameref="Jedox" />
@@ -1069,32 +1160,51 @@ where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query
       </cube>
       <mode>insert</mode>
     </load>
+    <load modified="1589864797476" name="ld-Stock Fact Data - Jets CurrentWeek - Period" type="Cube" modifiedBy="ONEPAS\richards">
+      <source nameref="FactStock - Jets CurrentWeek - Period" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <bulksize>1000000</bulksize>
+      <cube cubeLayoutChangeMode="noneWithDefaultWrite" name="Stock" splash="disabled">
+        <dimensions>
+          <dimension input="Stock Years" name="Stock Years" />
+          <dimension input="Stock Periods" name="Stock Periods" />
+          <dimension input="Business Division" name="Business Division" />
+          <dimension input="Profit-Cost Centre" name="Profit-Cost Centre" />
+          <dimension input="StyleColour" name="StyleColour" />
+          <dimension input="Size" name="Size" />
+          <dimension input="Stock Age Buckets" name="Stock Age Buckets" />
+          <dimension input="Stock Measures" name="Stock Measures" />
+        </dimensions>
+      </cube>
+    </load>
   </loads>
   <jobs>
-    <job modified="1589339432584" name="Stock (Current Year - Period) Z-Out" type="Loop" modifiedBy="ONEPAS\richards">
+    <job modified="1589427930287" name="Stock (Current Year - Period) Z-Out" type="Loop" modifiedBy="ONEPAS\richards">
       <loops>
         <loop nameref="tf-FT [Stock] Current Period Format for Loop" />
       </loops>
       <execution nameref="ld-[Stock]: (Current Year - Period) Z-Out" type="load" />
       <failStatus>error</failStatus>
     </job>
-    <job modified="1589339432584" name="Stock (Current Year - Week) Z-Out" type="Loop" modifiedBy="ONEPAS\richards">
+    <job modified="1589427930287" name="Stock (Current Year - Week) Z-Out" type="Loop" modifiedBy="ONEPAS\richards">
       <loops>
         <loop nameref="tf-FT [Stock] Current Week Format for Loop" />
       </loops>
       <execution nameref="ld-[Stock]: (Current Year - Week) Z-Out" type="load" />
       <failStatus>error</failStatus>
     </job>
-    <job modified="1589339432584" name="Stock Z-Out Current Year Period Week" type="Parallel" modifiedBy="ONEPAS\richards">
+    <job modified="1589427930287" name="Stock Z-Out Current Year Period Week" type="Parallel" modifiedBy="ONEPAS\richards">
       <execution nameref="Stock (Current Year - Period) Z-Out" parallel="true" type="job" />
       <execution nameref="Stock (Current Year - Week) Z-Out" parallel="true" type="job" />
       <failStatus>error</failStatus>
     </job>
-    <job modified="1589339432584" name="Stock Current Year Fact Load" type="Standard" modifiedBy="ONEPAS\richards">
-      <execution nameref="ld-Stock Fact Data" type="load" />
+    <job modified="1589863819379" name="Stock Current Year Fact Load" type="Standard" modifiedBy="ONEPAS\richards">
+      <execution nameref="ld-Stock Fact Data - PAS CurrentWeek - Period" type="load" />
+      <execution nameref="ld-Stock Fact Data - Jets CurrentWeek - Period" type="load" />
       <failStatus>error</failStatus>
     </job>
-    <job modified="1589415537869" name="Stock Cube Nightly Load" type="Parallel" modifiedBy="ONEPAS\richards">
+    <job modified="1589427930287" name="Stock Cube Nightly Load" type="Parallel" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Loads stock data from the data warehouse from the previous day into the Stock cube for the current retail week and financial period]]></comment>
       <execution nameref="ld-Jedox [Cube] Parameters - Stock Week" parallel="false" type="load" />
       <execution nameref="ld-Jedox [Cube] Parameters - Stock Period" parallel="false" type="load" />
@@ -1102,7 +1212,7 @@ where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query
       <execution nameref="Stock Current Year Fact Load" parallel="false" type="job" />
       <failStatus>error</failStatus>
     </job>
-    <job modified="1589409966036" name="Stock Fact History Load - Current Year" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1589427930287" name="Stock Fact History Load - Current Year" type="Standard" modifiedBy="ONEPAS\richards">
       <execution nameref="ld-Stock Fact History Data - Current Year" type="load" />
       <failStatus>error</failStatus>
     </job>

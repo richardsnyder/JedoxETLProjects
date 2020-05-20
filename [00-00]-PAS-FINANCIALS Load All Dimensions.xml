@@ -1,4 +1,4 @@
-<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="7.3" modified="1589855940560" modifiedBy="ONEPAS\richards" olapId="p65">
+<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="7.3" modified="1589935584492" modifiedBy="ONEPAS\richards" olapId="p65">
   <headers>
     <header name="comment" modified="1589428121315" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
@@ -1168,21 +1168,24 @@ ORDER BY
         <alias origin="Size">2</alias>
       </alias_map>
     </extract>
-    <extract modified="1589500747326" name="ex-DW [Dim]: Jets StyleColour PC" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1589935584492" name="ex-DW [Dim]: Jets StyleColour PC" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[SELECT
+1 Sort,
   '' AS Parent,
   'TotalProducts' AS Child,
   NULL AS SeasonCode,
   NULL AS StyleSeasonCode
 UNION ALL
 SELECT
+2 Sort,
   'TotalProducts' AS Parent,
   'Jets' AS Child,
   NULL AS SeasonCode,
   NULL AS StyleSeasonCode
 UNION ALL
 SELECT DISTINCT
+3 Sort,
   'Jets' AS Parent,
   CAST('Jets' AS VARCHAR(50)) + '-' +
   CASE
@@ -1197,29 +1200,17 @@ WHERE IsActive = 1
   AND TunId IS NULL
   AND MatProduct.StockTypeCode = 'Finished Goods'
   AND IsActive = 1
-  AND ColourId != 1
+--  AND ColourId != 1
   AND IsReported = 1
 UNION ALL
 SELECT DISTINCT
+4 Sort,
   CAST('Jets' AS VARCHAR(50)) + '-' +
   CASE
     WHEN MatProduct.CategoryName = 'Point of Sale' THEN MatProduct.CategoryCode
      WHEN  MatProduct.CategoryName = 'Consumables' THEN ' Consumables'
     ELSE CAST(COALESCE(MatProduct.CategoryName, 'CategoryNA') AS VARCHAR(50))
   END AS Parent,
-  CAST('Jets' AS VARCHAR(50)) + '-' + CAST(COALESCE(MatProduct.ProductTypeName, 'SubCategoryNA') AS VARCHAR(255)) AS Child,
-  NULL AS SeasonCode,
-  NULL AS StyleSeasonCode
-FROM JetsDataWarehouse.dbo.MatProduct
-WHERE IsActive = 1
-  AND TunId IS NULL
-  AND MatProduct.StockTypeCode = 'Finished Goods'
-  AND IsActive = 1
-  AND ColourId != 1
-  AND IsReported = 1
-UNION ALL
-SELECT DISTINCT
-  CAST('Jets' AS VARCHAR(50)) + '-' + CAST(COALESCE(MatProduct.ProductTypeName, 'SubCategoryNA') AS VARCHAR(255)) AS Parent,
   CAST(MatProduct.StyleCode + ' - ' + MatProduct.StyleName + '.' + MatProduct.ColourName AS VARCHAR(255)) AS Child,
   CAST(MatProduct.SeasonCode AS VARCHAR(50)) AS StyleSeason,
   CAST(MatProduct.StoryCode AS VARCHAR(50)) AS StyleColourSeason
@@ -1228,14 +1219,15 @@ WHERE IsActive = 1
   AND TunId IS NULL
   AND MatProduct.StockTypeCode = 'Finished Goods'
   AND IsActive = 1
-  AND ColourId != 1
-  AND IsReported = 1]]></query>
+--  AND ColourId != 1
+  AND IsReported = 1
+  ORDER BY Sort, Parent,Child]]></query>
       <alias_map>
-        <alias origin="Parent">1</alias>
-        <alias origin="Child">2</alias>
-        <alias origin="SeasonCode">3</alias>
-        <alias origin="StyleSeasonCode">4</alias>
-        <alias origin="weight">5</alias>
+        <alias origin="Sort">1</alias>
+        <alias origin="Parent">2</alias>
+        <alias origin="Child">3</alias>
+        <alias origin="SeasonCode">4</alias>
+        <alias origin="StyleSeasonCode">5</alias>
       </alias_map>
     </extract>
     <extract modified="1589852720950" name="ex-DW [Dim]: PAS StyleColour PC" type="Relational" modifiedBy="ONEPAS\richards">
@@ -2989,7 +2981,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes />
       </target>
     </transform>
-    <transform modified="1589500892347" name="tr-PC [Dim]: StyleColour - Jets PC" type="TreePC" modifiedBy="ONEPAS\richards">
+    <transform modified="1589872112312" name="tr-PC [Dim]: StyleColour - Jets PC" type="TreePC" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: Jets StyleColour PC" />
       </sources>
@@ -3324,7 +3316,7 @@ This is the second pass that loads all the alternate structures in their entiret
     </load>
   </loads>
   <jobs>
-    <job modified="1589855940560" name="Dimension Load - Parallel" type="Parallel" modifiedBy="ONEPAS\richards">
+    <job modified="1589856224686" name="Dimension Load - Parallel" type="Parallel" modifiedBy="ONEPAS\richards">
       <execution nameref="ld-Jedox [Dim-Wholesale]: WholesaleCustomer" parallel="true" type="load" />
       <execution nameref="ld-Jedox [Dim-Wholesale]: Colour" parallel="true" type="load" />
       <execution nameref="ld-Jedox [Dim-Wholesale]: Season" parallel="true" type="load" />
@@ -3338,7 +3330,7 @@ This is the second pass that loads all the alternate structures in their entiret
       <execution nameref="ld-Jedox [Dim-Stock]: Size" parallel="true" type="load" />
       <execution nameref="ld-Jedox [Dim-Stock]: Style Colour - PAS PC" parallel="true" type="load" />
       <execution nameref="ld-Jedox [Dim-Stock]: Style Colour - Jets PC" parallel="true" type="load" />
-      <execution nameref="ld-Jedox [Dim-Stock]: Style Colour - Designworks PC" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Dim-Stock]: Style Colour - Designworks PC" parallel="true" type="load" />
       <failStatus>error</failStatus>
     </job>
     <job modified="1589428121315" name="Dimension Load - Sequencial" type="Standard" modifiedBy="ONEPAS\richards">
