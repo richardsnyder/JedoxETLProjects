@@ -1,4 +1,4 @@
-<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="7.3" modified="1589935584492" modifiedBy="ONEPAS\richards" olapId="p65">
+<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="7.3" modified="1590028568803" modifiedBy="ONEPAS\richards" olapId="p65">
   <headers>
     <header name="comment" modified="1589428121315" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
@@ -6,7 +6,7 @@
   </headers>
   <variables />
   <connections>
-    <connection modified="1589428121315" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1590027716812" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <host>MTWSQL06</host>
       <port>1433</port>
       <database>DataWarehouse</database>
@@ -24,7 +24,7 @@
         <parameter name="autoCommit">true</parameter>
       </parameters>
     </connection>
-    <connection modified="1589428121315" name="Jedox" type="JedoxGlobal" modifiedBy="ONEPAS\richards">
+    <connection modified="1590027716812" name="Jedox" type="JedoxGlobal" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
       <globalReference>localhost</globalReference>
       <database>PAS-Financials</database>
@@ -1230,7 +1230,7 @@ WHERE IsActive = 1
         <alias origin="StyleSeasonCode">5</alias>
       </alias_map>
     </extract>
-    <extract modified="1589852720950" name="ex-DW [Dim]: PAS StyleColour PC" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1590027716812" name="ex-DW [Dim]: PAS StyleColour PC" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[SELECT
   1 AS Sort,
@@ -1458,6 +1458,338 @@ ORDER BY
   Sort,
   parent,
   Child]]></query>
+      <alias_map>
+        <alias origin="Sort">1</alias>
+        <alias origin="Parent">2</alias>
+        <alias origin="Child">3</alias>
+        <alias origin="DivisionName">4</alias>
+        <alias origin="DepartmentName">5</alias>
+        <alias origin="CategoryName">6</alias>
+        <alias origin="SubCategoryName">7</alias>
+        <alias origin="StyleSeason">8</alias>
+        <alias origin="StyleColourSeason">9</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1590028058338" name="ex-DW [Dim]: PAS StyleColour PC - 2019" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
+      <query><![CDATA[IF OBJECT_ID('tempdb.dbo.#Products') IS NOT NULL
+	DROP TABLE #Products
+
+SELECT DISTINCT ProductId
+INTO #Products
+FROM FactStock
+INNER JOIN DimDate 
+ON FactStock.StockDate = DimDate.CalendarDate
+WHERE 1=1
+AND (DimDate.RetailYear = 2019 OR DimDate.FinancialYear= 2019)
+
+
+SELECT
+  1 AS Sort,
+  '' AS Parent,
+  'TotalProducts' AS Child,
+  NULL AS DivisionName,
+  NULL AS DepartmentName,
+  NULL AS CategoryName,
+  NULL AS SubCategoryName,
+  NULL AS StyleSeason,
+  NULL AS StyleColourSeason
+
+UNION ALL
+SELECT DISTINCT
+  2 AS Sort, -- Division
+  'TotalProducts' AS Parent,
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS Child,
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS DivisionName,
+  NULL AS DepartmentName,
+  NULL AS CategoryName,
+  NULL AS SubCategoryName,
+  NULL AS StyleSeason,
+  NULL AS StyleColourSeason
+FROM dbo.MatProduct
+LEFT OUTER JOIN dbo.DimBusinessDivision AS BusinessDivisionTranslation
+ON BusinessDivisionTranslation.Code = MatProduct.BusinessDivisionCode
+WHERE MatProduct.IsActive = 1
+  AND TunId IS NULL
+  AND MatProduct.BusinessDivisionCode NOT IN ('19', '30', '16')
+  AND ComponentGroupCode = 'FG'
+  AND ColourId != 1
+  AND IsReported = 1
+
+UNION ALL
+SELECT DISTINCT
+  3 Sort, -- Department
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS Parent,
+  CAST(MatProduct.DepartmentCode AS VARCHAR(255)) AS Child,
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS DivisionName,
+  CAST(MatProduct.DepartmentName AS VARCHAR(255)) AS DepartmentName,
+  NULL AS CategoryName,
+  NULL AS SubCategoryName,
+  NULL AS StyleSeason,
+  NULL AS StyleColourSeason
+FROM dbo.MatProduct
+LEFT OUTER JOIN dbo.DimBusinessDivision AS BusinessDivisionTranslation
+ON BusinessDivisionTranslation.Code = MatProduct.BusinessDivisionCode
+WHERE MatProduct.IsActive = 1
+  AND TunId IS NULL
+  AND MatProduct.BusinessDivisionCode NOT IN ('19', '30', '16')
+  AND ComponentGroupCode = 'FG'
+  AND ColourId != 1
+  AND IsReported = 1
+
+UNION ALL
+SELECT DISTINCT
+  4 Sort, -- Category
+  CAST(MatProduct.DepartmentCode AS VARCHAR(255)) AS Parent,
+  CASE
+    WHEN CAST(MatProduct.DepartmentCode AS VARCHAR(255)) = CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    THEN CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) + '-' + CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    ELSE CAST(MatProduct.CategoryCode AS VARCHAR(255))
+  END AS Child,
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS DivisionName,
+  CAST(MatProduct.DepartmentName AS VARCHAR(255)) AS DepartmentName,
+  CAST(MatProduct.CategoryName AS VARCHAR(255)) AS CategoryName,
+  NULL AS SubCategoryName,
+  NULL AS StyleSeason,
+  NULL AS StyleColourSeason
+FROM dbo.MatProduct
+LEFT OUTER JOIN dbo.DimBusinessDivision AS BusinessDivisionTranslation
+ON BusinessDivisionTranslation.Code = MatProduct.BusinessDivisionCode
+WHERE MatProduct.IsActive = 1
+  AND TunId IS NULL
+  AND MatProduct.BusinessDivisionCode NOT IN ('19', '30', '16')
+  AND ComponentGroupCode = 'FG'
+  AND ColourId != 1
+  AND IsReported = 1
+
+UNION ALL
+SELECT DISTINCT
+  5 Sort, -- Subcategory
+  CASE
+    WHEN CAST(MatProduct.DepartmentCode AS VARCHAR(255)) = CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    THEN CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) + '-' + CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    ELSE CAST(MatProduct.CategoryCode AS VARCHAR(255))
+  END AS Parent,
+  CASE
+    WHEN CAST(MatProduct.CategoryCode AS VARCHAR(255)) = CAST(MatProduct.SubCategoryCode AS VARCHAR(255))
+    THEN CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) + '-' + CAST(MatProduct.SubCategoryCode AS VARCHAR(255))
+    ELSE CAST(MatProduct.SubCategoryCode AS VARCHAR(255))
+  END AS Child,
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS DivisionName,
+  CAST(MatProduct.DepartmentName AS VARCHAR(255)) AS DepartmentName,
+  CAST(MatProduct.CategoryName AS VARCHAR(255)) AS CategoryName,
+  CAST(MatProduct.SubCategoryName AS VARCHAR(255)) AS SubCategoryName,
+  NULL AS StyleSeason,
+  NULL AS StyleColourSeason
+FROM dbo.MatProduct
+LEFT OUTER JOIN dbo.DimBusinessDivision AS BusinessDivisionTranslation
+ON BusinessDivisionTranslation.Code = MatProduct.BusinessDivisionCode
+WHERE MatProduct.IsActive = 1
+  AND TunId IS NULL
+  AND MatProduct.BusinessDivisionCode NOT IN ('19', '30', '16')
+  AND ComponentGroupCode = 'FG'
+  AND ColourId != 1
+  AND IsReported = 1
+
+UNION ALL
+SELECT DISTINCT
+  6 Sort,  -- Style Colour
+  CASE
+    WHEN CAST(MatProduct.CategoryCode AS VARCHAR(255)) = CAST(MatProduct.SubCategoryCode AS VARCHAR(255))
+    THEN CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) + '-' + CAST(MatProduct.SubCategoryCode AS VARCHAR(255))
+    ELSE CAST(MatProduct.SubCategoryCode AS VARCHAR(255))
+  END AS Parent,
+  CAST(MatProduct.StyleCode + ' - ' + MatProduct.StyleName + '.' + MatProduct.ColourName AS VARCHAR(255)) AS Child,
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS DivisionName,
+  CAST(MatProduct.DepartmentName AS VARCHAR(255)) AS DepartmentName,
+  CAST(MatProduct.CategoryName AS VARCHAR(255)) AS CategoryName,
+  CAST(MatProduct.SubCategoryName AS VARCHAR(255)) AS SubCategoryName,
+  CAST(MatProduct.StyleSeasonCode AS VARCHAR(50)) AS StyleSeason,
+  CAST(MatProduct.StyleColourSeasonCode AS VARCHAR(50)) AS StyleColourSeason
+FROM dbo.MatProduct
+LEFT OUTER JOIN dbo.DimBusinessDivision AS BusinessDivisionTranslation
+ON BusinessDivisionTranslation.Code = MatProduct.BusinessDivisionCode
+INNER JOIN #Products
+ON MatProduct.ProductId = #Products.ProductId
+WHERE 1 = 1
+--  AND MatProduct.IsActive = 1
+  AND TunId IS NULL
+  AND MatProduct.BusinessDivisionCode NOT IN ('19', '30', '16')
+  AND ComponentGroupCode = 'FG'
+  AND ColourId != 1
+  AND IsReported = 1
+ORDER BY
+  Sort,
+  parent,
+  Child
+  
+DROP TABLE #Products]]></query>
+      <alias_map>
+        <alias origin="Sort">1</alias>
+        <alias origin="Parent">2</alias>
+        <alias origin="Child">3</alias>
+        <alias origin="DivisionName">4</alias>
+        <alias origin="DepartmentName">5</alias>
+        <alias origin="CategoryName">6</alias>
+        <alias origin="SubCategoryName">7</alias>
+        <alias origin="StyleSeason">8</alias>
+        <alias origin="StyleColourSeason">9</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1590028568803" name="ex-DW [Dim]: Designworks StyleColour PC - 2019" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
+      <query><![CDATA[IF OBJECT_ID('tempdb.dbo.#Products') IS NOT NULL
+	DROP TABLE #Products
+
+SELECT DISTINCT ProductId
+INTO #Products
+FROM FactStock
+INNER JOIN DimDate 
+ON FactStock.StockDate = DimDate.CalendarDate
+WHERE 1=1
+AND (DimDate.RetailYear = 2019 OR DimDate.FinancialYear= 2019)
+
+
+SELECT
+  1 AS Sort,
+  '' AS Parent,
+  'TotalProducts' AS Child,
+  NULL AS DivisionName,
+  NULL AS DepartmentName,
+  NULL AS CategoryName,
+  NULL AS SubCategoryName,
+  NULL AS StyleSeason,
+  NULL AS StyleColourSeason
+
+UNION ALL
+SELECT DISTINCT
+  2 AS Sort, -- Division
+  'TotalProducts' AS Parent,
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS Child,
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS DivisionName,
+  NULL AS DepartmentName,
+  NULL AS CategoryName,
+  NULL AS SubCategoryName,
+  NULL AS StyleSeason,
+  NULL AS StyleColourSeason
+FROM dbo.MatProduct
+LEFT OUTER JOIN dbo.DimBusinessDivision AS BusinessDivisionTranslation
+ON BusinessDivisionTranslation.Code = MatProduct.BusinessDivisionCode
+WHERE MatProduct.IsActive = 1
+  AND TunId IS NULL
+  AND MatProduct.BusinessDivisionCode IN ('16')
+  AND ComponentGroupCode = 'FG'
+  AND ColourId != 1
+  AND IsReported = 1
+
+UNION ALL
+SELECT DISTINCT
+  3 Sort, -- Department
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS Parent,
+  CAST(MatProduct.DepartmentCode AS VARCHAR(255)) AS Child,
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS DivisionName,
+  CAST(MatProduct.DepartmentName AS VARCHAR(255)) AS DepartmentName,
+  NULL AS CategoryName,
+  NULL AS SubCategoryName,
+  NULL AS StyleSeason,
+  NULL AS StyleColourSeason
+FROM dbo.MatProduct
+LEFT OUTER JOIN dbo.DimBusinessDivision AS BusinessDivisionTranslation
+ON BusinessDivisionTranslation.Code = MatProduct.BusinessDivisionCode
+WHERE MatProduct.IsActive = 1
+  AND TunId IS NULL
+  AND MatProduct.BusinessDivisionCode IN ('16')
+  AND ComponentGroupCode = 'FG'
+  AND ColourId != 1
+  AND IsReported = 1
+
+UNION ALL
+SELECT DISTINCT
+  4 Sort, -- Category
+  CAST(MatProduct.DepartmentCode AS VARCHAR(255)) AS Parent,
+  CASE
+    WHEN CAST(MatProduct.DepartmentCode AS VARCHAR(255)) = CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    THEN CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) + '-' + CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    ELSE CAST(MatProduct.CategoryCode AS VARCHAR(255))
+  END AS Child,
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS DivisionName,
+  CAST(MatProduct.DepartmentName AS VARCHAR(255)) AS DepartmentName,
+  CAST(MatProduct.CategoryName AS VARCHAR(255)) AS CategoryName,
+  NULL AS SubCategoryName,
+  NULL AS StyleSeason,
+  NULL AS StyleColourSeason
+FROM dbo.MatProduct
+LEFT OUTER JOIN dbo.DimBusinessDivision AS BusinessDivisionTranslation
+ON BusinessDivisionTranslation.Code = MatProduct.BusinessDivisionCode
+WHERE MatProduct.IsActive = 1
+  AND TunId IS NULL
+  AND MatProduct.BusinessDivisionCode IN ('16')
+  AND ComponentGroupCode = 'FG'
+  AND ColourId != 1
+  AND IsReported = 1
+
+UNION ALL
+SELECT DISTINCT
+  5 Sort, -- Subcategory
+  CASE
+    WHEN CAST(MatProduct.DepartmentCode AS VARCHAR(255)) = CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    THEN CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) + '-' + CAST(MatProduct.CategoryCode AS VARCHAR(255))
+    ELSE CAST(MatProduct.CategoryCode AS VARCHAR(255))
+  END AS Parent,
+  CASE
+    WHEN CAST(MatProduct.CategoryCode AS VARCHAR(255)) = CAST(MatProduct.SubCategoryCode AS VARCHAR(255))
+    THEN CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) + '-' + CAST(MatProduct.SubCategoryCode AS VARCHAR(255))
+    ELSE CAST(MatProduct.SubCategoryCode AS VARCHAR(255))
+  END AS Child,
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS DivisionName,
+  CAST(MatProduct.DepartmentName AS VARCHAR(255)) AS DepartmentName,
+  CAST(MatProduct.CategoryName AS VARCHAR(255)) AS CategoryName,
+  CAST(MatProduct.SubCategoryName AS VARCHAR(255)) AS SubCategoryName,
+  NULL AS StyleSeason,
+  NULL AS StyleColourSeason
+FROM dbo.MatProduct
+LEFT OUTER JOIN dbo.DimBusinessDivision AS BusinessDivisionTranslation
+ON BusinessDivisionTranslation.Code = MatProduct.BusinessDivisionCode
+WHERE MatProduct.IsActive = 1
+  AND TunId IS NULL
+  AND MatProduct.BusinessDivisionCode IN ('16')
+  AND ComponentGroupCode = 'FG'
+  AND ColourId != 1
+  AND IsReported = 1
+
+UNION ALL
+SELECT DISTINCT
+  6 Sort,  -- Style Colour
+  CASE
+    WHEN CAST(MatProduct.CategoryCode AS VARCHAR(255)) = CAST(MatProduct.SubCategoryCode AS VARCHAR(255))
+    THEN CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) + '-' + CAST(MatProduct.SubCategoryCode AS VARCHAR(255))
+    ELSE CAST(MatProduct.SubCategoryCode AS VARCHAR(255))
+  END AS Parent,
+  CAST(MatProduct.StyleCode + ' - ' + MatProduct.StyleName + '.' + MatProduct.ColourName AS VARCHAR(255)) AS Child,
+  CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS DivisionName,
+  CAST(MatProduct.DepartmentName AS VARCHAR(255)) AS DepartmentName,
+  CAST(MatProduct.CategoryName AS VARCHAR(255)) AS CategoryName,
+  CAST(MatProduct.SubCategoryName AS VARCHAR(255)) AS SubCategoryName,
+  CAST(MatProduct.StyleSeasonCode AS VARCHAR(50)) AS StyleSeason,
+  CAST(MatProduct.StyleColourSeasonCode AS VARCHAR(50)) AS StyleColourSeason
+FROM dbo.MatProduct
+LEFT OUTER JOIN dbo.DimBusinessDivision AS BusinessDivisionTranslation
+ON BusinessDivisionTranslation.Code = MatProduct.BusinessDivisionCode
+INNER JOIN #Products
+ON MatProduct.ProductId = #Products.ProductId
+WHERE 1 = 1
+--  AND MatProduct.IsActive = 1
+  AND TunId IS NULL
+  AND MatProduct.BusinessDivisionCode IN ('16')
+  AND ComponentGroupCode = 'FG'
+  AND ColourId != 1
+  AND IsReported = 1
+ORDER BY
+  Sort,
+  parent,
+  Child
+  
+DROP TABLE #Products]]></query>
       <alias_map>
         <alias origin="Sort">1</alias>
         <alias origin="Parent">2</alias>
@@ -3005,7 +3337,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </attributes>
       </target>
     </transform>
-    <transform modified="1589786555237" name="tr-PC [Dim]: StyleColour - PAS PC" type="TreePC" modifiedBy="ONEPAS\richards">
+    <transform modified="1590027716812" name="tr-PC [Dim]: StyleColour - PAS PC" type="TreePC" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: PAS StyleColour PC" />
       </sources>
@@ -3044,6 +3376,78 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
     <transform modified="1589853519350" name="tr-PC [Dim]: StyleColour - Designworks PC" type="TreePC" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: Designworks StyleColour PC" />
+      </sources>
+      <target>
+        <parent>
+          <input nameref="Parent" />
+        </parent>
+        <child>
+          <input nameref="Child" />
+        </child>
+        <weight>
+          <input constant="1" />
+        </weight>
+        <attributes>
+          <attribute name="DivisionName" type="string">
+            <input nameref="DivisionName" />
+          </attribute>
+          <attribute name="DepartmentName" type="string">
+            <input nameref="DepartmentName" />
+          </attribute>
+          <attribute name="CategoryName" type="string">
+            <input nameref="CategoryName" />
+          </attribute>
+          <attribute name="SubCategoryName" type="string">
+            <input nameref="SubCategoryName" />
+          </attribute>
+          <attribute name="StyleSeason" type="string">
+            <input nameref="StyleSeason" />
+          </attribute>
+          <attribute name="StyleColourSeason" type="string">
+            <input nameref="StyleColourSeason" />
+          </attribute>
+        </attributes>
+      </target>
+    </transform>
+    <transform modified="1590027806903" name="tr-PC [Dim]: StyleColour - PAS PC - 2019" type="TreePC" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-DW [Dim]: PAS StyleColour PC - 2019" />
+      </sources>
+      <target>
+        <parent>
+          <input nameref="Parent" />
+        </parent>
+        <child>
+          <input nameref="Child" />
+        </child>
+        <weight>
+          <input constant="1" />
+        </weight>
+        <attributes>
+          <attribute name="DivisionName" type="string">
+            <input nameref="DivisionName" />
+          </attribute>
+          <attribute name="DepartmentName" type="string">
+            <input nameref="DepartmentName" />
+          </attribute>
+          <attribute name="CategoryName" type="string">
+            <input nameref="CategoryName" />
+          </attribute>
+          <attribute name="SubCategoryName" type="string">
+            <input nameref="SubCategoryName" />
+          </attribute>
+          <attribute name="StyleSeason" type="string">
+            <input nameref="StyleSeason" />
+          </attribute>
+          <attribute name="StyleColourSeason" type="string">
+            <input nameref="StyleColourSeason" />
+          </attribute>
+        </attributes>
+      </target>
+    </transform>
+    <transform modified="1590028426357" name="tr-PC [Dim]: StyleColour - Designworks PC - 2019" type="TreePC" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-DW [Dim]: Designworks StyleColour PC - 2019" />
       </sources>
       <target>
         <parent>
@@ -3307,6 +3711,24 @@ This is the second pass that loads all the alternate structures in their entiret
     </load>
     <load modified="1589853478554" name="ld-Jedox [Dim-Stock]: Style Colour - Designworks PC" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tr-PC [Dim]: StyleColour - Designworks PC" />
+      <connection nameref="Jedox" />
+      <dimension name="StyleColour">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load modified="1590027829163" name="ld-Jedox [Dim-Stock]: Style Colour - PAS PC - 2019" type="Dimension" modifiedBy="ONEPAS\richards">
+      <source nameref="tr-PC [Dim]: StyleColour - PAS PC - 2019" />
+      <connection nameref="Jedox" />
+      <dimension name="StyleColour">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load modified="1590028417507" name="ld-Jedox [Dim-Stock]: Style Colour - Designworks PC - 2019" type="Dimension" modifiedBy="ONEPAS\richards">
+      <source nameref="tr-PC [Dim]: StyleColour - Designworks PC - 2019" />
       <connection nameref="Jedox" />
       <dimension name="StyleColour">
         <elements mode="add" />
