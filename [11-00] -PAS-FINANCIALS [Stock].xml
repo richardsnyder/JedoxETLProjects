@@ -1,19 +1,21 @@
-<project name="[11-00] -PAS-FINANCIALS [Stock]" version="7.3" modified="1589938409966" modifiedBy="ONEPAS\richards" olapId="p66">
+<project name="[11-00] -PAS-FINANCIALS [Stock]" version="7.3" modified="1590474225763" modifiedBy="ONEPAS\richards" olapId="p66">
   <headers>
-    <header name="comment" modified="1589427930287" modifiedBy="ONEPAS\richards">
+    <header name="comment" modified="1590470139036" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
     </header>
   </headers>
   <variables>
-    <variable modified="1589427930287" name="StockPeriod" modifiedBy="ONEPAS\richards">
+    <variable modified="1590470139036" name="StockPeriod" modifiedBy="ONEPAS\richards">
       <comment />
     </variable>
-    <variable modified="1589427930287" name="StockWeek" modifiedBy="ONEPAS\richards">
+    <variable modified="1590470139036" name="StockWeek" modifiedBy="ONEPAS\richards">
       <comment />
     </variable>
+    <variable name="StockFinancialYear" modified="1590470885742" modifiedBy="ONEPAS\richards" />
+    <variable name="StockRetailYear" modified="1590471816450" modifiedBy="ONEPAS\richards" />
   </variables>
   <connections>
-    <connection modified="1589427930287" name="PAS-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1590470139036" name="PAS-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <host>MTWSQL06</host>
       <port>1433</port>
       <database>DataWarehouse</database>
@@ -22,13 +24,13 @@
         <parameter name="integratedSecurity">true</parameter>
       </parameters>
     </connection>
-    <connection modified="1589427930287" name="Jedox" type="JedoxGlobal" modifiedBy="ONEPAS\richards">
+    <connection modified="1590470139036" name="Jedox" type="JedoxGlobal" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
       <globalReference>localhost</globalReference>
       <database>PAS-Financials</database>
       <ssl>off</ssl>
     </connection>
-    <connection modified="1589427930287" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1590470139036" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <host>MTWSQL06</host>
       <port>1433</port>
       <database>DataWarehouse</database>
@@ -37,7 +39,7 @@
         <parameter name="integratedSecurity">true</parameter>
       </parameters>
     </connection>
-    <connection name="CurrentWeekTextFile" type="File" modified="1589427930287" modifiedBy="ONEPAS\richards">
+    <connection name="CurrentWeekTextFile" type="File" modified="1590470139036" modifiedBy="ONEPAS\richards">
       <location type="FileSystem" />
       <database>C:\Progra~1\Jedox\Jedox Suite\tomcat\client\CurrentWeek.txt</database>
       <header>false</header>
@@ -45,7 +47,7 @@
       <quote>#none</quote>
       <enableEscape>false</enableEscape>
     </connection>
-    <connection modified="1589520631216" name="DW-RawData" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1590470139036" name="DW-RawData" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <host>MTWSQL06</host>
       <port>1433</port>
       <database>DataWarehouseRawData</database>
@@ -54,7 +56,7 @@
         <parameter name="autocommit">true</parameter>
       </parameters>
     </connection>
-    <connection modified="1589863656503" name="Jets-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1590470139036" name="Jets-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <host>MTWSQL06</host>
       <port>1433</port>
       <database>JetsDataWarehouse</database>
@@ -65,7 +67,7 @@
     </connection>
   </connections>
   <extracts>
-    <extract modified="1589863481810" name="FactStock - PAS CurrentWeek - Period" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1590473827420" name="FactStock - PAS CurrentWeek - Period" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW" />
       <query><![CDATA[IF OBJECT_ID('tempdb.dbo.#TempJedoxStock') IS NOT NULL
   DROP TABLE #TempJedoxStock
@@ -86,7 +88,9 @@ PRINT @ReportDate
 
 CREATE TABLE #TempJedoxStock (
   StockDate DATE NOT NULL,
+  RetailYear INT NOT NULL,
   RetailWeek INT NOT NULL,
+  FInancialYear INT NOT NULL,
   FinancialPeriod INT NOT NULL,
   ProductId INT NOT NULL,
   WarehouseId INT NOT NULL,
@@ -123,7 +127,9 @@ CREATE TABLE #TempJedoxStock (
 -- Capture Stock quantities
 
 INSERT INTO #TempJedoxStock (StockDate,
+RetailYear,
 RetailWeek,
+FInancialYear,
 FinancialPeriod,
 ProductId,
 WarehouseId,
@@ -158,7 +164,9 @@ StockAgeDays)
 
   SELECT
     FactStock.StockDate,
+    DimDate.RetailYear,
     DimDate.RetailWeek,
+    DimDate.FinancialYear,
     DimDate.FinancialMonth,
     FactStock.ProductId,
     FactStock.WarehouseId,
@@ -347,7 +355,7 @@ SET StockAgeDays = COALESCE(DATEDIFF(DAY, #TempJedoxStock.LastReceiptDate, @Repo
 /* --------------------------------------------------------------------------------------------------------- */
 
 SELECT
-  'Current Year' [Stock Years],
+  Unpvt.RetailYear [Stock Years],
   FORMAT(Unpvt.RetailWeek, 'WK00') [Stock Periods],
   Unpvt.FinancialBusinessDivision [Business Division],
   Unpvt.[Profit-Cost Centre],
@@ -358,6 +366,7 @@ SELECT
   CAST(Unpvt.[#Value] AS NUMERIC(18, 4)) AS [#Value]
 FROM (SELECT
     #TempJedoxStock.StockDate,
+    #TempJedoxStock.RetailYear,
     #TempJedoxStock.RetailWeek,
     #TempJedoxStock.FinancialBusinessDivision,
     #TempJedoxStock.ProfitCentreCode AS 'Profit-Cost Centre',
@@ -390,6 +399,7 @@ FROM (SELECT
   WHERE 1 = 1
   AND #TempJedoxStock.TotalQuantity <> 0
   GROUP BY #TempJedoxStock.StockDate,
+           #TempJedoxStock.RetailYear,
            #TempJedoxStock.RetailWeek,
            #TempJedoxStock.FinancialBusinessDivision,
            #TempJedoxStock.ProfitCentreCode,
@@ -403,7 +413,7 @@ UNPIVOT (
 UNION ALL
 
 SELECT
-  'Current Year' [Stock Years],
+  Unpvt.FinancialYear [Stock Years],
   FORMAT(Unpvt.FinancialPeriod, '\P00') [Stock Periods],
   Unpvt.FinancialBusinessDivision [Business Division],
   Unpvt.[Profit-Cost Centre],
@@ -414,6 +424,7 @@ SELECT
   CAST(Unpvt.[#Value] AS NUMERIC(18, 4)) AS [#Value]
 FROM (SELECT
     #TempJedoxStock.StockDate,
+    #TempJedoxStock.FInancialYear,
     #TempJedoxStock.FinancialPeriod,
     #TempJedoxStock.FinancialBusinessDivision,
     #TempJedoxStock.ProfitCentreCode AS 'Profit-Cost Centre',
@@ -446,6 +457,7 @@ FROM (SELECT
   WHERE 1 = 1
   AND #TempJedoxStock.TotalQuantity <> 0
   GROUP BY #TempJedoxStock.StockDate,
+           #TempJedoxStock.FInancialYear,
            #TempJedoxStock.FinancialPeriod,
            #TempJedoxStock.FinancialBusinessDivision,
            #TempJedoxStock.ProfitCentreCode,
@@ -467,12 +479,12 @@ UNPIVOT (
         <alias origin="#Value">9</alias>
       </alias_map>
     </extract>
-    <extract modified="1589427930287" name="exJedox[CubeSlice - Period] Stock Actual Z-Out" type="CubeSlice" modifiedBy="ONEPAS\richards">
+    <extract modified="1590471756902" name="exJedox[CubeSlice - Period] Stock Actual Z-Out" type="CubeSlice" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query mode="exclude" randomPaths="false">
         <dimensions>
           <dimension name="Stock Years">
-            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Current Year]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${StockFinancialYear}]]></condition>
           </dimension>
           <dimension name="Stock Periods">
             <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${StockPeriod}]]></condition>
@@ -481,7 +493,7 @@ UNPIVOT (
         <cube name="Stock" />
       </query>
     </extract>
-    <extract modified="1589427930287" name="ex-[Parameter] - Stock Period" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1590471253343" name="ex-[Parameter] - Stock Period" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -495,7 +507,7 @@ UNPIVOT (
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1589427930287" name="ex-[Parameter] - Stock Week" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1590470139036" name="ex-[Parameter] - Stock Week" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -509,12 +521,12 @@ UNPIVOT (
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1589427930287" name="exJedox[CubeSlice - Week] Stock Actual Z-Out" type="CubeSlice" modifiedBy="ONEPAS\richards">
+    <extract modified="1590471846872" name="exJedox[CubeSlice - Week] Stock Actual Z-Out" type="CubeSlice" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query mode="exclude" randomPaths="false">
         <dimensions>
           <dimension name="Stock Years">
-            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Current Year]]></condition>
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${StockRetailYear}]]></condition>
           </dimension>
           <dimension name="Stock Periods">
             <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${StockWeek}]]></condition>
@@ -523,7 +535,7 @@ UNPIVOT (
         <cube name="Stock" />
       </query>
     </extract>
-    <extract modified="1589938409966" name="FactStock History Load - Current Year" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1590470139036" name="FactStock History Load - Current Year" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW-RawData" />
       <query><![CDATA[SELECT
   [Stock Years],
@@ -549,7 +561,7 @@ FROM DataWarehouseRawData.dbo.JedoxStock
         <alias origin="#Value">9</alias>
       </alias_map>
     </extract>
-    <extract modified="1589427930287" name="ex-DW [Attr] Financial Period - Stock Period" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1590470139036" name="ex-DW [Attr] Financial Period - Stock Period" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[select 'Item' [#_Parameter_]
 , 'Stock Period'  Parameter
@@ -557,7 +569,7 @@ FROM DataWarehouseRawData.dbo.JedoxStock
 from DataWarehouse.dbo.DimDate DimDate
 where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query>
     </extract>
-    <extract modified="1589427930287" name="ex-DW [Dim] Week - Stock Week" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1590470139036" name="ex-DW [Dim] Week - Stock Week" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract the current retail week based on the current date.]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[select 'Item' [#_Parameter_]
@@ -571,7 +583,7 @@ where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query
         <alias origin="#Value">3</alias>
       </alias_map>
     </extract>
-    <extract modified="1589935512343" name="FactStock - Jets CurrentWeek - Period" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1590474135522" name="FactStock - Jets CurrentWeek - Period" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="Jets-DW" />
       <query><![CDATA[IF OBJECT_ID('tempdb.dbo.#TempJetsJedoxStock') IS NOT NULL
   DROP TABLE #TempJetsJedoxStock
@@ -592,7 +604,9 @@ PRINT @ReportDate
 
 CREATE TABLE #TempJetsJedoxStock (
   StockDate DATE NOT NULL,
+  RetailYear INT NOT NULL,
   RetailWeek INT NOT NULL,
+  FinancialYear INT NOT NULL,
   FinancialPeriod INT NOT NULL,
   ProductId INT NOT NULL,
   WarehouseId INT NOT NULL,
@@ -629,7 +643,9 @@ CREATE TABLE #TempJetsJedoxStock (
 -- Capture Stock quantities
 
 INSERT INTO #TempJetsJedoxStock (StockDate,
+RetailYear,
 RetailWeek,
+FinancialYear,
 FinancialPeriod,
 ProductId,
 WarehouseId,
@@ -664,7 +680,9 @@ StockAgeDays)
 
   SELECT
     FactStock.StockDate,
+    DimDate.RetailYear,
     DimDate.RetailWeek,
+    DimDate.FinancialYear,
     DimDate.FinancialMonth,
     FactStock.ProductId,
     FactStock.WarehouseId,
@@ -868,7 +886,7 @@ PRINT FORMAT(@@rowcount, '###,###,###,###') + ' Rows updated  with stock age in 
 /* --------------------------------------------------------------------------------------------------------- */
 
 SELECT
-  'Current Year' [Stock Years],
+  Unpvt.RetailYear [Stock Years],
   FORMAT(Unpvt.RetailWeek, 'WK00') [Stock Periods],
   Unpvt.FinancialBusinessDivision [Business Division],
   Unpvt.[Profit-Cost Centre],
@@ -879,6 +897,7 @@ SELECT
   CAST(Unpvt.[#Value] AS NUMERIC(18, 4)) AS [#Value]
 FROM (SELECT
     #TempJetsJedoxStock.StockDate,
+    #TempJetsJedoxStock.RetailYear,
     #TempJetsJedoxStock.RetailWeek,
     #TempJetsJedoxStock.FinancialBusinessDivision,
     #TempJetsJedoxStock.ProfitCentreCode AS 'Profit-Cost Centre',
@@ -927,6 +946,7 @@ FROM (SELECT
   WHERE 1 = 1
   AND #TempJetsJedoxStock.TotalQuantity <> 0
   GROUP BY #TempJetsJedoxStock.StockDate,
+           #TempJetsJedoxStock.RetailYear,
            #TempJetsJedoxStock.RetailWeek,
            #TempJetsJedoxStock.FinancialBusinessDivision,
            #TempJetsJedoxStock.ProfitCentreCode,
@@ -940,7 +960,7 @@ UNPIVOT (
 UNION ALL
 
 SELECT
-  'Current Year' [Stock Years],
+  Unpvt.FinancialYear [Stock Years],
   FORMAT(Unpvt.FinancialPeriod, '\P00') [Stock Periods],
   Unpvt.FinancialBusinessDivision [Business Division],
   Unpvt.[Profit-Cost Centre],
@@ -951,6 +971,7 @@ SELECT
   CAST(Unpvt.[#Value] AS NUMERIC(18, 4)) AS [#Value]
 FROM (SELECT
     #TempJetsJedoxStock.StockDate,
+    #TempJetsJedoxStock.FinancialYear,
     #TempJetsJedoxStock.FinancialPeriod,
     #TempJetsJedoxStock.FinancialBusinessDivision,
     #TempJetsJedoxStock.ProfitCentreCode AS 'Profit-Cost Centre',
@@ -999,6 +1020,7 @@ FROM (SELECT
   WHERE 1 = 1
   AND #TempJetsJedoxStock.TotalQuantity <> 0
   GROUP BY #TempJetsJedoxStock.StockDate,
+  #TempJetsJedoxStock.FinancialYear,
            #TempJetsJedoxStock.FinancialPeriod,
            #TempJetsJedoxStock.FinancialBusinessDivision,
            #TempJetsJedoxStock.ProfitCentreCode,
@@ -1020,33 +1042,81 @@ UNPIVOT (
         <alias origin="#Value">9</alias>
       </alias_map>
     </extract>
+    <extract modified="1590472321522" name="ex-DW [Attr] Financial Year- Stock Financial Year" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
+      <query><![CDATA[select 'Item' [#_Parameter_]
+, 'Stock Financial Year'  Parameter
+,Format(DimDate.FinancialYear, '0000')  [#Value]
+from DataWarehouse.dbo.DimDate DimDate
+where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query>
+    </extract>
+    <extract modified="1590472534180" name="ex-DW [Attr] Financial Year- Stock Retail Year" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
+      <query><![CDATA[select 'Item' [#_Parameter_]
+, 'Stock Retail Year'  Parameter
+,Format(DimDate.RetailYear, '0000')  [#Value]
+from DataWarehouse.dbo.DimDate DimDate
+where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query>
+    </extract>
   </extracts>
   <transforms>
-    <transform modified="1589427930287" name="tf-FT [Stock] Current Period Format for Loop" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1590471788615" name="tf-FT [Stock] Current Period Format for Loop" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-[Parameter] - Stock Period" />
       </sources>
+      <functions>
+        <function name="StockYear" type="OlapData">
+          <inputs>
+            <input constant="Item" />
+            <input constant="Financial Year ETL" />
+            <input constant="~" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>#_Parameter</cube>
+          </parameters>
+        </function>
+      </functions>
       <target>
         <coordinates>
           <coordinate name="StockPeriod">
             <input nameref="#Value" />
           </coordinate>
+          <coordinate name="StockFinancialYear">
+            <input nameref="StockYear" />
+          </coordinate>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1589427930287" name="tf-FT [Stock] Current Week Format for Loop" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1590472893422" name="tf-FT [Stock] Current Week Format for Loop" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-[Parameter] - Stock Week" />
       </sources>
+      <functions>
+        <function name="StockRetailYear" type="OlapData">
+          <inputs>
+            <input constant="Item" />
+            <input constant="Stock Retail Year" />
+            <input constant="~" />
+          </inputs>
+          <parameters>
+            <connection>Jedox</connection>
+            <cube>#_Parameter</cube>
+          </parameters>
+        </function>
+      </functions>
       <target>
         <coordinates>
           <coordinate name="StockWeek">
             <input nameref="#Value" />
           </coordinate>
+          <coordinate name="StockRetailYear">
+            <input nameref="StockRetailYear" />
+          </coordinate>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1589427930287" name="tf-FT [Atr]: Current Financial Period forS tock Week Parameter Update" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1590470139036" name="tf-FT [Atr]: Current Financial Period forS tock Week Parameter Update" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the current period based on date from the DW that will be used to update the Parameter cube.]]></comment>
       <sources>
         <source nameref="ex-DW [Attr] Financial Period - Stock Period" />
@@ -1065,7 +1135,7 @@ UNPIVOT (
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT [Atr]: Current Week for Stock Week Parameter" type="FieldTransform" modified="1589427930287" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Atr]: Current Week for Stock Week Parameter" type="FieldTransform" modified="1590470139036" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the current period based on date from the DW that will be used to update the Parameter cube.]]></comment>
       <sources>
         <source nameref="ex-DW [Dim] Week - Stock Week" />
@@ -1084,9 +1154,47 @@ UNPIVOT (
         </coordinates>
       </target>
     </transform>
+    <transform modified="1590472369786" name="tf-FT [Atr]: Current Financial Year for Stock Financial Year Parameter Update" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Maps the current period based on date from the DW that will be used to update the Parameter cube.]]></comment>
+      <sources>
+        <source nameref="ex-DW [Attr] Financial Year- Stock Financial Year" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Attr#_Parameter_">
+            <input nameref="#_Parameter_" />
+          </coordinate>
+          <coordinate name="AttrVersion">
+            <input nameref="Parameter" />
+          </coordinate>
+          <coordinate name="Attr#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1590472596378" name="tf-FT [Atr]: Current Retail Year for Stock Retail Year Parameter Update" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Maps the current period based on date from the DW that will be used to update the Parameter cube.]]></comment>
+      <sources>
+        <source nameref="ex-DW [Attr] Financial Year- Stock Retail Year" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="Attr#_Parameter_">
+            <input nameref="#_Parameter_" />
+          </coordinate>
+          <coordinate name="AttrVersion">
+            <input nameref="Parameter" />
+          </coordinate>
+          <coordinate name="Attr#Value">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
   </transforms>
   <loads>
-    <load modified="1589863508661" name="ld-Stock Fact Data - PAS CurrentWeek - Period" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1590470139036" name="ld-Stock Fact Data - PAS CurrentWeek - Period" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="FactStock - PAS CurrentWeek - Period" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -1104,21 +1212,21 @@ UNPIVOT (
         </dimensions>
       </cube>
     </load>
-    <load modified="1589427930287" name="ld-[Stock]: (Current Year - Period) Z-Out" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1590472986842" name="ld-[Stock]: (Current Financial Year - Period) Z-Out" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="exJedox[CubeSlice - Period] Stock Actual Z-Out" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
       <bulksize>100000</bulksize>
       <cube cubeLayoutChangeMode="none" name="Stock" splash="default" />
     </load>
-    <load modified="1589427930287" name="ld-[Stock]: (Current Year - Week) Z-Out" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1590473003436" name="ld-[Stock]: (Current Retail Year - Week) Z-Out" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="exJedox[CubeSlice - Week] Stock Actual Z-Out" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
       <bulksize>100000</bulksize>
       <cube cubeLayoutChangeMode="none" name="Stock" splash="default" />
     </load>
-    <load modified="1589864812137" name="ld-Stock Fact History Data - Current Year" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1590470139036" name="ld-Stock Fact History Data - Current Year" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="FactStock History Load - Current Year" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -1136,7 +1244,7 @@ UNPIVOT (
         </dimensions>
       </cube>
     </load>
-    <load modified="1589427930287" name="ld-Jedox [Cube] Parameters - Stock Period" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1590470139036" name="ld-Jedox [Cube] Parameters - Stock Period" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Updates the Current Period ETL parameter in the #_Parameters cube]]></comment>
       <source nameref="tf-FT [Atr]: Current Financial Period forS tock Week Parameter Update" />
       <connection nameref="Jedox" />
@@ -1148,7 +1256,7 @@ UNPIVOT (
         </dimensions>
       </cube>
     </load>
-    <load name="ld-Jedox [Cube] Parameters - Stock Week" type="Cube" modified="1589427930287" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube] Parameters - Stock Week" type="Cube" modified="1590470139036" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Updates the Week parameter in the #_Parameters cube]]></comment>
       <source nameref="tf-FT [Atr]: Current Week for Stock Week Parameter" />
       <connection nameref="Jedox" />
@@ -1160,7 +1268,7 @@ UNPIVOT (
       </cube>
       <mode>insert</mode>
     </load>
-    <load modified="1589864797476" name="ld-Stock Fact Data - Jets CurrentWeek - Period" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1590470139036" name="ld-Stock Fact Data - Jets CurrentWeek - Period" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="FactStock - Jets CurrentWeek - Period" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -1178,41 +1286,69 @@ UNPIVOT (
         </dimensions>
       </cube>
     </load>
+    <load modified="1590472420224" name="ld-Jedox [Cube] Parameters - Stock Financial Year" type="Cube" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Updates the Current Period ETL parameter in the #_Parameters cube]]></comment>
+      <source nameref="tf-FT [Atr]: Current Financial Year for Stock Financial Year Parameter Update" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <bulksize>100000</bulksize>
+      <cube cubeLayoutChangeMode="noneWithDefaultWrite" name="#_Parameter" splash="disabled">
+        <dimensions>
+          <dimension input="Attr#_Parameter_" name="#_Parameter_" />
+          <dimension input="AttrVersion" name="Parameter" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1590472627158" name="ld-Jedox [Cube] Parameters - Stock Retail Year" type="Cube" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Updates the Current Period ETL parameter in the #_Parameters cube]]></comment>
+      <source nameref="tf-FT [Atr]: Current Retail Year for Stock Retail Year Parameter Update" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <bulksize>100000</bulksize>
+      <cube cubeLayoutChangeMode="noneWithDefaultWrite" name="#_Parameter" splash="disabled">
+        <dimensions>
+          <dimension input="Attr#_Parameter_" name="#_Parameter_" />
+          <dimension input="AttrVersion" name="Parameter" />
+        </dimensions>
+      </cube>
+    </load>
   </loads>
   <jobs>
-    <job modified="1589427930287" name="Stock (Current Year - Period) Z-Out" type="Loop" modifiedBy="ONEPAS\richards">
+    <job modified="1590472986842" name="Stock (Current Year - Period) Z-Out" type="Loop" modifiedBy="ONEPAS\richards">
       <loops>
         <loop nameref="tf-FT [Stock] Current Period Format for Loop" />
       </loops>
-      <execution nameref="ld-[Stock]: (Current Year - Period) Z-Out" type="load" />
+      <execution nameref="ld-[Stock]: (Current Financial Year - Period) Z-Out" type="load" />
       <failStatus>error</failStatus>
     </job>
-    <job modified="1589427930287" name="Stock (Current Year - Week) Z-Out" type="Loop" modifiedBy="ONEPAS\richards">
+    <job modified="1590473003436" name="Stock (Current Year - Week) Z-Out" type="Loop" modifiedBy="ONEPAS\richards">
       <loops>
         <loop nameref="tf-FT [Stock] Current Week Format for Loop" />
       </loops>
-      <execution nameref="ld-[Stock]: (Current Year - Week) Z-Out" type="load" />
+      <execution nameref="ld-[Stock]: (Current Retail Year - Week) Z-Out" type="load" />
       <failStatus>error</failStatus>
     </job>
-    <job modified="1589427930287" name="Stock Z-Out Current Year Period Week" type="Parallel" modifiedBy="ONEPAS\richards">
+    <job modified="1590470139036" name="Stock Z-Out Current Year Period Week" type="Parallel" modifiedBy="ONEPAS\richards">
       <execution nameref="Stock (Current Year - Period) Z-Out" parallel="true" type="job" />
       <execution nameref="Stock (Current Year - Week) Z-Out" parallel="true" type="job" />
       <failStatus>error</failStatus>
     </job>
-    <job modified="1589863819379" name="Stock Current Year Fact Load" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1590470139036" name="Stock Current Year Fact Load" type="Standard" modifiedBy="ONEPAS\richards">
       <execution nameref="ld-Stock Fact Data - PAS CurrentWeek - Period" type="load" />
       <execution nameref="ld-Stock Fact Data - Jets CurrentWeek - Period" type="load" />
       <failStatus>error</failStatus>
     </job>
-    <job modified="1589427930287" name="Stock Cube Nightly Load" type="Parallel" modifiedBy="ONEPAS\richards">
+    <job modified="1590474225763" name="Stock Cube Nightly Load" type="Parallel" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Loads stock data from the data warehouse from the previous day into the Stock cube for the current retail week and financial period]]></comment>
+      <execution nameref="ld-Jedox [Cube] Parameters - Stock Financial Year" parallel="false" type="load" />
+      <execution nameref="ld-Jedox [Cube] Parameters - Stock Retail Year" parallel="false" type="load" />
       <execution nameref="ld-Jedox [Cube] Parameters - Stock Week" parallel="false" type="load" />
       <execution nameref="ld-Jedox [Cube] Parameters - Stock Period" parallel="false" type="load" />
       <execution nameref="Stock Z-Out Current Year Period Week" parallel="false" type="job" />
       <execution nameref="Stock Current Year Fact Load" parallel="false" type="job" />
       <failStatus>error</failStatus>
     </job>
-    <job modified="1589427930287" name="Stock Fact History Load - Current Year" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1590470139036" name="Stock Fact History Load - Current Year" type="Standard" modifiedBy="ONEPAS\richards">
       <execution nameref="ld-Stock Fact History Data - Current Year" type="load" />
       <failStatus>error</failStatus>
     </job>
