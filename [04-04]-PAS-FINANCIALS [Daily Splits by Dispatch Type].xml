@@ -1,0 +1,172 @@
+<project name="[04-04]-PAS-FINANCIALS [Daily Splits by Dispatch Type]" version="7.3" modified="1597983382732" modifiedBy="ONEPAS\richards" olapId="p51">
+  <headers>
+    <header name="comment" modified="1595810850919" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Project description]]></comment>
+    </header>
+  </headers>
+  <variables>
+    <variable modified="1596760108375" name="BudgetFinancialYear" modifiedBy="ONEPAS\richards">
+      <comment />
+      <default>2021</default>
+    </variable>
+    <variable modified="1597981892861" name="BudgetRetailYear" modifiedBy="ONEPAS\richards">
+      <comment />
+      <default>2021R</default>
+    </variable>
+    <variable modified="1596760140772" name="ForecastFinancialYear" modifiedBy="ONEPAS\richards">
+      <comment />
+      <default>2021</default>
+    </variable>
+    <variable modified="1597981920832" name="ForecastRetailYear" modifiedBy="ONEPAS\richards">
+      <comment />
+      <default>2021R</default>
+    </variable>
+  </variables>
+  <connections>
+    <connection modified="1595811077728" name="Jedox" type="JedoxGlobal" modifiedBy="ONEPAS\richards">
+      <globalReference>localhost</globalReference>
+      <database>PAS-FINANCIALS</database>
+      <ssl>off</ssl>
+    </connection>
+    <connection modified="1595811225584" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DataWarehouse</database>
+      <parameters>
+        <parameter name="integratedSecurity">true</parameter>
+        <parameter name="autoCommit">true</parameter>
+      </parameters>
+    </connection>
+    <connection modified="1595811305202" name="DW Raw" type="Sqlserver" modifiedBy="ONEPAS\richards">
+      <host>MTWSQL06</host>
+      <port>1433</port>
+      <database>DatawarehouseRawData</database>
+      <parameters>
+        <parameter name="integratedSecurity">true</parameter>
+        <parameter name="autoCommit">true</parameter>
+      </parameters>
+    </connection>
+  </connections>
+  <extracts>
+    <extract modified="1597983382732" name="Daily Splits by Dispatch Type" type="Cube" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <query celltype="only_numeric" drillthrough="false" onlyBasisAsDefault="false" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="Day">
+            <condition mode="onlyNodes" operator="inAlphaRange" type="accept"><![CDATA[[${BudgetFinancialYear}_P01,${BudgetFinancialYear}_P12]]]></condition>
+            <condition mode="onlyNodes" operator="inAlphaRange" type="accept"><![CDATA[[${BudgetFinancialYear}_P01R,${BudgetFinancialYear}_P12R]]]></condition>
+            <condition mode="onlyNodes" operator="inAlphaRange" type="accept"><![CDATA[[${ForecastFinancialYear}_P01,${ForecastFinancialYear}_P12]]]></condition>
+            <condition mode="onlyNodes" operator="inAlphaRange" type="accept"><![CDATA[[${ForecastFinancialYear}_P01R,${ForecastFinancialYear}_P12R]]]></condition>
+            <condition mode="onlyNodes" operator="like" type="deny"><![CDATA[YTD]]></condition>
+            <condition mode="onlyNodes" operator="like" type="deny"><![CDATA[LTM]]></condition>
+          </dimension>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="inAlphaRange" type="accept"><![CDATA[[Budget, Forecast]]]></condition>
+            <condition mode="onlyBases" operator="inAlphaRange" type="accept"><![CDATA[[Manual Load Budget, Manual Load Forecast]]]></condition>
+          </dimension>
+          <dimension name="Dispatch Type">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[All Dispatch Types]]></condition>
+          </dimension>
+          <dimension name="Store">
+            <condition mode="onlyNodes" operator="like" type="accept"><![CDATA[Review - Retail]]></condition>
+            <condition mode="onlyNodes" operator="like" type="accept"><![CDATA[Review - Concessions]]></condition>
+            <condition mode="onlyNodes" operator="like" type="accept"><![CDATA[Review - E]]></condition>
+            <condition mode="onlyNodes" operator="like" type="accept"><![CDATA[Review - Outlets]]></condition>
+            <condition mode="onlyNodes" operator="like" type="accept"><![CDATA[Breakaway - Concessions]]></condition>
+            <condition mode="onlyNodes" operator="like" type="accept"><![CDATA[Breakaway - E]]></condition>
+            <condition mode="onlyNodes" operator="like" type="accept"><![CDATA[Breakaway - Outlets]]></condition>
+            <condition mode="onlyNodes" operator="like" type="accept"><![CDATA[Breakaway - Retail]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail Daily Splits" />
+      </query>
+    </extract>
+    <extract modified="1596606676862" name="Export Profit Centres" type="Dimension" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <query>
+        <dimension name="Store">
+          <condition operator="equal" type="accept"><![CDATA[Retail Reporting Dropdown]]></condition>
+          <condition mode="rootToBases" operator="equal" type="accept"><![CDATA[Review]]></condition>
+          <condition mode="rootToBases" operator="equal" type="accept"><![CDATA[Breakaway]]></condition>
+          <condition operator="equal" type="deny"><![CDATA[Margin Analysis]]></condition>
+          <condition operator="like" type="deny"><![CDATA[(All Stores - excl. HO & Outlets)]]></condition>
+          <condition operator="like" type="deny"><![CDATA[(All Stores - excl. HO)]]></condition>
+        </dimension>
+      </query>
+      <attributesMode>defaultLanguage</attributesMode>
+    </extract>
+    <extract modified="1597385270463" name="DW - Fact Retail Budgets" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
+      <query><![CDATA[DECLARE @BudgetYear VARCHAR(4)
+
+SELECT
+  @BudgetYear = SysConfiguration.ConfigurationValue
+FROM DataWarehouse.dbo.SysConfiguration SysConfiguration
+WHERE SysConfiguration.ConfigurationKey = 'ReportingFinancialYear'
+
+SELECT
+  FactJedoxBudgetByDispatchType.Version,
+  FactJedoxBudgetByDispatchType.Day,
+  FactJedoxBudgetByDispatchType.Currency,
+  FactJedoxBudgetByDispatchType.Region,
+  FactJedoxBudgetByDispatchType.Store,
+  FactJedoxBudgetByDispatchType.CompType,
+  FactJedoxBudgetByDispatchType.DispatchType,
+  FactJedoxBudgetByDispatchType.[Weekly Retail Measure],
+  FactJedoxBudgetByDispatchType.#Value
+FROM DataWarehouseSummarisedFactData.dbo.FactJedoxBudgetByDispatchType FactJedoxBudgetByDispatchType
+WHERE FactJedoxBudgetByDispatchType.FYear = @BudgetYear]]></query>
+      <alias_map>
+        <alias origin="Version">1</alias>
+        <alias origin="Day">2</alias>
+        <alias origin="Currency">3</alias>
+        <alias origin="Region">4</alias>
+        <alias origin="Store">5</alias>
+        <alias origin="CompType">6</alias>
+        <alias origin="DispatchType">7</alias>
+        <alias origin="Weekly Retail Measure">8</alias>
+        <alias origin="#Value">9</alias>
+      </alias_map>
+    </extract>
+  </extracts>
+  <transforms />
+  <loads>
+    <load modified="1597703350655" name="Export Daily Splits" type="Relational" modifiedBy="ONEPAS\richards">
+      <source nameref="Daily Splits by Dispatch Type" />
+      <connection nameref="DW Raw" />
+      <mode>update</mode>
+      <table name="JEDOX_DAILY_SPLITS" schema="dbo" />
+    </load>
+    <load modified="1597703056095" name="Export ProfitCentres" type="Relational" modifiedBy="ONEPAS\richards">
+      <source nameref="Export Profit Centres" />
+      <connection nameref="DW Raw" />
+      <mode>update</mode>
+      <table name="JEDOX_PROFIT_CENTRES" schema="dbo" />
+    </load>
+    <load modified="1597385389681" name="Ld - Financial Budgets by Dispatch Type" type="Cube" modifiedBy="ONEPAS\richards">
+      <source nameref="DW - Fact Retail Budgets" />
+      <connection nameref="Jedox" />
+      <mode>insert</mode>
+      <bulksize>1000000</bulksize>
+      <cube cubeLayoutChangeMode="none" name="Retail Budget by Dispatch Type" splash="disabled">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="Day" name="Day" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="CompType" name="Comp Type" />
+          <dimension input="DispatchType" name="Dispatch Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+  </loads>
+  <jobs>
+    <job modified="1597704357206" name="01-Export Daily Splits" type="Parallel" modifiedBy="ONEPAS\richards">
+      <execution nameref="Export Daily Splits" parallel="true" type="load" />
+      <execution nameref="Export ProfitCentres" parallel="true" type="load" />
+      <failStatus>error</failStatus>
+    </job>
+  </jobs>
+</project>
