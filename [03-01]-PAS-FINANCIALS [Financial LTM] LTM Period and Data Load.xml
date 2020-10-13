@@ -1,16 +1,17 @@
-<project name="[03-01]-PAS-FINANCIALS [Financial LTM] LTM Period and Data Load" version="7.3" modified="1490070755087" modifiedBy="ONEPAS\richards" olapId="p20">
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="[03-01]-PAS-FINANCIALS [Financial LTM] LTM Period and Data Load" version="20.3" modified="1602549687964" modifiedBy="ONEPAS\richards" olapId="p6">
   <headers>
-    <header name="comment">
+    <header name="comment" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <comment>The Retail LTM cube is  identical to the standard Retail cube with the exception of the Year and Period dimension being combined into one dimension called LTM Period. “Oct-12 LTM”</comment>
     </header>
   </headers>
   <variables />
   <connections>
-    <connection name="Jedox" type="JedoxGlobal" modified="1461821185366" modifiedBy="_internal_suite">
-      <globalReference>localhost</globalReference>
+    <connection name="Jedox" type="JedoxOlap" modified="1602549687964" modifiedBy="ONEPAS\richards">
+      <global nameref="localhost" />
       <database>PAS-Financials</database>
     </connection>
-    <connection name="Export File" type="File" modified="1461821185366" modifiedBy="_internal_suite">
+    <connection name="Export File" type="File" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <location type="FileSystem" />
       <database>Retail_Export_For_LTM.csv</database>
       <header>true</header>
@@ -21,16 +22,16 @@
     </connection>
   </connections>
   <extracts>
-    <extract name="ex-Jedox [Dim]: LTM Period" type="Dimension" modified="1461821185366" modifiedBy="_internal_suite">
+    <extract name="ex-Jedox [Dim]: LTM Period" type="Dimension" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query>
         <dimension name="Period">
           <condition operator="equal" mode="onlyBases" type="accept"><![CDATA[Full Year]]></condition>
         </dimension>
       </query>
-      <attributesMode>defaultLanguage</attributesMode>
+      <attributesMode>standardAttributes</attributesMode>
     </extract>
-    <extract modified="1490070755087" name="ex-Jedox [Cube]: Period LTM Calendar" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1602549687964" name="ex-Jedox [Cube]: Period LTM Calendar" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="only_string" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -51,7 +52,7 @@
         <cube name="Period Calender" />
       </query>
     </extract>
-    <extract modified="1485478819921" name="ex-Jedox [Cube]: Financial Cube for LTM" type="Cube" modifiedBy="richardsADMIN">
+    <extract modified="1602549687964" name="ex-Jedox [Cube]: Financial Cube for LTM" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -66,7 +67,7 @@
         <cube name="Financials" />
       </query>
     </extract>
-    <extract name="ex-Jedox [Cube]: Period LTM Calendar copy" type="Cube" modified="1461821185366" modifiedBy="_internal_suite">
+    <extract name="ex-Jedox [Cube]: Period LTM Calendar copy" type="Cube" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query useRules="true" onlyBasisAsDefault="true" celltype="only_string" zeroSuppressionType="excludeEmpty">
         <cube name="Period Calender" />
@@ -78,7 +79,7 @@
         </dimensions>
       </query>
     </extract>
-    <extract name="ex-Jedox [Cube]: FinancialLTM Cube Z-Out" type="Cube" modified="1461821185366" modifiedBy="_internal_suite">
+    <extract name="ex-Jedox [Cube]: FinancialLTM Cube Z-Out" type="Cube" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
         <cube name="Financial LTM" />
@@ -86,7 +87,7 @@
     </extract>
   </extracts>
   <transforms>
-    <transform name="tr-FT [Dim]: LTM Period" type="FieldTransform" modified="1461821185366" modifiedBy="_internal_suite">
+    <transform name="tr-FT [Dim]: LTM Period" type="FieldTransform" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Period LTM Calendar" />
       </sources>
@@ -98,11 +99,11 @@
         </coordinates>
       </target>
     </transform>
-    <transform name="tr- FH [Dim]: LTM Period" type="TreeFH" modified="1461821185366" modifiedBy="_internal_suite">
+    <transform name="tr- FH [Dim]: LTM Period" type="TreeFH" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tr-FT [Dim]: LTM Period" />
       </sources>
-      <target type="numeric" skipEmpty="false">
+      <target type="numeric">
         <levels>
           <level>
             <input nameref="#Value" />
@@ -111,7 +112,7 @@
         <attributes />
       </target>
     </transform>
-    <transform name="tr-FT [Cube]: Financial LTM" type="FieldTransform" modified="1461821185366" modifiedBy="_internal_suite">
+    <transform name="tr-FT [Cube]: Financial LTM" type="FieldTransform" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Financial Cube for LTM" />
       </sources>
@@ -160,7 +161,7 @@
         </coordinates>
       </target>
     </transform>
-    <transform name="tr-FT [Dim]: LTM Period L2" type="FieldTransform" modified="1461821185366" modifiedBy="_internal_suite">
+    <transform name="tr-FT [Dim]: LTM Period L2" type="FieldTransform" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Period LTM Calendar copy" />
       </sources>
@@ -194,7 +195,7 @@
         </function>
       </functions>
     </transform>
-    <transform name="tr- [Dim]: LTM L2" type="TableDenormalization" modified="1461821185366" modifiedBy="_internal_suite">
+    <transform name="tr- [Dim]: LTM L2" type="TableDenormalization" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Period LTM Calendar copy" />
       </sources>
@@ -222,7 +223,7 @@
     </transform>
   </transforms>
   <loads>
-    <load name="ld-Jedox [Dim]: LTM Period" type="Dimension" modified="1461821185366" modifiedBy="_internal_suite">
+    <load name="ld-Jedox [Dim]: LTM Period" type="Dimension" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <source nameref="tr- FH [Dim]: LTM Period" />
       <connection nameref="Jedox" />
       <dimension name="LTM Period">
@@ -231,7 +232,7 @@
         <attributes mode="add" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Cube]: Financial LTM" type="Cube" modified="1461821185366" modifiedBy="_internal_suite">
+    <load name="ld-Jedox [Cube]: Financial LTM" type="Cube" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <source nameref="tr-FT [Cube]: Financial LTM" />
       <connection nameref="Jedox" />
       <mode>insert</mode>
@@ -248,7 +249,7 @@
         </dimensions>
       </cube>
     </load>
-    <load name="ld-Jedox [Cube]: Financial LTM (Z-Out)" type="Cube" modified="1461821185366" modifiedBy="_internal_suite">
+    <load name="ld-Jedox [Cube]: Financial LTM (Z-Out)" type="Cube" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <source nameref="ex-Jedox [Cube]: FinancialLTM Cube Z-Out" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
@@ -265,23 +266,29 @@
         </dimensions>
       </cube>
     </load>
-    <load name="Financial Export for LTM" type="File" modified="1461821185366" modifiedBy="_internal_suite">
+    <load name="Financial Export for LTM" type="File" modified="1602549687964" modifiedBy="ONEPAS\richards">
       <source nameref="ex-Jedox [Cube]: Financial Cube for LTM" />
       <connection nameref="Export File" />
       <mode>create</mode>
     </load>
   </loads>
   <jobs>
-    <job name="[02-02]-load [Cube]: Financial LTM" type="Standard" modified="1461821185366" modifiedBy="_internal_suite">
+    <job name="[02-02]-load [Cube]: Financial LTM" type="Standard" modified="1602549687964" modifiedBy="ONEPAS\richards">
+      <executions>
+        <execution nameref="ld-Jedox [Cube]: Financial LTM" type="load" />
+      </executions>
       <comment><![CDATA[Heads up: Rules on period calendar in case it failed - name of Database needs to be changed]]></comment>
-      <execution nameref="ld-Jedox [Cube]: Financial LTM" type="load" />
     </job>
-    <job name="[02-00]-load [Cube]: Financial LTM (All)" type="Standard" modified="1461821185366" modifiedBy="_internal_suite">
-      <execution nameref="[02-01]-load [Cube]: Financial LTM (Z-Out)" type="job" />
-      <execution nameref="[02-02]-load [Cube]: Financial LTM" type="job" />
+    <job name="[02-00]-load [Cube]: Financial LTM (All)" type="Standard" modified="1602549687964" modifiedBy="ONEPAS\richards">
+      <executions>
+        <execution nameref="[02-01]-load [Cube]: Financial LTM (Z-Out)" type="job" />
+        <execution nameref="[02-02]-load [Cube]: Financial LTM" type="job" />
+      </executions>
     </job>
-    <job name="[02-01]-load [Cube]: Financial LTM (Z-Out)" type="Standard" modified="1461821185366" modifiedBy="_internal_suite">
-      <execution nameref="ld-Jedox [Cube]: Financial LTM (Z-Out)" type="load" />
+    <job name="[02-01]-load [Cube]: Financial LTM (Z-Out)" type="Standard" modified="1602549687964" modifiedBy="ONEPAS\richards">
+      <executions>
+        <execution nameref="ld-Jedox [Cube]: Financial LTM (Z-Out)" type="load" />
+      </executions>
     </job>
   </jobs>
 </project>
