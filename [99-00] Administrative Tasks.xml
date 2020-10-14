@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[99-00] Administrative Tasks" version="20.3" modified="1602552603502" modifiedBy="ONEPAS\richards" olapId="p15">
+<project name="[99-00] Administrative Tasks" version="20.3" modified="1602643284662" modifiedBy="ONEPAS\richards" olapId="p15">
   <headers>
     <header name="comment" modified="1602549892330" modifiedBy="ONEPAS\richards">
       <comment>This project is for updating system cubes (#_Parameters) or attributes in dimensions based on the values in #_Parameters.</comment>
@@ -20,13 +20,13 @@
     </variable>
   </variables>
   <connections>
-    <connection name="CurrentWeekTextFile" type="File" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <connection modified="1602643209877" name="CurrentWeekTextFile" type="File" modifiedBy="ONEPAS\richards">
       <location type="FileSystem" />
-      <database>C:\Progra~1\Jedox\Jedox Suite\tomcat\client\CurrentWeek.txt</database>
-      <header>false</header>
+      <database><![CDATA[C:\Program Files\Jedox\Jedox Suite\tomcat\client\CurrentWeek.txt]]></database>
       <delimiter>,</delimiter>
       <quote>#none</quote>
       <enableEscape>false</enableEscape>
+      <header>false</header>
     </connection>
     <connection modified="1602549892330" name="Jedox" type="JedoxOlap" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
@@ -37,22 +37,22 @@
     <connection modified="1602552569239" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <global nameref="DW" />
     </connection>
-    <connection name="Parameter Cube Contents" type="File" modified="1602549892330" modifiedBy="ONEPAS\richards">
-      <location type="FileSystem" />
+    <connection modified="1602643238223" name="Parameter Cube Contents" type="File" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Contains the value of the #_parameter cube]]></comment>
-      <database>C:\Progra~1\Jedox\Jedox Suite\tomcat\client\ParameterCube.txt</database>
-      <header>false</header>
+      <location type="FileSystem" />
+      <database><![CDATA[C:\Program Files\Jedox\Jedox Suite\tomcat\client\ParameterCube.txt]]></database>
       <delimiter>#space</delimiter>
       <quote>#none</quote>
       <enableEscape>false</enableEscape>
+      <header>false</header>
     </connection>
     <connection modified="1602552603502" name="AP21" type="Oracle" modifiedBy="ONEPAS\richards">
       <global nameref="AP21" />
     </connection>
-    <connection name="file-SalesDailyUpdate" type="File" modified="1602549892330" modifiedBy="ONEPAS\richards">
-      <location type="FileSystem" />
+    <connection modified="1602643222913" name="file-SalesDailyUpdate" type="File" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Used for sending the SalesDaily update times in an email.]]></comment>
-      <database>C:\Program Files\Jedox\Jedox Suite\tomcat\client\SailesDailyUpdate.txt</database>
+      <location type="FileSystem" />
+      <database><![CDATA[C:\Program Files\Jedox\Jedox Suite\tomcat\client\SailesDailyUpdate.txt]]></database>
       <header>true</header>
       <delimiter>,</delimiter>
       <quote>#none</quote>
@@ -65,21 +65,20 @@
       <database>System</database>
       <password encryption="AES">kUdvvoBnlqH8ua02/w1L2lQssD55</password>
     </connection>
-    <connection name="Stat PandL Check" type="File" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <connection modified="1602643284662" name="Stat PandL Check" type="File" modifiedBy="ONEPAS\richards">
       <location type="FileSystem" />
-      <database>C:\Progra~1\Jedox\Jedox Suite\tomcat\client\StatPandLCheck.txt</database>
+      <database><![CDATA[C:\Program Files\Jedox\Jedox Suite\tomcat\client\StatPandLCheck.txt]]></database>
       <delimiter>#space</delimiter>
       <quote>#none</quote>
-      <ssl>verify</ssl>
       <enableEscape>false</enableEscape>
       <header>false</header>
     </connection>
     <connection modified="1602552584628" name="DW Raw" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <global nameref="DW Raw" />
     </connection>
-    <connection modified="1602549892330" name="Review Concession Profit Centre  Check" type="File" modifiedBy="ONEPAS\richards">
+    <connection modified="1602643274284" name="Review Concession Profit Centre  Check" type="File" modifiedBy="ONEPAS\richards">
       <location type="FileSystem" />
-      <database>C:\Progra~1\Jedox\Jedox Suite\tomcat\client\ReviewConcessionProfitCentreCheck.txt</database>
+      <database><![CDATA[C:\Program Files\Jedox\Jedox Suite\tomcat\client\ReviewConcessionProfitCentreCheck.txt]]></database>
       <delimiter>#space</delimiter>
       <quote>#none</quote>
       <enableEscape>false</enableEscape>
