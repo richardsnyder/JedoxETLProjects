@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[11-00] -PAS-FINANCIALS [Stock]" version="20.3" modified="1602552542100" modifiedBy="ONEPAS\richards" olapId="p14">
+<project name="[11-00] -PAS-FINANCIALS [Stock]" version="20.3" modified="1603248564794" modifiedBy="ONEPAS\richards" olapId="p14">
   <headers>
     <header name="comment" modified="1602549854444" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
@@ -1336,6 +1336,17 @@ where DimDate.CalendarDate = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)]]></query
     <job modified="1602549854444" name="Stock Fact History Load - Current Year" type="Standard" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Stock Fact History Data - Current Year" type="load" />
+      </executions>
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1603248564794" name="New Standard job" type="Standard" modifiedBy="ONEPAS\richards">
+      <executions>
+        <execution nameref="ld-Jedox [Cube] Parameters - Stock Financial Year" type="load" />
+        <execution nameref="ld-Jedox [Cube] Parameters - Stock Retail Year" type="load" />
+        <execution nameref="ld-Jedox [Cube] Parameters - Stock Period" type="load" />
+        <execution nameref="ld-Jedox [Cube] Parameters - Stock Week" type="load" />
+        <execution nameref="Stock Z-Out Current Year Period Week" type="job" />
+        <execution nameref="Stock Current Year Fact Load" type="job" />
       </executions>
       <failStatus>error</failStatus>
     </job>

@@ -1,34 +1,25 @@
-<project name="[04-04]-PAS-FINANCIALS [Daily Splits by Dispatch Type]" version="7.3" modified="1597983382732" modifiedBy="ONEPAS\richards" olapId="p51">
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="[04-04]-PAS-FINANCIALS [Daily Splits by Dispatch Type]" version="20.3" modified="1604557834832" modifiedBy="ONEPAS\richards" olapId="p16">
   <headers>
-    <header name="comment" modified="1595810850919" modifiedBy="ONEPAS\richards">
+    <header name="comment" modified="1604471236834" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
     </header>
   </headers>
   <variables>
-    <variable modified="1596760108375" name="BudgetFinancialYear" modifiedBy="ONEPAS\richards">
-      <comment />
-      <default>2021</default>
+    <variable modified="1604471236834" name="BudgetFinancialYear" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Used to extract Daily Splits by Dispatch Type]]></comment>
     </variable>
-    <variable modified="1597981892861" name="BudgetRetailYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1604557834832" name="ForecastFinancialYear" modifiedBy="ONEPAS\richards">
       <comment />
-      <default>2021R</default>
-    </variable>
-    <variable modified="1596760140772" name="ForecastFinancialYear" modifiedBy="ONEPAS\richards">
-      <comment />
-      <default>2021</default>
-    </variable>
-    <variable modified="1597981920832" name="ForecastRetailYear" modifiedBy="ONEPAS\richards">
-      <comment />
-      <default>2021R</default>
     </variable>
   </variables>
   <connections>
-    <connection modified="1595811077728" name="Jedox" type="JedoxGlobal" modifiedBy="ONEPAS\richards">
-      <globalReference>localhost</globalReference>
+    <connection modified="1604471236834" name="Jedox" type="JedoxOlap" modifiedBy="ONEPAS\richards">
+      <global nameref="localhost" />
       <database>PAS-FINANCIALS</database>
       <ssl>off</ssl>
     </connection>
-    <connection modified="1595811225584" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1604471236834" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <host>MTWSQL06</host>
       <port>1433</port>
       <database>DataWarehouse</database>
@@ -37,7 +28,7 @@
         <parameter name="autoCommit">true</parameter>
       </parameters>
     </connection>
-    <connection modified="1595811305202" name="DW Raw" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1604471236834" name="DW Raw" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <host>MTWSQL06</host>
       <port>1433</port>
       <database>DatawarehouseRawData</database>
@@ -48,7 +39,7 @@
     </connection>
   </connections>
   <extracts>
-    <extract modified="1597983382732" name="Daily Splits by Dispatch Type" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1604471236834" name="Daily Splits by Dispatch Type" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="only_numeric" drillthrough="false" onlyBasisAsDefault="false" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -81,7 +72,7 @@
         <cube name="Retail Daily Splits" />
       </query>
     </extract>
-    <extract modified="1596606676862" name="Export Profit Centres" type="Dimension" modifiedBy="ONEPAS\richards">
+    <extract modified="1604471236834" name="Export Profit Centres" type="Dimension" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query>
         <dimension name="Store">
@@ -93,29 +84,31 @@
           <condition operator="like" type="deny"><![CDATA[(All Stores - excl. HO)]]></condition>
         </dimension>
       </query>
-      <attributesMode>defaultLanguage</attributesMode>
+      <attributesMode>standardAttributes</attributesMode>
     </extract>
-    <extract modified="1597385270463" name="DW - Fact Retail Budgets" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1604471236834" name="DW - Fact Financial Budgets" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[DECLARE @BudgetYear VARCHAR(4)
 
 SELECT
-  @BudgetYear = SysConfiguration.ConfigurationValue
-FROM DataWarehouse.dbo.SysConfiguration SysConfiguration
-WHERE SysConfiguration.ConfigurationKey = 'ReportingFinancialYear'
+  @BudgetYear = JedoxParam.Value
+FROM DataWarehouse.dbo.SysJedoxParameters JedoxParam
+WHERE JedoxParam.Parameter = 'BudYear'
 
 SELECT
-  FactJedoxBudgetByDispatchType.Version,
-  FactJedoxBudgetByDispatchType.Day,
-  FactJedoxBudgetByDispatchType.Currency,
-  FactJedoxBudgetByDispatchType.Region,
-  FactJedoxBudgetByDispatchType.Store,
-  FactJedoxBudgetByDispatchType.CompType,
-  FactJedoxBudgetByDispatchType.DispatchType,
-  FactJedoxBudgetByDispatchType.[Weekly Retail Measure],
-  FactJedoxBudgetByDispatchType.#Value
-FROM DataWarehouseSummarisedFactData.dbo.FactJedoxBudgetByDispatchType FactJedoxBudgetByDispatchType
-WHERE FactJedoxBudgetByDispatchType.FYear = @BudgetYear]]></query>
+  FactJedoxRetailByDispatchType.Version,
+  FactJedoxRetailByDispatchType.Day,
+  FactJedoxRetailByDispatchType.Currency,
+  FactJedoxRetailByDispatchType.Region,
+  FactJedoxRetailByDispatchType.Store,
+  FactJedoxRetailByDispatchType.CompType,
+  FactJedoxRetailByDispatchType.DispatchType,
+  FactJedoxRetailByDispatchType.[Weekly Retail Measure],
+  FactJedoxRetailByDispatchType.#Value
+FROM DataWarehouseSummarisedFactData.dbo.FactJedoxRetailByDispatchType FactJedoxRetailByDispatchType
+WHERE FactJedoxRetailByDispatchType.FYear = @BudgetYear
+and FactJedoxRetailByDispatchType.PeriodType = 'Financial'
+AND FactJedoxRetailByDispatchType.Version = 'Budget']]></query>
       <alias_map>
         <alias origin="Version">1</alias>
         <alias origin="Day">2</alias>
@@ -128,27 +121,143 @@ WHERE FactJedoxBudgetByDispatchType.FYear = @BudgetYear]]></query>
         <alias origin="#Value">9</alias>
       </alias_map>
     </extract>
+    <extract modified="1604471236834" name="DW - Fact Financial Forecasts" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
+      <query><![CDATA[DECLARE @CurrYear VARCHAR(4)
+
+SELECT
+  @CurrYear = JedoxParam.Value
+FROM DataWarehouse.dbo.SysJedoxParameters JedoxParam
+WHERE JedoxParam.Parameter = 'CurrYear'
+
+SELECT
+  FactJedoxRetailByDispatchType.Version,
+  FactJedoxRetailByDispatchType.Day,
+  FactJedoxRetailByDispatchType.Currency,
+  FactJedoxRetailByDispatchType.Region,
+  FactJedoxRetailByDispatchType.Store,
+  FactJedoxRetailByDispatchType.CompType,
+  FactJedoxRetailByDispatchType.DispatchType,
+  FactJedoxRetailByDispatchType.[Weekly Retail Measure],
+  FactJedoxRetailByDispatchType.#Value
+FROM DataWarehouseSummarisedFactData.dbo.FactJedoxRetailByDispatchType FactJedoxRetailByDispatchType
+WHERE FactJedoxRetailByDispatchType.FYear = @CurrYear
+and FactJedoxRetailByDispatchType.PeriodType = 'Financial'
+AND FactJedoxRetailByDispatchType.Version = 'Forecast']]></query>
+      <alias_map>
+        <alias origin="Version">1</alias>
+        <alias origin="Day">2</alias>
+        <alias origin="Currency">3</alias>
+        <alias origin="Region">4</alias>
+        <alias origin="Store">5</alias>
+        <alias origin="CompType">6</alias>
+        <alias origin="DispatchType">7</alias>
+        <alias origin="Weekly Retail Measure">8</alias>
+        <alias origin="#Value">9</alias>
+      </alias_map>
+    </extract>
+    <extract modified="1604471236834" name="Clear Budget Financial BudgetFinancialYear" type="CubeSlice" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <query mode="exclude" randomPaths="false">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Budget]]></condition>
+          </dimension>
+          <dimension name="Day">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${BudgetFinancialYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail by Dispatch Type" />
+      </query>
+    </extract>
+    <extract modified="1604471236834" name="Parameter Cube - BudYear" type="Cube" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="#_Parameter_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[BudYear]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
+    <extract modified="1604471236834" name="Clear Forecast Financial CurrentFinancialYear" type="CubeSlice" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <query mode="exclude" randomPaths="false">
+        <dimensions>
+          <dimension name="Version">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Forecast]]></condition>
+          </dimension>
+          <dimension name="Day">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[${ForecastFinancialYear}]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="Retail by Dispatch Type" />
+      </query>
+    </extract>
+    <extract modified="1604471236834" name="Parameter Cube - CurrYear" type="Cube" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
+        <dimensions>
+          <dimension name="#_Parameter_">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[Item]]></condition>
+          </dimension>
+          <dimension name="Parameter">
+            <condition mode="onlyBases" operator="equal" type="accept"><![CDATA[CurrYear]]></condition>
+          </dimension>
+        </dimensions>
+        <cube name="#_Parameter" />
+      </query>
+    </extract>
   </extracts>
-  <transforms />
+  <transforms>
+    <transform modified="1604471236834" name="tr-ft BudYear" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="Parameter Cube - BudYear" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="BudgetFinancialYear">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+    <transform modified="1604471236834" name="tr-ft CurrYear" type="FieldTransform" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="Parameter Cube - CurrYear" />
+      </sources>
+      <target>
+        <coordinates>
+          <coordinate name="ForecastFinancialYear">
+            <input nameref="#Value" />
+          </coordinate>
+        </coordinates>
+      </target>
+    </transform>
+  </transforms>
   <loads>
-    <load modified="1597703350655" name="Export Daily Splits" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1604471236834" name="Export Daily Splits" type="Relational" modifiedBy="ONEPAS\richards">
       <source nameref="Daily Splits by Dispatch Type" />
       <connection nameref="DW Raw" />
       <mode>update</mode>
       <table name="JEDOX_DAILY_SPLITS" schema="dbo" />
     </load>
-    <load modified="1597703056095" name="Export ProfitCentres" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1604471236834" name="Export ProfitCentres" type="Relational" modifiedBy="ONEPAS\richards">
       <source nameref="Export Profit Centres" />
       <connection nameref="DW Raw" />
       <mode>update</mode>
       <table name="JEDOX_PROFIT_CENTRES" schema="dbo" />
     </load>
-    <load modified="1597385389681" name="Ld - Financial Budgets by Dispatch Type" type="Cube" modifiedBy="ONEPAS\richards">
-      <source nameref="DW - Fact Retail Budgets" />
+    <load modified="1604471236834" name="Ld - Financial Budgets by Dispatch Type" type="Cube" modifiedBy="ONEPAS\richards">
+      <source nameref="DW - Fact Financial Budgets" />
       <connection nameref="Jedox" />
-      <mode>insert</mode>
+      <mode>add</mode>
       <bulksize>1000000</bulksize>
-      <cube cubeLayoutChangeMode="none" name="Retail Budget by Dispatch Type" splash="disabled">
+      <cube cubeLayoutChangeMode="none" name="Retail by Dispatch Type" splash="disabled">
         <dimensions>
           <dimension input="Version" name="Version" />
           <dimension input="Day" name="Day" />
@@ -161,12 +270,108 @@ WHERE FactJedoxBudgetByDispatchType.FYear = @BudgetYear]]></query>
         </dimensions>
       </cube>
     </load>
+    <load modified="1604471236834" name="Ld - Financial Forecasts by Dispatch Type" type="Cube" modifiedBy="ONEPAS\richards">
+      <source nameref="DW - Fact Financial Forecasts" />
+      <connection nameref="Jedox" />
+      <mode>add</mode>
+      <bulksize>1000000</bulksize>
+      <cube cubeLayoutChangeMode="none" name="Retail by Dispatch Type" splash="disabled">
+        <dimensions>
+          <dimension input="Version" name="Version" />
+          <dimension input="Day" name="Day" />
+          <dimension input="Currency" name="Currency" />
+          <dimension input="Region" name="Region" />
+          <dimension input="Store" name="Store" />
+          <dimension input="CompType" name="Comp Type" />
+          <dimension input="DispatchType" name="Dispatch Type" />
+          <dimension input="Weekly Retail Measure" name="Weekly Retail Measure" />
+        </dimensions>
+      </cube>
+    </load>
+    <load modified="1604471236834" name="Ld - Clear Budget Financial BudgetFinancialYear" type="Cube" modifiedBy="ONEPAS\richards">
+      <source nameref="Clear Budget Financial BudgetFinancialYear" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <bulksize>1000000</bulksize>
+      <cube cubeLayoutChangeMode="none" name="Retail by Dispatch Type" splash="default" />
+    </load>
+    <load modified="1604471236834" name="Ld - Clear Forecast Financial CurrentFinancialYear" type="Cube" modifiedBy="ONEPAS\richards">
+      <source nameref="Clear Forecast Financial CurrentFinancialYear" />
+      <connection nameref="Jedox" />
+      <mode>delete</mode>
+      <bulksize>1000000</bulksize>
+      <cube cubeLayoutChangeMode="none" name="Retail by Dispatch Type" splash="default" />
+    </load>
   </loads>
   <jobs>
-    <job modified="1597704357206" name="01-Export Daily Splits" type="Parallel" modifiedBy="ONEPAS\richards">
-      <execution nameref="Export Daily Splits" parallel="true" type="load" />
-      <execution nameref="Export ProfitCentres" parallel="true" type="load" />
+    <job modified="1604471236834" name="Export Daily Splits and Profit Centres" type="Parallel" modifiedBy="ONEPAS\richards">
+      <executions>
+        <execution nameref="Export Daily Splits" parallel="true" type="load" />
+        <execution nameref="Export ProfitCentres" parallel="true" type="load" />
+      </executions>
       <failStatus>error</failStatus>
+    </job>
+    <job modified="1604471236834" name="[2b] Load Daily Splits Financial Budget into Data Warehouse" type="Groovy" modifiedBy="ONEPAS\richards">
+      <jobscript><![CDATA[LOG.info("Calling the load daily splits financial budget batch file");
+
+Runtime.runtime.exec("D:\\Jedox\\SQL_UpdateDailySplitsFinancialBudget.bat");
+
+LOG.info("The load daily splits financial budget batch file has been called");]]></jobscript>
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1604471236834" name="[1] Export Daily Splits" type="Groovy" modifiedBy="ONEPAS\richards">
+      <jobscript><![CDATA[LOG.info("Calling the export of daily splits batch file");
+
+Runtime.runtime.exec("D:\\Jedox\\Jedox_DailySplits_Export_DailySplits_Batch.bat");
+
+LOG.info("The export of daily splits batch file has been called");]]></jobscript>
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1604471236834" name="Update Data Warehouse with Financial Budget Daly Splits" type="Standard" modifiedBy="ONEPAS\richards">
+      <executions>
+        <execution nameref="[1] Export Daily Splits" type="job" />
+        <execution nameref="[2b] Load Daily Splits Financial Budget into Data Warehouse" type="job" />
+      </executions>
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1604471236834" name="Clear Budget Financial BudgetFinancialYear" type="Loop" modifiedBy="ONEPAS\richards">
+      <execution nameref="Ld - Clear Budget Financial BudgetFinancialYear" type="load" />
+      <failStatus>error</failStatus>
+      <loop nameref="tr-ft BudYear" />
+    </job>
+    <job modified="1604471236834" name="Load Financial Budget Daily Splits" type="Standard" modifiedBy="ONEPAS\richards">
+      <executions>
+        <execution nameref="Clear Budget Financial BudgetFinancialYear" type="job" />
+        <execution nameref="Ld - Financial Budgets by Dispatch Type" type="load" />
+      </executions>
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1604471236834" name="[2f] Load Daily Splits Financial Budget into Data Warehouse" type="Groovy" modifiedBy="ONEPAS\richards">
+      <jobscript><![CDATA[LOG.info("Calling the load daily splits financial forecast batch file");
+
+Runtime.runtime.exec("D:\\Jedox\\SQL_UpdateDailySplitsFinancialForecast.bat");
+
+LOG.info("The load daily splits financial forecast batch file has been called");]]></jobscript>
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1604471236834" name="Update Data Warehouse with Financial Forecast Daly Splits" type="Standard" modifiedBy="ONEPAS\richards">
+      <executions>
+        <execution nameref="[1] Export Daily Splits" type="job" />
+        <execution nameref="[2f] Load Daily Splits Financial Budget into Data Warehouse" type="job" />
+      </executions>
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1604471236834" name="Load Financial Forecast Daily Splits" type="Standard" modifiedBy="ONEPAS\richards">
+      <executions>
+        <execution nameref="Clear Forecast Financial ForecastCurrentYear" type="job" />
+        <execution nameref="Ld - Financial Forecasts by Dispatch Type" type="load" />
+      </executions>
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1604471236834" name="Clear Forecast Financial ForecastCurrentYear" type="Loop" modifiedBy="ONEPAS\richards">
+      <execution nameref="Ld - Clear Forecast Financial CurrentFinancialYear" type="load" />
+      <failStatus>error</failStatus>
+      <loop nameref="tr-ft CurrYear" />
     </job>
   </jobs>
 </project>
