@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="20.3" modified="1602550818062" modifiedBy="ONEPAS\richards" olapId="p2">
+<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="20.3" modified="1609283215588" modifiedBy="ONEPAS\richards" olapId="p2">
   <headers>
     <header name="comment" modified="1602481548525" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
@@ -1860,6 +1860,31 @@ ORDER BY
         <alias name="LoadFactor" origin="LoadFactor">5</alias>
       </alias_map>
     </extract>
+    <extract modified="1609281215793" name="Wholesale Customers by Fashion Grade" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Designworks wholesale customers grouped by fashion grade]]></comment>
+      <connection nameref="PAS-DW" />
+      <query><![CDATA[SELECT DISTINCT
+  'Designworks By FashionGrade' Parent,
+  COALESCE(MatCustomer.FashionGradeName, 'No Fashion Grade') AS FashionGrade,
+  MatCustomer.CustomerCode AS CustomerCode,
+  MatCustomer.CustomerName AS CustomerName
+ FROM DataWarehouse.dbo.MatCustomer
+INNER JOIN DataWarehouse.dbo.DimBusinessDivision
+ON DimBusinessDivision.Id = MatCustomer.BusinessDivisionId
+WHERE MatCustomer.BillToCustomerId = MatCustomer.CustomerId
+  AND MatCustomer.IsActive = 1
+  AND MatCustomer.BusinessDivisionCode IN (16, 51) -- Metalicus
+ORDER BY
+  FashionGrade,
+  CustomerCode]]></query>
+      <alias_map>
+        <alias origin="Parent">1</alias>
+        <alias origin="FashionGrade">2</alias>
+        <alias origin="CustomerCode">3</alias>
+        <alias origin="CustomerName">4</alias>
+      </alias_map>
+      <cache>false</cache>
+    </extract>
   </extracts>
   <transforms>
     <transform modified="1602481548525" name="tr-PC [Dim]:Accounts (AllLevels)" type="TreePC" modifiedBy="ONEPAS\richards">
@@ -3570,6 +3595,32 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </attributes>
       </target>
     </transform>
+    <transform modified="1609282519372" name="tf-FH [Dim]: Customer by Fashion Grade" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="Wholesale Customers by Fashion Grade" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="Customer Name" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input nameref="Parent" />
+          </level>
+          <level>
+            <input nameref="FashionGrade" />
+          </level>
+          <level>
+            <input nameref="CustomerCode" />
+            <attributes>
+              <attribute name="Customer Name">
+                <input nameref="CustomerName" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
   </transforms>
   <loads>
     <load modified="1602481548525" name="ld-Jedox [Dim-Financials]: Account (All Levels)" type="Dimension" modifiedBy="ONEPAS\richards">
@@ -3850,11 +3901,20 @@ Does not load level 0/bottom level accounts]]></comment>
       <mode>insert</mode>
       <table name="JEDOX_ACCOUNTS_ATTRIBUTES" schema="dbo" />
     </load>
+    <load modified="1609282789361" name="ld-Jedox [Dim-Wholesale]: Wholesale Customer by Fashion Grade" type="Dimension" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Creates the alternate hierarchy for Wholesale Customer by Fashion Grade for Designworks Customers]]></comment>
+      <source nameref="tf-FH [Dim]: Customer by Fashion Grade" />
+      <connection nameref="Jedox" />
+      <dimension generateSubsets="false" name="Wholesale Customer">
+        <elements mode="insert" />
+        <consolidations mode="add" />
+        <attributes mode="insert" />
+      </dimension>
+    </load>
   </loads>
   <jobs>
-    <job modified="1602481548525" name="Dimension Load - Parallel" type="Parallel" modifiedBy="ONEPAS\richards">
+    <job modified="1609283161862" name="Dimension Load - Parallel" type="Parallel" modifiedBy="ONEPAS\richards">
       <executions>
-        <execution nameref="ld-Jedox [Dim-Wholesale]: WholesaleCustomer" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Wholesale]: Colour" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Wholesale]: Season" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Wholesale]: SizeRange" parallel="true" type="load" />
@@ -3871,7 +3931,7 @@ Does not load level 0/bottom level accounts]]></comment>
       </executions>
       <failStatus>error</failStatus>
     </job>
-    <job modified="1602481548525" name="Dimension Load - Sequencial" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1609283215588" name="Dimension Load - Sequencial" type="Standard" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Dim-Financials]: ProfCen (Non-Retail)" type="load" />
         <execution nameref="ld-Jedox [Dim-Financials]: ProfCen (Retail)" type="load" />
@@ -3886,6 +3946,8 @@ Does not load level 0/bottom level accounts]]></comment>
         <execution nameref="ld-Jedox [Dim-Financials]: Account (All Levels)" type="load" />
         <execution nameref="ld-Jedox [Dim-Wholesale]: ProductByCategory" type="load" />
         <execution nameref="ld-Jedox [Dim-Wholesale]: ProductByDepartment" type="load" />
+        <execution nameref="ld-Jedox [Dim-Wholesale]: WholesaleCustomer" type="load" />
+        <execution nameref="ld-Jedox [Dim-Wholesale]: Wholesale Customer by Fashion Grade" type="load" />
       </executions>
       <failStatus>error</failStatus>
     </job>

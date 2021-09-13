@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[04-01]-PAS-FINANCIALS [Retail Sales Weekly] Store Update and Data Load" version="20.3" modified="1602552222475" modifiedBy="ONEPAS\richards" olapId="p7">
+<project name="[04-01]-PAS-FINANCIALS [Retail Sales Weekly] Store Update and Data Load" version="20.3" modified="1623283842369" modifiedBy="ONEPAS\richards" olapId="p7">
   <headers>
     <header name="comment" modified="1602549716734" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[All the ETL processes required to load the Retail Sales Weekly cube
@@ -18,13 +18,13 @@ This project is dependent upon the Rtl ETL process to build the store dimension 
       <comment />
       <default>2018</default>
     </variable>
-    <variable modified="1602549716734" name="BudYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1623283832448" name="BudYear" modifiedBy="ONEPAS\richards">
       <comment />
-      <default>2020</default>
+      <default>2022</default>
     </variable>
-    <variable modified="1602549716734" name="Budget Copy Target" modifiedBy="ONEPAS\richards">
+    <variable modified="1623283842369" name="Budget Copy Target" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Determines the target version of the Budget Copy ETL]]></comment>
-      <default>Budget_2</default>
+      <default>Budget_1</default>
     </variable>
   </variables>
   <connections>
@@ -1887,6 +1887,22 @@ LOG.info("The load Breakaway forecast batch file has been called");]]></jobscrip
       <jobscript><![CDATA[LOG.info("Calling the load Review forecast file");
 
 Runtime.runtime.exec("D:\\Jedox\\UpdateReviewForecast.bat");
+
+LOG.info("The load Review forecast batch file has been called");]]></jobscript>
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1616364878848" name="Update Breakaway Budget" type="Groovy" modifiedBy="ONEPAS\richards">
+      <jobscript><![CDATA[LOG.info("Calling the load Breakaway forecast file");
+
+Runtime.runtime.exec("D:\\Jedox\\UpdateBreakawayBudget.bat");
+
+LOG.info("The load Breakaway forecast batch file has been called");]]></jobscript>
+      <failStatus>error</failStatus>
+    </job>
+    <job modified="1616364919073" name="Update Review Budget" type="Groovy" modifiedBy="ONEPAS\richards">
+      <jobscript><![CDATA[LOG.info("Calling the load Review forecast file");
+
+Runtime.runtime.exec("D:\\Jedox\\UpdateReviewBudget.bat");
 
 LOG.info("The load Review forecast batch file has been called");]]></jobscript>
       <failStatus>error</failStatus>

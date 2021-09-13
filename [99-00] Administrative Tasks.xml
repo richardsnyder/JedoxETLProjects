@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[99-00] Administrative Tasks" version="20.3" modified="1602643284662" modifiedBy="ONEPAS\richards" olapId="p15">
+<project name="[99-00] Administrative Tasks" version="20.3" modified="1605227220280" modifiedBy="ONEPAS\richards" olapId="p15">
   <headers>
     <header name="comment" modified="1602549892330" modifiedBy="ONEPAS\richards">
       <comment>This project is for updating system cubes (#_Parameters) or attributes in dimensions based on the values in #_Parameters.</comment>
@@ -3272,10 +3272,11 @@ THIS JOB must be run BEFORE the Store Calendar comp type load]]></comment>
       <mode>add</mode>
       <table name="JEDOX_STAT_PANDL_CHECK" schema="dbo" />
     </load>
-    <load name="ld-File: Stat PandL Check" type="File" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load modified="1605227220280" name="ld-File: Stat PandL Check" type="File" modifiedBy="ONEPAS\richards">
       <source nameref="ex-DW [Dim] Account - Stat PandL Check" />
       <connection nameref="Stat PandL Check" />
       <mode>create</mode>
+      <useScientificNotation>true</useScientificNotation>
     </load>
     <load modified="1602549892330" name="ld-Jedox [Cube] Store Calendar - Store Status Dates - New" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Cube]:Store Calendar - Store Status" />

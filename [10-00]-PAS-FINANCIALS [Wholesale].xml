@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[10-00]-PAS-FINANCIALS [Wholesale]" version="20.3" modified="1611185828536" modifiedBy="ONEPAS\richards" olapId="p13">
+<project name="[10-00]-PAS-FINANCIALS [Wholesale]" version="20.3" modified="1611198097255" modifiedBy="ONEPAS\richards" olapId="p13">
   <headers>
     <header modified="1611185531020" name="comment" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
@@ -336,7 +336,7 @@ ORDER BY Division, SizeRange]]></query>
         <alias origin="SizeRange">2</alias>
       </alias_map>
     </extract>
-    <extract modified="1611185531020" name="Wholesale Invoices" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1611197607093" name="Wholesale Invoices" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW" />
       <query><![CDATA[IF OBJECT_ID('tempdb..#CurrencyMap') IS NOT NULL 
 DROP TABLE #CurrencyMap
@@ -429,7 +429,7 @@ FROM DataWarehouse.dbo.FactWholesaleInvoices
      LEFT JOIN Datawarehouse.dbo.DimSalesOrderType
     ON DimSalesOrderType.Id = FactWholesaleInvoices.SalesOrderTypeId
 WHERE 1=1
-and FactWholesaleInvoices.PostedDate BETWEEN DATEADD(MONTH, -18, CAST(GETDATE() AS DATE)) AND CAST(GETDATE() AS DATE)
+and FactWholesaleInvoices.PostedDate BETWEEN (SELECT DISTINCT DimDate.FinancialMonthStart FROM DimDate WHERE CalendarDate = DATEADD(MONTH, -18, CAST(GETDATE() AS DATE))) AND CAST(GETDATE() AS DATE)
 and MatProduct.IsReported = 1
 GROUP BY FinBusinessDivision.Code
   ,DimBusinessDivision.FinancialBusinessDivisionDescription
@@ -1015,12 +1015,12 @@ FROM [dbo].[JEDOX_WHOLESALE_CUSTOMER_ALTERNATE]]]></query>
         <cube name="Wholesale" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="18 Periods" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1611198097255" name="18 Periods" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Select 18 periods for deletion from sales invlices]]></comment>
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT DimDate.FinancialYear AS FYear, FORMAT(DimDate.FinancialMonth, '\P00') Period
 FROM DimDate
-WHERE calendardate BETWEEN  DATEADD(MONTH, -18, CAST(GETDATE() AS DATE)) AND CAST(GETDATE() AS DATE)
+WHERE calendardate BETWEEN (SELECT DISTINCT DimDate.FinancialMonthStart FROM DimDate WHERE CalendarDate = DATEADD(MONTH, -18, CAST(GETDATE() AS DATE))) AND CAST(GETDATE() AS DATE)
 ORDER BY FYear, Period]]></query>
       <alias_map>
         <alias origin="FYear">1</alias>

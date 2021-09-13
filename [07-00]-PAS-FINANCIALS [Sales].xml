@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[07-00]-PAS-FINANCIALS [Sales]" version="20.3" modified="1602549764522" modifiedBy="ONEPAS\richards" olapId="p10">
+<project name="[07-00]-PAS-FINANCIALS [Sales]" version="20.3" modified="1623283999615" modifiedBy="ONEPAS\richards" olapId="p10">
   <headers>
     <header name="comment" modified="1602549764522" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
@@ -14,13 +14,13 @@
       <comment />
       <default>Forecast_Sep</default>
     </variable>
-    <variable modified="1602549764522" name="BudgetYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1623283990484" name="BudgetYear" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Used in Budget Copy process to identify/determine the Budget Year to be copied]]></comment>
-      <default>2020</default>
+      <default>2022</default>
     </variable>
-    <variable modified="1602549764522" name="Budget Copy Target" modifiedBy="ONEPAS\richards">
+    <variable modified="1623283999615" name="Budget Copy Target" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Determines the target version of the Budget Copy process]]></comment>
-      <default>Budget_2</default>
+      <default>Budget_1</default>
     </variable>
   </variables>
   <connections>

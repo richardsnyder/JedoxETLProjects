@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[08-00]-PAS-FINANCIALS [Cash Flow]" version="20.3" modified="1602549788278" modifiedBy="ONEPAS\richards" olapId="p11">
+<project name="[08-00]-PAS-FINANCIALS [Cash Flow]" version="20.3" modified="1629959395826" modifiedBy="ONEPAS\richards" olapId="p11">
   <headers>
     <header name="comment" modified="1602549788278" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[ETLs for CashFlow Cube
@@ -8,21 +8,21 @@
     </header>
   </headers>
   <variables>
-    <variable modified="1602549788278" name="CurrYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1629959395826" name="CurrYear" modifiedBy="ONEPAS\richards">
       <comment />
-      <default>2020</default>
+      <default>2022</default>
     </variable>
     <variable modified="1602549788278" name="Forecast_MMM" modifiedBy="ONEPAS\richards">
       <comment />
       <default>Forecast_Jun</default>
     </variable>
-    <variable modified="1602549788278" name="BudgetYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1623284044226" name="BudgetYear" modifiedBy="ONEPAS\richards">
       <comment />
-      <default>2020</default>
+      <default>2022</default>
     </variable>
-    <variable modified="1602549788278" name="BudgetCopy_Target" modifiedBy="ONEPAS\richards">
+    <variable modified="1623284054888" name="BudgetCopy_Target" modifiedBy="ONEPAS\richards">
       <comment />
-      <default>Budget_2</default>
+      <default>Budget_1</default>
     </variable>
     <variable modified="1602549788278" name="FYear" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Used as input for Loop Job]]></comment>
@@ -358,12 +358,12 @@
         </join>
       </joins>
     </transform>
-    <transform modified="1602549788278" name="tf-FT [Cube]: CashFlow (Manual Load to Actual)" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1623295459183" name="tf-FT [Cube]: CashFlow (Manual Load to Actual)" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: CashFlow (Manual Load) Actual" />
       </sources>
       <functions>
-        <function name="CurrYear" type="OlapData">
+        <function name="CurrentYear" type="OlapData">
           <inputs>
             <input constant="Item" />
             <input constant="CurrYear" />
@@ -381,7 +381,7 @@
             <input nameref="Currency" />
           </coordinate>
           <coordinate name="FYear">
-            <input nameref="CurrYear" />
+            <input nameref="CurrentYear" />
           </coordinate>
           <coordinate name="Period">
             <input nameref="Period" />
@@ -403,6 +403,7 @@
           </coordinate>
         </coordinates>
       </target>
+      <cache>false</cache>
     </transform>
     <transform modified="1602549788278" name="tf-FT [Cube]: CashFlow (Budget Copy)" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
@@ -700,7 +701,7 @@
         <execution nameref="ld-Jedox [Cube]: Fin (Act 2  Fcst)" type="load" />
       </executions>
     </job>
-    <job modified="1602549788278" name="[00-02-00]-load[Cube]:Forecast All" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1623296379834" name="[00-02-00]-load[Cube]:Forecast All" type="Standard" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="[00-02-02]-load[Cube]:Forecast(Act2Fcst)" type="job" />
         <execution nameref="load[Cube]: CashFlow (Forecast_Mmm) Z-Out" type="job" />
