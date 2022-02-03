@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[09-00]-PAS-FINANCIALS [Payroll Costing]" version="20.3" modified="1602553047969" modifiedBy="ONEPAS\richards" olapId="p12">
+<project name="[09-00]-PAS-FINANCIALS [Payroll Costing]" version="20.3" modified="1638331344345" modifiedBy="ONEPAS\richards" olapId="p12">
   <headers>
     <header name="comment" modified="1602549803861" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
     </header>
   </headers>
   <variables>
-    <variable modified="1602549803861" name="CurrYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1638331344345" name="CurrYear" modifiedBy="ONEPAS\richards">
       <comment />
-      <default>2020</default>
+      <default>2022</default>
     </variable>
     <variable modified="1602549803861" name="PrevYear" modifiedBy="ONEPAS\richards">
       <comment />
