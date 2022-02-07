@@ -1,46 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[04-01]-PAS-FINANCIALS [Retail Sales Weekly] Store Update and Data Load" version="20.3" modified="1623283842369" modifiedBy="ONEPAS\richards" olapId="p7">
+<project name="[04-01]-PAS-FINANCIALS [Retail Sales Weekly] Store Update and Data Load" version="21.4" modified="1643933130356" modifiedBy="ONEPAS\richards" olapId="p27">
   <headers>
-    <header name="comment" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <header name="comment" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[All the ETL processes required to load the Retail Sales Weekly cube
 This project is dependent upon the Rtl ETL process to build the store dimension used by the Retail Sales Weekly cube.]]></comment>
     </header>
   </headers>
   <variables>
-    <variable name="ParameterYear" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <variable name="ParameterYear" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <default>CurrYear|PrevYear</default>
     </variable>
-    <variable modified="1602549716734" name="CurrYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1643932100294" name="CurrYear" modifiedBy="ONEPAS\richards">
       <comment />
       <default>2019</default>
     </variable>
-    <variable modified="1602549716734" name="PrevYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1643932100294" name="PrevYear" modifiedBy="ONEPAS\richards">
       <comment />
       <default>2018</default>
     </variable>
-    <variable modified="1623283832448" name="BudYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1643932100294" name="BudYear" modifiedBy="ONEPAS\richards">
       <comment />
       <default>2022</default>
     </variable>
-    <variable modified="1623283842369" name="Budget Copy Target" modifiedBy="ONEPAS\richards">
+    <variable modified="1643932100294" name="Budget Copy Target" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Determines the target version of the Budget Copy ETL]]></comment>
       <default>Budget_1</default>
     </variable>
   </variables>
   <connections>
-    <connection modified="1602552222475" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1643932100294" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <global nameref="DW" />
     </connection>
-    <connection modified="1602549716734" name="Jedox" type="JedoxOlap" modifiedBy="ONEPAS\richards">
+    <connection modified="1643932100294" name="Jedox" type="JedoxOlap" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
       <global nameref="localhost" />
       <database>PAS-FINANCIALS</database>
       <ssl>off</ssl>
     </connection>
-    <connection modified="1602552189971" name="AP21" type="Oracle" modifiedBy="ONEPAS\richards">
+    <connection modified="1643932100294" name="AP21" type="Oracle" modifiedBy="ONEPAS\richards">
       <global nameref="AP21" />
     </connection>
-    <connection name="file-SalesDailyUpdate" type="File" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <connection name="file-SalesDailyUpdate" type="File" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <location type="FileSystem" />
       <comment><![CDATA[Used for sending the SalesDaily update times in an email.]]></comment>
       <database>C:\Program Files\Jedox\Jedox Suite\tomcat\client\SailesDailyUpdate.txt</database>
@@ -49,7 +49,7 @@ This project is dependent upon the Rtl ETL process to build the store dimension 
       <quote>#none</quote>
       <enableEscape>false</enableEscape>
     </connection>
-    <connection name="file-Test" type="File" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <connection name="file-Test" type="File" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <location type="FileSystem" />
       <database>TestingFile.csv</database>
       <header>true</header>
@@ -60,7 +60,7 @@ This project is dependent upon the Rtl ETL process to build the store dimension 
     </connection>
   </connections>
   <extracts>
-    <extract modified="1602549716734" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Actuals)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Actuals)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
 NOTE: This is only used for the actual/Forecast load at this stage.
 NOTE: Manual loads will not be cleared out]]></comment>
@@ -87,7 +87,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="Retail Sales Weekly" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-DW-Sales Budget" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-DW-Sales Budget" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[2015-01-12 RKS
 The query will be replaced by a view once it has been created.]]></comment>
       <connection nameref="DW" />
@@ -138,7 +138,7 @@ SELECT [Version]
         <alias origin="#VALUE">9</alias>
       </alias_map>
     </extract>
-    <extract modified="1602549716734" name="ex-DW-Sales Forecast" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-DW-Sales Forecast" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[2015-01-12 RKS
 The query will be replaced by a view once it has been created.]]></comment>
       <connection nameref="DW" />
@@ -191,7 +191,7 @@ SELECT [Version]
         <alias origin="#VALUE">9</alias>
       </alias_map>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Budget)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Budget)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
 NOTE: This is only used for the actual/Forecast load at this stage.
 NOTE: Manual loads will not be cleared out]]></comment>
@@ -217,7 +217,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="Retail Sales Weekly" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox[Cube]: Act2Fcst - Actuals" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox[Cube]: Act2Fcst - Actuals" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
 NOTE: This is only used for the actual/Forecast load at this stage.
 NOTE: Manual loads will not be cleared out]]></comment>
@@ -246,7 +246,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="Retail Sales Weekly" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_DW)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_DW)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
 NOTE: This is only used for the actual/Forecast load at this stage.
 NOTE: Manual loads will not be cleared out]]></comment>
@@ -272,7 +272,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="Retail Sales Weekly" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Cube]: Retail Sales Weekly (Forecast)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Cube]: Retail Sales Weekly (Forecast)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extracts the Forecast_DW version for loading into Forecast_MMM]]></comment>
       <connection nameref="Jedox" />
       <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
@@ -284,7 +284,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="Retail Sales Weekly" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Attr]: Week (Forecast Weeks)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Attr]: Week (Forecast Weeks)" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="only_numeric" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmptyAndZero">
         <dimensions>
@@ -295,7 +295,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="#_Week" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Attr]: Week (Actual Week)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Attr]: Week (Actual Week)" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="only_numeric" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmptyAndZero">
         <dimensions>
@@ -306,7 +306,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="#_Week" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-DW-Sales Daily" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-DW-Sales Daily" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[DECLARE @PrevYear as int
 DECLARE @CurrYear as int
@@ -388,7 +388,7 @@ SELECT [Version]
         <alias origin="Comp Type">9</alias>
       </alias_map>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Target)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Target)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
 NOTE: This is only used for the actual/Forecast load at this stage.
 NOTE: Manual loads will not be cleared out]]></comment>
@@ -416,7 +416,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="Retail Sales Weekly" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-DW-Sales Target" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-DW-Sales Target" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[2015-01-12 RKS
 The query will be replaced by a view once it has been created.]]></comment>
       <connection nameref="DW" />
@@ -467,7 +467,7 @@ SELECT [Version]
         <alias origin="#VALUE">9</alias>
       </alias_map>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Cube]: Retail Sales Weekly (Budget Copy)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Cube]: Retail Sales Weekly (Budget Copy)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Used to copy the Budget from one version to another]]></comment>
       <connection nameref="Jedox" />
       <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
@@ -482,7 +482,7 @@ SELECT [Version]
         <cube name="Retail Sales Weekly" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_MMM)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_MMM)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
 NOTE: This is only used for the actual/Forecast load at this stage.
 NOTE: Manual loads will not be cleared out]]></comment>
@@ -508,7 +508,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="Retail Sales Weekly" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract from Weekly Retail Sales cube used to zero out the "Comp Type".
 NOTE: This is only used for the actual/Forecast load at this stage.
 NOTE: Manual loads will not be cleared out]]></comment>
@@ -534,7 +534,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="Retail Sales Weekly" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Cube]: Parameter - CurrYearETL" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Cube]: Parameter - CurrYearETL" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query drillthrough="false" onlyBasisAsDefault="false" useRules="false" zeroSuppressionType="includeEmptyDefaultMapping">
         <dimensions>
@@ -548,7 +548,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Cube]: Parameter - Forecast_MMM" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Cube]: Parameter - Forecast_MMM" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="both" drillthrough="false" onlyBasisAsDefault="false" useRules="true" zeroSuppressionType="includeEmptyDefaultMapping">
         <dimensions>
@@ -562,7 +562,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Cube]: Parameter - BudYearETL" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Cube]: Parameter - BudYearETL" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query drillthrough="false" onlyBasisAsDefault="false" useRules="false" zeroSuppressionType="includeEmptyDefaultMapping">
         <dimensions>
@@ -576,7 +576,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Cube]: Parameter - PrevYearETL" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Cube]: Parameter - PrevYearETL" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query drillthrough="false" onlyBasisAsDefault="false" useRules="true" zeroSuppressionType="includeEmptyDefaultMapping">
         <dimensions>
@@ -590,7 +590,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1602549716734" name="ex-Jedox [Cube]: Retail Sales Weekly (Forecast Comp Lookup)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-Jedox [Cube]: Retail Sales Weekly (Forecast Comp Lookup)" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -615,7 +615,7 @@ NOTE: Manual loads will not be cleared out]]></comment>
         <column name="FRetail Measure" origin="Weekly Retail Measure" />
       </columns>
     </extract>
-    <extract modified="1602549716734" name="ex-DW-Sales Act-Fcst Load" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643932100294" name="ex-DW-Sales Act-Fcst Load" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract used to load actual into forecast version]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[IF OBJECT_ID('tempdb.dbo.#Actual', 'U') IS NOT NULL 
@@ -741,7 +741,7 @@ and [Comp Type Act] LIKE 'LY -%'
     </extract>
   </extracts>
   <transforms>
-    <transform modified="1602549716734" name="tf-FT [Cube]: Actual Load" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT [Cube]: Actual Load" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Matches the dimensions in the cube (Weekly Retail Sales) to the query used to extract the data
 RetYear in the query to FYear in the cube etc.]]></comment>
       <sources>
@@ -779,7 +779,7 @@ RetYear in the query to FYear in the cube etc.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549716734" name="tf-FT [Cube]: Forecast Load" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT [Cube]: Forecast Load" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Matches the dimensions in the cube (Weekly Retail Sales) to the query used to extract the data
 RetYear in the query to FYear in the cube etc.]]></comment>
       <sources>
@@ -817,7 +817,7 @@ RetYear in the query to FYear in the cube etc.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT[Cube]: Act2Fcst - Actual Week - Week Only" type="FieldTransform" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT[Cube]: Act2Fcst - Actual Week - Week Only" type="FieldTransform" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Brings in the only 2 required field and renames them to avoid naming issues down stream.]]></comment>
       <sources>
         <source nameref="ex-Jedox [Attr]: Week (Actual Week)" />
@@ -830,7 +830,7 @@ RetYear in the query to FYear in the cube etc.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549716734" name="tf-FT[Cube]: Act2Fcst - Format for Jedox Load" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT[Cube]: Act2Fcst - Format for Jedox Load" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Renames the #_Value field to eliminate issues down stream.]]></comment>
       <sources>
         <source nameref="tf-TJ[Cube]: - Ex-Jedox Act2Fcst Actuals Up to Prior Week" />
@@ -867,7 +867,7 @@ RetYear in the query to FYear in the cube etc.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549716734" name="tf-TJ[Cube]: - Ex-Jedox Act2Fcst Actuals Up to Prior Week" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-TJ[Cube]: - Ex-Jedox Act2Fcst Actuals Up to Prior Week" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-FT[Cube]: Act2Fcst - Actual Week - Week Only" />
         <source nameref="ex-DW-Sales Act-Fcst Load" />
@@ -886,7 +886,7 @@ RetYear in the query to FYear in the cube etc.]]></comment>
         </join>
       </joins>
     </transform>
-    <transform modified="1602549716734" name="tf-FT[Cube]: Act2Fcst - Forecast Week - Week Only" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT[Cube]: Act2Fcst - Forecast Week - Week Only" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Brings in the only 2 required field and renames them to avoid naming issues down stream.]]></comment>
       <sources>
         <source nameref="ex-Jedox [Attr]: Week (Forecast Weeks)" />
@@ -899,7 +899,7 @@ RetYear in the query to FYear in the cube etc.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549716734" name="tf-TJ [Cube] - Forecast Load Forecast Weeks Only" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-TJ [Cube] - Forecast Load Forecast Weeks Only" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW-Sales Forecast" />
         <source nameref="tf-FT[Cube]: Act2Fcst - Forecast Week - Week Only" />
@@ -915,7 +915,7 @@ RetYear in the query to FYear in the cube etc.]]></comment>
         </join>
       </joins>
     </transform>
-    <transform modified="1602549716734" name="tf-FT [Cube]: Forecast_DW Load" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT [Cube]: Forecast_DW Load" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Matches the dimensions in the cube (Weekly Retail Sales) to the query used to extract the data
 RetYear in the query to FYear in the cube etc.]]></comment>
       <sources>
@@ -953,7 +953,7 @@ RetYear in the query to FYear in the cube etc.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT [Cube]: Target Load" type="FieldTransform" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Cube]: Target Load" type="FieldTransform" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Matches the dimensions in the cube (Weekly Retail Sales) to the query used to extract the data
 RetYear in the query to FYear in the cube etc.]]></comment>
       <sources>
@@ -991,7 +991,7 @@ RetYear in the query to FYear in the cube etc.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT [Cube]: Budget Copy" type="FieldTransform" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Cube]: Budget Copy" type="FieldTransform" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Transforms the version of the budget copy from Budget to what ever the variable ${Budget Target Copy} is set to.
 To change the target change the version in the variable.]]></comment>
       <sources>
@@ -1029,7 +1029,7 @@ To change the target change the version in the variable.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549716734" name="tf-FT [Attr]: Parameter - CurrYearETL" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT [Attr]: Parameter - CurrYearETL" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Parameter - CurrYearETL" />
       </sources>
@@ -1041,7 +1041,7 @@ To change the target change the version in the variable.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549716734" name="tf-TJ [Cube] - CurrYearETL to Forecast Z-Out" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-TJ [Cube] - CurrYearETL to Forecast Z-Out" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast)" />
         <source nameref="tf-FT [Attr]: Parameter - CurrYearETL" />
@@ -1057,7 +1057,7 @@ To change the target change the version in the variable.]]></comment>
         </join>
       </joins>
     </transform>
-    <transform modified="1602549716734" name="tf-TJ [Cube] - CurrYearETL to Forecast_DW Z-Out" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-TJ [Cube] - CurrYearETL to Forecast_DW Z-Out" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_DW)" />
         <source nameref="tf-FT [Attr]: Parameter - CurrYearETL" />
@@ -1073,23 +1073,27 @@ To change the target change the version in the variable.]]></comment>
         </join>
       </joins>
     </transform>
-    <transform modified="1602549716734" name="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out Curr Year" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932997240" name="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out Curr Year" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_MMM)" />
         <source nameref="ex-Jedox [Cube]: Parameter - CurrYearETL" />
       </sources>
       <joins persist="false">
-        <join type="inner">
+        <join allColumns="true" type="inner" unique="false">
           <left nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_MMM)">
             <key nameref="FYear" />
           </left>
           <right nameref="ex-Jedox [Cube]: Parameter - CurrYearETL">
             <key nameref="#Value" />
           </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
         </join>
       </joins>
+      <cache>false</cache>
     </transform>
-    <transform modified="1602549716734" name="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out Forecast MMM" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out Forecast MMM" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Forecast_MMM)" />
         <source nameref="tf-FT [Attr]: Parameter - Forecast_MMM" />
@@ -1105,7 +1109,7 @@ To change the target change the version in the variable.]]></comment>
         </join>
       </joins>
     </transform>
-    <transform modified="1602549716734" name="tf-FT [Attr]: Parameter - Forecast_MMM" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT [Attr]: Parameter - Forecast_MMM" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Parameter - Forecast_MMM" />
       </sources>
@@ -1117,13 +1121,13 @@ To change the target change the version in the variable.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549716734" name="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932985138" name="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-FT[Attr-Cube]: Forecast_MMM Z-Out - Forecast_MMM" />
         <source nameref="tf-FT[Attr-Cube]: Forecast_MMM Z-Out - Curr Year" />
       </sources>
       <joins persist="false">
-        <join type="inner">
+        <join allColumns="true" type="inner" unique="false">
           <left nameref="tf-FT[Attr-Cube]: Forecast_MMM Z-Out - Forecast_MMM">
             <key nameref="FYear" />
             <key nameref="Version" />
@@ -1146,10 +1150,22 @@ To change the target change the version in the variable.]]></comment>
             <key nameref="Weekly Retail Measure" />
             <key nameref="#Value" />
           </right>
+          <conditions>
+            <condition type="eq" />
+            <condition type="eq" />
+            <condition type="eq" />
+            <condition type="eq" />
+            <condition type="eq" />
+            <condition type="eq" />
+            <condition type="eq" />
+            <condition type="eq" />
+            <condition type="eq" />
+          </conditions>
         </join>
       </joins>
+      <cache>false</cache>
     </transform>
-    <transform modified="1602549716734" name="tf-FT[Attr-Cube]: Forecast_MMM Z-Out - Forecast_MMM" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT[Attr-Cube]: Forecast_MMM Z-Out - Forecast_MMM" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out Forecast MMM" />
       </sources>
@@ -1185,7 +1201,7 @@ To change the target change the version in the variable.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549716734" name="tf-FT[Attr-Cube]: Forecast_MMM Z-Out - Curr Year" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT[Attr-Cube]: Forecast_MMM Z-Out - Curr Year" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out Curr Year" />
       </sources>
@@ -1221,7 +1237,7 @@ To change the target change the version in the variable.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549716734" name="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Curr Year" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Curr Year" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Forecast)" />
         <source nameref="tf-FT [Attr]: Parameter - CurrYearETL" />
@@ -1237,7 +1253,7 @@ To change the target change the version in the variable.]]></comment>
         </join>
       </joins>
     </transform>
-    <transform modified="1602549716734" name="tf-FT[Attr-Cube]: Forecast_MMM - Curr Year" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT[Attr-Cube]: Forecast_MMM - Curr Year" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Curr Year" />
       </sources>
@@ -1286,23 +1302,27 @@ To change the target change the version in the variable.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549716734" name="tf-TJ [Cube] - CurrYearETL to Budget Z-Out" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643933083940" name="tf-TJ [Cube] - CurrYearETL to Budget Z-Out" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Budget)" />
         <source nameref="ex-Jedox [Cube]: Parameter - BudYearETL" />
       </sources>
       <joins persist="false">
-        <join type="inner">
+        <join allColumns="true" type="inner" unique="false">
           <left nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Budget)">
             <key nameref="FYear" />
           </left>
           <right nameref="ex-Jedox [Cube]: Parameter - BudYearETL">
             <key nameref="#Value" />
           </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
         </join>
       </joins>
+      <cache>false</cache>
     </transform>
-    <transform modified="1602549716734" name="tf-FT [Attr-Cube]: Budget Z-Out Bud Year" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT [Attr-Cube]: Budget Z-Out Bud Year" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Cube] - CurrYearETL to Budget Z-Out" />
       </sources>
@@ -1338,7 +1358,7 @@ To change the target change the version in the variable.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549716734" name="tf-FT [Attr]: Parameter - PrevYearETL" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT [Attr]: Parameter - PrevYearETL" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Parameter - PrevYearETL" />
       </sources>
@@ -1350,7 +1370,7 @@ To change the target change the version in the variable.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549716734" name="tf-TJ [Cube] - Actual Z-Out - CurrYearETL" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-TJ [Cube] - Actual Z-Out - CurrYearETL" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Actuals)" />
         <source nameref="tf-FT [Attr]: Parameter - CurrYearETL" />
@@ -1369,7 +1389,7 @@ To change the target change the version in the variable.]]></comment>
         </join>
       </joins>
     </transform>
-    <transform modified="1602549716734" name="tf-TJ [Cube] -  Actual Z-Out - PrevYearETL" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-TJ [Cube] -  Actual Z-Out - PrevYearETL" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Actuals)" />
         <source nameref="tf-FT [Attr]: Parameter - PrevYearETL" />
@@ -1388,13 +1408,13 @@ To change the target change the version in the variable.]]></comment>
         </join>
       </joins>
     </transform>
-    <transform modified="1602549716734" name="tf-TU [Cube] - Union PrevYear and CurrYear to Actual Z-Out" type="TableUnion" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-TU [Cube] - Union PrevYear and CurrYear to Actual Z-Out" type="TableUnion" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Cube] -  Actual Z-Out - PrevYearETL" />
         <source nameref="tf-TJ [Cube] - Actual Z-Out - CurrYearETL" />
       </sources>
     </transform>
-    <transform modified="1602549716734" name="tf-FT [Cube]: Actual Z-Out" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT [Cube]: Actual Z-Out" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TU [Cube] - Union PrevYear and CurrYear to Actual Z-Out" />
       </sources>
@@ -1430,23 +1450,27 @@ To change the target change the version in the variable.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549716734" name="tf-TJ [Cube] - CurrYearETL to Target Z-Out" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643933130356" name="tf-TJ [Cube] - CurrYearETL to Target Z-Out" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Target)" />
         <source nameref="ex-Jedox [Cube]: Parameter - CurrYearETL" />
       </sources>
       <joins persist="false">
-        <join type="inner">
+        <join allColumns="true" type="inner" unique="false">
           <left nameref="ex-Jedox [Cube]: Retail Sales Weekly (Z-Out: Target)">
             <key nameref="FYear" />
           </left>
           <right nameref="ex-Jedox [Cube]: Parameter - CurrYearETL">
             <key nameref="#Value" />
           </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
         </join>
       </joins>
+      <cache>false</cache>
     </transform>
-    <transform modified="1602549716734" name="tf-FT [Attr-Cube]: Target Z-Out Curr Year" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643932100294" name="tf-FT [Attr-Cube]: Target Z-Out Curr Year" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Cube] - CurrYearETL to Target Z-Out" />
       </sources>
@@ -1484,7 +1508,7 @@ To change the target change the version in the variable.]]></comment>
     </transform>
   </transforms>
   <loads>
-    <load modified="1602549716734" name="ld-Jedox [Cube]: Retail Sales Weekly - Actual" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643932100294" name="ld-Jedox [Cube]: Retail Sales Weekly - Actual" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Cube]: Actual Load" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -1501,7 +1525,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549716734" name="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Actuals)" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643932100294" name="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Actuals)" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Cube]: Actual Z-Out" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
@@ -1518,7 +1542,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549716734" name="ld-Jedox [Cube]: Retail Sales Weekly - Budget" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643932100294" name="ld-Jedox [Cube]: Retail Sales Weekly - Budget" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="ex-DW-Sales Budget" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -1535,7 +1559,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549716734" name="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Budget)" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643932100294" name="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Budget)" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Attr-Cube]: Budget Z-Out Bud Year" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
@@ -1552,7 +1576,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549716734" name="ld-Jedox [Cube]: Retail Sales Weekly - Forecast" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643932100294" name="ld-Jedox [Cube]: Retail Sales Weekly - Forecast" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Cube]: Forecast Load" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -1569,7 +1593,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549716734" name="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Forecast)" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643932100294" name="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Forecast)" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast Z-Out" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
@@ -1586,7 +1610,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549716734" name="ld-Jedox [Cube]: Retail Sales Weekly - Forecast (Fcst2Fcst_mmm)" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643932100294" name="ld-Jedox [Cube]: Retail Sales Weekly - Forecast (Fcst2Fcst_mmm)" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT[Attr-Cube]: Forecast_MMM - Curr Year" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -1603,7 +1627,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549716734" name="ld-Jedox [Cube]: Retail Sales Weekly - (Z-Out Forecast_MMM)" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643932100294" name="ld-Jedox [Cube]: Retail Sales Weekly - (Z-Out Forecast_MMM)" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast_MMM Z-Out" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
@@ -1620,7 +1644,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load name="ld-Jedox [Cube]: Retail Sales Weekly - Act2Fcst (Copy Actual over Forecast up to Prior Week)" type="Cube" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube]: Retail Sales Weekly - Act2Fcst (Copy Actual over Forecast up to Prior Week)" type="Cube" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT[Cube]: Act2Fcst - Format for Jedox Load" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -1637,7 +1661,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549716734" name="ld-Jedox [Cube]: Retail Sales Weekly - Forecast_DW" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643932100294" name="ld-Jedox [Cube]: Retail Sales Weekly - Forecast_DW" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Cube]: Forecast_DW Load" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -1654,7 +1678,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549716734" name="ld-Jedox [Cube]: Retail Sales Weekly (Z-Out Forecast_DW)" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643932100294" name="ld-Jedox [Cube]: Retail Sales Weekly (Z-Out Forecast_DW)" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast_DW Z-Out" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
@@ -1671,12 +1695,12 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549716734" name="ld-File TestFile" type="File" modifiedBy="ONEPAS\richards">
+    <load modified="1643932100294" name="ld-File TestFile" type="File" modifiedBy="ONEPAS\richards">
       <source nameref="tf-TJ [Cube] - CurrYearETL to Forecast Z-Out" />
       <connection nameref="file-Test" />
       <mode>create</mode>
     </load>
-    <load modified="1602549716734" name="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Target)" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643932100294" name="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Target)" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Attr-Cube]: Target Z-Out Curr Year" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
@@ -1693,7 +1717,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549716734" name="ld-Jedox [Cube]: Retail Sales Weekly - Target" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643932100294" name="ld-Jedox [Cube]: Retail Sales Weekly - Target" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="ex-DW-Sales Target" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -1710,7 +1734,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load name="ld-Jedox [Cube]: Retail Sales Weekly - Budget Copy" type="Cube" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube]: Retail Sales Weekly - Budget Copy" type="Cube" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Second step in the budget copy process
 Copies the Budget to the Budget target version (as defined in the variable Budget Copy Target) for the budget year (as defined in the variable BudgetYear).]]></comment>
       <source nameref="tf-FT [Cube]: Budget Copy" />
@@ -1729,7 +1753,7 @@ Copies the Budget to the Budget target version (as defined in the variable Budge
         </dimensions>
       </cube>
     </load>
-    <load name="ld-Jedox [Cube]: Retail Sales Weekly - Budget Copy Z-Out" type="Cube" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube]: Retail Sales Weekly - Budget Copy Z-Out" type="Cube" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[First step in the budget copy process
 Zeros out the Budget target version (as defined in the variable Budget Copy Target) for the budget year (as defined in the variable BudgetYear).]]></comment>
       <source nameref="tf-FT [Cube]: Budget Copy" />
@@ -1750,18 +1774,18 @@ Zeros out the Budget target version (as defined in the variable Budget Copy Targ
     </load>
   </loads>
   <jobs>
-    <job name="01-02 Nightly - Retail Sales Cube Weekly Load Actuals" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="01-02 Nightly - Retail Sales Cube Weekly Load Actuals" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Actual" type="load" />
       </executions>
     </job>
-    <job name="01-01 Nightly - Retail Sales Weekly Cube - Z-Out Actuals" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="01-01 Nightly - Retail Sales Weekly Cube - Z-Out Actuals" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Actuals)" type="load" />
       </executions>
       <comment><![CDATA[Zeros out the current year that is being loaded]]></comment>
     </job>
-    <job name="01-00 Nightly - Retail Sales Weekly Cube Load" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="01-00 Nightly - Retail Sales Weekly Cube Load" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="01-01 Nightly - Retail Sales Weekly Cube - Z-Out Actuals" type="job" />
         <execution nameref="01-02 Nightly - Retail Sales Cube Weekly Load Actuals" type="job" />
@@ -1769,33 +1793,33 @@ Zeros out the Budget target version (as defined in the variable Budget Copy Targ
         <execution nameref="04-00 Manual - Retail Sales Weekly - Target Load" type="job" />
       </executions>
     </job>
-    <job name="03-02 Manual - Retail Sales Weekly - Budget Load" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="03-02 Manual - Retail Sales Weekly - Budget Load" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Budget" type="load" />
       </executions>
     </job>
-    <job name="03-01 Manual - Retail Sales Weekly - Budget - Z-Out" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="03-01 Manual - Retail Sales Weekly - Budget - Z-Out" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Budget)" type="load" />
       </executions>
     </job>
-    <job name="03-00 Manual - Retail Sales Weekly - Budget Load" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="03-00 Manual - Retail Sales Weekly - Budget Load" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="03-01 Manual - Retail Sales Weekly - Budget - Z-Out" type="job" />
         <execution nameref="03-02 Manual - Retail Sales Weekly - Budget Load" type="job" />
       </executions>
     </job>
-    <job name="02-06 Manual - Retail Sales Weekly - Forecast (Fcst2Fcst_mmm)" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="02-06 Manual - Retail Sales Weekly - Forecast (Fcst2Fcst_mmm)" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Forecast (Fcst2Fcst_mmm)" type="load" />
       </executions>
     </job>
-    <job name="02-05 Manual - Retail Sales Weekly - Forecast (Fcst2Fcst_mmm Z-Out)" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="02-05 Manual - Retail Sales Weekly - Forecast (Fcst2Fcst_mmm Z-Out)" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - (Z-Out Forecast_MMM)" type="load" />
       </executions>
     </job>
-    <job name="02-04 Manual - Retail Sales Weekly - Forecast_DW Load" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="02-04 Manual - Retail Sales Weekly - Forecast_DW Load" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Forecast_DW" type="load" />
       </executions>
@@ -1803,23 +1827,23 @@ Zeros out the Budget target version (as defined in the variable Budget Copy Targ
 This job relies on job 02-02 Manual - Retail Sales Weekly - Load Forecast which populates the table F_RetailSalesData.
 If that job is not run first the contents of Forecast_DW may not reflect the latest forecasts.]]></comment>
     </job>
-    <job name="02-03 Manual - Retail Sales Weekly - Forecast_DW Z-Out" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="02-03 Manual - Retail Sales Weekly - Forecast_DW Z-Out" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly (Z-Out Forecast_DW)" type="load" />
       </executions>
     </job>
-    <job name="02-02 Manual - Retail Sales Weekly - Load Forecast" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="02-02 Manual - Retail Sales Weekly - Load Forecast" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Act2Fcst (Copy Actual over Forecast up to Prior Week)" type="load" />
         <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Forecast" type="load" />
       </executions>
     </job>
-    <job name="02-01 Manual - Retail Sales Weekly - Z-Out Forecast" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="02-01 Manual - Retail Sales Weekly - Z-Out Forecast" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Forecast)" type="load" />
       </executions>
     </job>
-    <job modified="1602549716734" name="02-00 Manual - Retail Sales Weekly - Forecast Load" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1643932100294" name="02-00 Manual - Retail Sales Weekly - Forecast Load" type="Standard" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="02-01 Manual - Retail Sales Weekly - Z-Out Forecast" type="job" />
         <execution nameref="02-02 Manual - Retail Sales Weekly - Load Forecast" type="job" />
@@ -1830,36 +1854,36 @@ If that job is not run first the contents of Forecast_DW may not reflect the lat
       </executions>
       <failStatus>error</failStatus>
     </job>
-    <job name="02-00-01 Nightly - Retail Sales Weekly - Forecast (Only) Load" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="02-00-01 Nightly - Retail Sales Weekly - Forecast (Only) Load" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="02-01 Manual - Retail Sales Weekly - Z-Out Forecast" type="job" />
         <execution nameref="02-02 Manual - Retail Sales Weekly - Load Forecast" type="job" />
       </executions>
     </job>
-    <job name="04-01 Manual - Retail Sales Weekly - Z-Out Target" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="04-01 Manual - Retail Sales Weekly - Z-Out Target" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Target)" type="load" />
       </executions>
     </job>
-    <job name="04-02 Manual - Retail Sales Weekly - Target Load" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="04-02 Manual - Retail Sales Weekly - Target Load" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Target" type="load" />
       </executions>
     </job>
-    <job name="04-00 Manual - Retail Sales Weekly - Target Load" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="04-00 Manual - Retail Sales Weekly - Target Load" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube] Retail Sales Weekly (Z-Out Target)" type="load" />
         <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Target" type="load" />
       </executions>
     </job>
-    <job name="99-01 Manual - Retail Sales Weekly Budget Copy" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="99-01 Manual - Retail Sales Weekly Budget Copy" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Budget Copy Z-Out" type="load" />
         <execution nameref="ld-Jedox [Cube]: Retail Sales Weekly - Budget Copy" type="load" />
       </executions>
       <comment><![CDATA[Zeros out and then performs a copy using the Variables BudgetYear and Budget Target Version from the Budget version to the version set in Budget Target Version for the variable BudgetYear.]]></comment>
     </job>
-    <job name="02-00-02 Nightly - Retail Sales Weekly - Forecast DW - Forecast_MMM Load" type="Standard" modified="1602549716734" modifiedBy="ONEPAS\richards">
+    <job name="02-00-02 Nightly - Retail Sales Weekly - Forecast DW - Forecast_MMM Load" type="Standard" modified="1643932100294" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="02-03 Manual - Retail Sales Weekly - Forecast_DW Z-Out" type="job" />
         <execution nameref="02-04 Manual - Retail Sales Weekly - Forecast_DW Load" type="job" />
@@ -1867,7 +1891,7 @@ If that job is not run first the contents of Forecast_DW may not reflect the lat
         <execution nameref="02-06 Manual - Retail Sales Weekly - Forecast (Fcst2Fcst_mmm)" type="job" />
       </executions>
     </job>
-    <job modified="1602549716734" name="Load Targets from AP21" type="Groovy" modifiedBy="ONEPAS\richards">
+    <job modified="1643932100294" name="Load Targets from AP21" type="Groovy" modifiedBy="ONEPAS\richards">
       <jobscript><![CDATA[LOG.info("Calling the load targets batch file");
 
 Runtime.runtime.exec("D:\\Jedox\\LoadTargets.bat");
@@ -1875,7 +1899,7 @@ Runtime.runtime.exec("D:\\Jedox\\LoadTargets.bat");
 LOG.info("The load targets batch file has been called");]]></jobscript>
       <failStatus>error</failStatus>
     </job>
-    <job modified="1602549716734" name="Update Breakaway Forecast" type="Groovy" modifiedBy="ONEPAS\richards">
+    <job modified="1643932100294" name="Update Breakaway Forecast" type="Groovy" modifiedBy="ONEPAS\richards">
       <jobscript><![CDATA[LOG.info("Calling the load Breakaway forecast file");
 
 Runtime.runtime.exec("D:\\Jedox\\UpdateBreakawayForecast.bat");
@@ -1883,7 +1907,7 @@ Runtime.runtime.exec("D:\\Jedox\\UpdateBreakawayForecast.bat");
 LOG.info("The load Breakaway forecast batch file has been called");]]></jobscript>
       <failStatus>error</failStatus>
     </job>
-    <job modified="1602549716734" name="Update Review Forecast" type="Groovy" modifiedBy="ONEPAS\richards">
+    <job modified="1643932100294" name="Update Review Forecast" type="Groovy" modifiedBy="ONEPAS\richards">
       <jobscript><![CDATA[LOG.info("Calling the load Review forecast file");
 
 Runtime.runtime.exec("D:\\Jedox\\UpdateReviewForecast.bat");
@@ -1891,7 +1915,7 @@ Runtime.runtime.exec("D:\\Jedox\\UpdateReviewForecast.bat");
 LOG.info("The load Review forecast batch file has been called");]]></jobscript>
       <failStatus>error</failStatus>
     </job>
-    <job modified="1616364878848" name="Update Breakaway Budget" type="Groovy" modifiedBy="ONEPAS\richards">
+    <job modified="1643932100294" name="Update Breakaway Budget" type="Groovy" modifiedBy="ONEPAS\richards">
       <jobscript><![CDATA[LOG.info("Calling the load Breakaway forecast file");
 
 Runtime.runtime.exec("D:\\Jedox\\UpdateBreakawayBudget.bat");
@@ -1899,7 +1923,7 @@ Runtime.runtime.exec("D:\\Jedox\\UpdateBreakawayBudget.bat");
 LOG.info("The load Breakaway forecast batch file has been called");]]></jobscript>
       <failStatus>error</failStatus>
     </job>
-    <job modified="1616364919073" name="Update Review Budget" type="Groovy" modifiedBy="ONEPAS\richards">
+    <job modified="1643932100294" name="Update Review Budget" type="Groovy" modifiedBy="ONEPAS\richards">
       <jobscript><![CDATA[LOG.info("Calling the load Review forecast file");
 
 Runtime.runtime.exec("D:\\Jedox\\UpdateReviewBudget.bat");

@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[10-00]-PAS-FINANCIALS [Wholesale]" version="20.3" modified="1611198097255" modifiedBy="ONEPAS\richards" olapId="p13">
+<project name="[10-00]-PAS-FINANCIALS [Wholesale]" version="21.4" modified="1643934286432" modifiedBy="ONEPAS\richards" olapId="p30">
   <headers>
-    <header modified="1611185531020" name="comment" modifiedBy="ONEPAS\richards">
+    <header modified="1643934110775" name="comment" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
     </header>
   </headers>
   <variables>
-    <variable name="Period" modified="1611185531020" modifiedBy="ONEPAS\richards" />
-    <variable modified="1611185531020" name="FYear" modifiedBy="ONEPAS\richards">
+    <variable name="Period" modified="1643934110775" modifiedBy="ONEPAS\richards" />
+    <variable modified="1643934110775" name="FYear" modifiedBy="ONEPAS\richards">
       <comment />
       <default />
     </variable>
   </variables>
   <connections>
-    <connection modified="1611185531020" name="Jets-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1643934110775" name="Jets-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Connection to Data warehouse MTWSQL06]]></comment>
       <host>MTWSQL06</host>
       <port>1433</port>
@@ -23,20 +23,20 @@
         <parameter name="integratedSecurity">true</parameter>
       </parameters>
     </connection>
-    <connection modified="1611185531020" name="Jedox" type="JedoxOlap" modifiedBy="ONEPAS\richards">
+    <connection modified="1643934110775" name="Jedox" type="JedoxOlap" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
       <global nameref="localhost" />
       <database>PAS-Financials</database>
       <ssl>off</ssl>
     </connection>
-    <connection modified="1611185531020" name="PAS-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1643934110775" name="PAS-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Connection to Data warehouse MTWSQL06]]></comment>
       <global nameref="DW" />
     </connection>
-    <connection modified="1611185531020" name="PAS-DW RAW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1643934110775" name="PAS-DW RAW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <global nameref="DW Raw" />
     </connection>
-    <connection modified="1611185531020" name="Jets-DW RAW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1643934110775" name="Jets-DW RAW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <host>MTWSQL06</host>
       <port>1433</port>
       <database>JetsDataWarehouseRawData</database>
@@ -47,7 +47,7 @@
     </connection>
   </connections>
   <extracts>
-    <extract modified="1611185531020" name="Wholesale Customers" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="Wholesale Customers" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract wholesale customers from DimCustomer]]></comment>
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT 'Jets' AS Division 
@@ -138,7 +138,7 @@ ORDER BY Division
         <alias origin="CustomerCreationDate">15</alias>
       </alias_map>
     </extract>
-    <extract modified="1611185531020" name="Wholesale Products by Department" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="Wholesale Products by Department" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract products from Jets and PAS data warehouses. The source table in both instances is MATPRODUCT]]></comment>
       <connection nameref="PAS-DW" />
       <query><![CDATA[/* Jets product hierarchy is
@@ -186,7 +186,7 @@ ORDER BY Division, Department, Category, Product]]></query>
         <alias origin="Product">4</alias>
       </alias_map>
     </extract>
-    <extract modified="1611185531020" name="Season" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="Season" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT DimSeason.Code 
   ,DimSeason.Name
@@ -211,7 +211,7 @@ ORDER BY Code]]></query>
         <alias origin="SourceKey">4</alias>
       </alias_map>
     </extract>
-    <extract modified="1611185531020" name="Wholesale Products By Category" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="Wholesale Products By Category" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract products from Jets and PAS data warehouses. The source table in both instances is MATPRODUCT]]></comment>
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT 'Jets - by Category' AS 'Division' 
@@ -243,7 +243,7 @@ ORDER BY Division, Category, Product]]></query>
         <alias origin="Product">3</alias>
       </alias_map>
     </extract>
-    <extract modified="1611185531020" name="Story" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="Story" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT 'Jets' AS Division 
   ,'Jets - ' + COALESCE(MatProduct.StoryCode, 'StoryNA') StoryCode 
@@ -277,7 +277,7 @@ ORDER BY Division
         <alias origin="StoryId">4</alias>
       </alias_map>
     </extract>
-    <extract modified="1611185531020" name="Colour" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="Colour" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT 'Jets' AS 'BusinessDivision' 
   ,' Jets' + ' - ' + COALESCE(MatProduct.ColourName, 'Colour - NA') AS 'Colour' 
@@ -316,7 +316,7 @@ ORDER BY BusinessDivision
         <alias origin="Colour">2</alias>
       </alias_map>
     </extract>
-    <extract modified="1611185531020" name="Size" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="Size" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT 'Jets' AS 'Division' 
   ,'Jets - ' + COALESCE(NULLIF(MatProduct.SizeRange,'') ,'Size - NA') AS 'SizeRange' 
@@ -336,7 +336,7 @@ ORDER BY Division, SizeRange]]></query>
         <alias origin="SizeRange">2</alias>
       </alias_map>
     </extract>
-    <extract modified="1611197607093" name="Wholesale Invoices" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="Wholesale Invoices" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW" />
       <query><![CDATA[IF OBJECT_ID('tempdb..#CurrencyMap') IS NOT NULL 
 DROP TABLE #CurrencyMap
@@ -487,7 +487,7 @@ GROUP BY FinBusinessDivision.Code
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1611185531020" name="Wholesale Orders" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="Wholesale Orders" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW" />
       <query><![CDATA[IF OBJECT_ID('tempdb..#CurrencyMap') IS NOT NULL 
 DROP TABLE #CurrencyMap
@@ -749,7 +749,7 @@ ORDER BY BusinessDivision, FYear, Period]]></query>
         <alias origin="#Value">14</alias>
       </alias_map>
     </extract>
-    <extract modified="1611185531020" name="ex-Jedox [Cube Slice]: Sales Order (Actual) Z-Out" type="CubeSlice" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-Jedox [Cube Slice]: Sales Order (Actual) Z-Out" type="CubeSlice" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query mode="exclude" randomPaths="false">
         <dimensions>
@@ -763,7 +763,7 @@ ORDER BY BusinessDivision, FYear, Period]]></query>
         <cube name="Wholesale" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-[Parameter] - CurrYearETL" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-[Parameter] - CurrYearETL" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -777,7 +777,7 @@ ORDER BY BusinessDivision, FYear, Period]]></query>
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-[Parameter] - Current Period ETL" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-[Parameter] - Current Period ETL" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -791,7 +791,7 @@ ORDER BY BusinessDivision, FYear, Period]]></query>
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-Jedox [Cube Slice]: Sales Invoice (Actual) Z-Out" type="CubeSlice" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-Jedox [Cube Slice]: Sales Invoice (Actual) Z-Out" type="CubeSlice" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query mode="exclude" randomPaths="false">
         <dimensions>
@@ -811,7 +811,7 @@ ORDER BY BusinessDivision, FYear, Period]]></query>
         <cube name="Wholesale" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-[Parameter] - Prior Period ETL" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-[Parameter] - Prior Period ETL" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -825,7 +825,7 @@ ORDER BY BusinessDivision, FYear, Period]]></query>
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-[Parameter] - Prior Period Year ETL" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-[Parameter] - Prior Period Year ETL" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -839,7 +839,7 @@ ORDER BY BusinessDivision, FYear, Period]]></query>
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-Jedox [Attr]: Period (Actual)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-Jedox [Attr]: Period (Actual)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Is Used to:
 1- Copy Act 2 Fcst
 2- Fcst Z-Out]]></comment>
@@ -853,7 +853,7 @@ ORDER BY BusinessDivision, FYear, Period]]></query>
         <cube name="#_Period" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-Jedox [Cube]: (Forecast)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-Jedox [Cube]: (Forecast)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[1- Source to back up current forecast before applying actuals
 2- Source to Fcst Z-Out]]></comment>
       <connection nameref="Jedox" />
@@ -866,7 +866,7 @@ ORDER BY BusinessDivision, FYear, Period]]></query>
         <cube name="Wholesale" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-Jedox [Attr]: Parameters (CurrYear)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-Jedox [Attr]: Parameters (CurrYear)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Is used to extract the FYear(CurrYear) for following :
 1- Forecast]]></comment>
       <connection nameref="Jedox" />
@@ -882,7 +882,7 @@ ORDER BY BusinessDivision, FYear, Period]]></query>
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-Jedox [Cube]: WSale(Actual)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-Jedox [Cube]: WSale(Actual)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[1- Source to zero out before loading
 2- Source to Copy (Act 2 Fcst)]]></comment>
       <connection nameref="Jedox" />
@@ -895,7 +895,7 @@ ORDER BY BusinessDivision, FYear, Period]]></query>
         <cube name="Wholesale" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-Jedox [Attr]: Parameters (Forecast_Mmm)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-Jedox [Attr]: Parameters (Forecast_Mmm)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Is used to extract the Version (Forecast_Mmm) to facilitate copying of Current Forecast.]]></comment>
       <connection nameref="Jedox" />
       <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
@@ -907,7 +907,7 @@ ORDER BY BusinessDivision, FYear, Period]]></query>
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-Jedox [Cube]: Fin (Forecast_Mmm Z-Out)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-Jedox [Cube]: Fin (Forecast_Mmm Z-Out)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Source to zero out forecast backup before replacing with current forecast
 ${ForecastYr}
 Forecast_Mmm = e.g. Forecast_Jul]]></comment>
@@ -921,7 +921,7 @@ Forecast_Mmm = e.g. Forecast_Jul]]></comment>
         <cube name="Wholesale" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-Jedox [Cube]: (Forecast Fcst To Fcst_mmm)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-Jedox [Cube]: (Forecast Fcst To Fcst_mmm)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[1- Source to back up current forecast before applying actuals
 2- Source to Fcst Z-Out]]></comment>
       <connection nameref="Jedox" />
@@ -934,7 +934,7 @@ Forecast_Mmm = e.g. Forecast_Jul]]></comment>
         <cube name="Wholesale" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="Duplicate of ex-Jedox [Cube]: (Forecast Z-Out)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="Duplicate of ex-Jedox [Cube]: (Forecast Z-Out)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[1- Source to back up current forecast before applying actuals
 2- Source to Fcst Z-Out]]></comment>
       <connection nameref="Jedox" />
@@ -947,7 +947,7 @@ Forecast_Mmm = e.g. Forecast_Jul]]></comment>
         <cube name="Wholesale" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="Wholesale Customer Manually Managed" type="Dimension" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="Wholesale Customer Manually Managed" type="Dimension" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query>
         <dimension name="Wholesale Customer">
@@ -956,7 +956,7 @@ Forecast_Mmm = e.g. Forecast_Jul]]></comment>
       </query>
       <attributesMode>none</attributesMode>
     </extract>
-    <extract modified="1611185531020" name="Wholesale Customers Alt Hierarchy" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="Wholesale Customers Alt Hierarchy" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW RAW" />
       <query><![CDATA[SELECT [level1], [level2], [level3], [level4], [level5], [level6] 
 FROM [dbo].[JEDOX_WHOLESALE_CUSTOMER_ALTERNATE]]]></query>
@@ -969,7 +969,7 @@ FROM [dbo].[JEDOX_WHOLESALE_CUSTOMER_ALTERNATE]]]></query>
         <alias origin="level6">6</alias>
       </alias_map>
     </extract>
-    <extract modified="1611185531020" name="ex-[Parameter] - BudYearETL" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-[Parameter] - BudYearETL" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -983,7 +983,7 @@ FROM [dbo].[JEDOX_WHOLESALE_CUSTOMER_ALTERNATE]]]></query>
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-Jedox [Cube]: (Budget)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-Jedox [Cube]: (Budget)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[1- Source to back up current forecast before applying actuals
 2- Source to Fcst Z-Out]]></comment>
       <connection nameref="Jedox" />
@@ -999,7 +999,7 @@ FROM [dbo].[JEDOX_WHOLESALE_CUSTOMER_ALTERNATE]]]></query>
         <cube name="Wholesale" />
       </query>
     </extract>
-    <extract modified="1611185531020" name="ex-Jedox [Cube]: (Forecast_ForReport)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="ex-Jedox [Cube]: (Forecast_ForReport)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[1- Source to back up current forecast before applying actuals
 2- Source to Fcst Z-Out]]></comment>
       <connection nameref="Jedox" />
@@ -1015,7 +1015,7 @@ FROM [dbo].[JEDOX_WHOLESALE_CUSTOMER_ALTERNATE]]]></query>
         <cube name="Wholesale" />
       </query>
     </extract>
-    <extract modified="1611198097255" name="18 Periods" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643934110775" name="18 Periods" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Select 18 periods for deletion from sales invlices]]></comment>
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT DimDate.FinancialYear AS FYear, FORMAT(DimDate.FinancialMonth, '\P00') Period
@@ -1030,7 +1030,7 @@ ORDER BY FYear, Period]]></query>
     </extract>
   </extracts>
   <transforms>
-    <transform modified="1611185531020" name="tf-FH [Dim]: Customer" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-FH [Dim]: Customer" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Wholesale Customers" />
       </sources>
@@ -1103,7 +1103,7 @@ ORDER BY FYear, Period]]></query>
         </levels>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tf-FH [Dim]: Product by Department" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-FH [Dim]: Product by Department" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Wholesale Products by Department" />
       </sources>
@@ -1128,7 +1128,7 @@ ORDER BY FYear, Period]]></query>
         <attributes />
       </target>
     </transform>
-    <transform modified="1611185531020" name="tf-FH [Dim]: Season" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-FH [Dim]: Season" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Season" />
       </sources>
@@ -1159,7 +1159,7 @@ ORDER BY FYear, Period]]></query>
         </levels>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tf-FH [Dim]: Product By Category" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-FH [Dim]: Product By Category" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tr-FT [Product By Category] - UpperLower Case" />
       </sources>
@@ -1181,7 +1181,7 @@ ORDER BY FYear, Period]]></query>
         <attributes />
       </target>
     </transform>
-    <transform modified="1611185531020" name="tf-FH [Dim]: Story" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-FH [Dim]: Story" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Story" />
       </sources>
@@ -1211,7 +1211,7 @@ ORDER BY FYear, Period]]></query>
         </levels>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tf-FH [Dim]: Colour" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-FH [Dim]: Colour" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Colour" />
       </sources>
@@ -1230,7 +1230,7 @@ ORDER BY FYear, Period]]></query>
         <attributes />
       </target>
     </transform>
-    <transform modified="1611185531020" name="tf-FH [Dim]: Size" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-FH [Dim]: Size" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Size" />
       </sources>
@@ -1249,7 +1249,7 @@ ORDER BY FYear, Period]]></query>
         <attributes />
       </target>
     </transform>
-    <transform modified="1611185531020" name="tr-FT [Wholesale Invoice Load] - Actual" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tr-FT [Wholesale Invoice Load] - Actual" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Wholesale Invoices" />
       </sources>
@@ -1300,7 +1300,7 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tr-FT [Wholesale Order Load] - Actual" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tr-FT [Wholesale Order Load] - Actual" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Wholesale Orders" />
       </sources>
@@ -1351,7 +1351,7 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tr-FT [Wholesale Invoce Z-Out] - #Parameters CurrYearETL" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tr-FT [Wholesale Invoce Z-Out] - #Parameters CurrYearETL" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-[Parameter] - CurrYearETL" />
       </sources>
@@ -1363,7 +1363,7 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tr-FT [Wholesale Invoce Z-Out] - #Parameters Current Period ETL" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tr-FT [Wholesale Invoce Z-Out] - #Parameters Current Period ETL" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-[Parameter] - Current Period ETL" />
       </sources>
@@ -1375,7 +1375,7 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tr-TJ [Wholesale Invoice Z-Out] - Join Current Year and Period" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tr-TJ [Wholesale Invoice Z-Out] - Join Current Year and Period" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tr-FT [Wholesale Invoce Z-Out] - #Parameters Current Period ETL" />
         <source nameref="tr-FT [Wholesale Invoce Z-Out] - #Parameters CurrYearETL" />
@@ -1387,7 +1387,7 @@ ORDER BY FYear, Period]]></query>
         </join>
       </joins>
     </transform>
-    <transform modified="1611185531020" name="tr-TJ [Wholesale Invoice Z-Out] - Join Prior Year and Period" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tr-TJ [Wholesale Invoice Z-Out] - Join Prior Year and Period" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tr-FT [Wholesale Invoce Z-Out] - #Parameters Prior Period ETL" />
         <source nameref="tr-FT [Wholesale Invoce Z-Out] - #Parameters Prior Period Year ETL" />
@@ -1399,7 +1399,7 @@ ORDER BY FYear, Period]]></query>
         </join>
       </joins>
     </transform>
-    <transform modified="1611185531020" name="tr-FT [Wholesale Invoce Z-Out] - #Parameters Prior Period ETL" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tr-FT [Wholesale Invoce Z-Out] - #Parameters Prior Period ETL" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-[Parameter] - Prior Period ETL" />
       </sources>
@@ -1411,7 +1411,7 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tr-FT [Wholesale Invoce Z-Out] - #Parameters Prior Period Year ETL" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tr-FT [Wholesale Invoce Z-Out] - #Parameters Prior Period Year ETL" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-[Parameter] - Prior Period Year ETL" />
       </sources>
@@ -1423,7 +1423,7 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tr-FT [Product By Category] - UpperLower Case" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tr-FT [Product By Category] - UpperLower Case" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Wholesale Products By Category" />
       </sources>
@@ -1452,7 +1452,7 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tf-FT [Cube]: (Fcst Z-Out) 2" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-FT [Cube]: (Fcst Z-Out) 2" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Cube]: (Fcst Z-Out) 1" />
       </sources>
@@ -1503,7 +1503,7 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tf-TJ [Cube]: (Fcst Z-Out) 1" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-TJ [Cube]: (Fcst Z-Out) 1" type="TableJoin" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Zero out Actuals Months]]></comment>
       <sources>
         <source nameref="tf-TJ [Cube]: (Forecast)" />
@@ -1523,13 +1523,13 @@ ORDER BY FYear, Period]]></query>
         </join>
       </joins>
     </transform>
-    <transform modified="1611185531020" name="tf-TJ [Cube]: (Forecast)" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934209284" name="tf-TJ [Cube]: (Forecast)" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: (Forecast)" />
         <source nameref="ex-Jedox [Attr]: Parameters (CurrYear)" />
       </sources>
       <joins persist="false">
-        <join allColumns="false" type="inner" unique="false">
+        <join allColumns="true" type="inner" unique="false">
           <left nameref="ex-Jedox [Cube]: (Forecast)">
             <key nameref="FYear" />
           </left>
@@ -1541,8 +1541,9 @@ ORDER BY FYear, Period]]></query>
           </conditions>
         </join>
       </joins>
+      <cache>false</cache>
     </transform>
-    <transform modified="1611185531020" name="tf-FT [Attr]: Period (Actual)" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-FT [Attr]: Period (Actual)" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Rename the fields so the ensuing join does not give a warninng]]></comment>
       <sources>
         <source nameref="ex-Jedox [Attr]: Period (Actual)" />
@@ -1564,7 +1565,7 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tf-FT [Cube]: (Act 2 Fcst) 2" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-FT [Cube]: (Act 2 Fcst) 2" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Cube]: (Act 2 Fcst) 1" />
       </sources>
@@ -1615,23 +1616,27 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-TJ [Cube]: (Actual)" type="TableJoin" modified="1611185531020" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934195580" name="tf-TJ [Cube]: (Actual)" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: WSale(Actual)" />
         <source nameref="ex-Jedox [Attr]: Parameters (CurrYear)" />
       </sources>
-      <joins>
-        <join type="inner">
+      <joins persist="false">
+        <join allColumns="true" type="inner" unique="false">
           <left nameref="ex-Jedox [Cube]: WSale(Actual)">
             <key nameref="FYear" />
           </left>
           <right nameref="ex-Jedox [Attr]: Parameters (CurrYear)">
             <key nameref="#Value" />
           </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
         </join>
       </joins>
+      <cache>false</cache>
     </transform>
-    <transform name="tf-TJ [Cube]: (Act 2 Fcst) 1" type="TableJoin" modified="1611185531020" modifiedBy="ONEPAS\richards">
+    <transform name="tf-TJ [Cube]: (Act 2 Fcst) 1" type="TableJoin" modified="1643934110775" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Cube]: (Actual)" />
         <source nameref="tf-FT [Attr]: Period (Actual)" />
@@ -1647,25 +1652,29 @@ ORDER BY FYear, Period]]></query>
         </join>
       </joins>
     </transform>
-    <transform name="tf-TJ [Cube]: Fin (Fcst_Mmm Z-Out) 0" type="TableJoin" modified="1611185531020" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934237132" name="tf-TJ [Cube]: Fin (Fcst_Mmm Z-Out) 0" type="TableJoin" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Source:
 1- Fcst_Mmm Z-Out]]></comment>
       <sources>
         <source nameref="ex-Jedox [Cube]: Fin (Forecast_Mmm Z-Out)" />
         <source nameref="ex-Jedox [Attr]: Parameters (CurrYear)" />
       </sources>
-      <joins>
-        <join type="inner">
+      <joins persist="false">
+        <join allColumns="true" type="inner" unique="false">
           <left nameref="ex-Jedox [Cube]: Fin (Forecast_Mmm Z-Out)">
             <key nameref="FYear" />
           </left>
           <right nameref="ex-Jedox [Attr]: Parameters (CurrYear)">
             <key nameref="#Value" />
           </right>
+          <conditions>
+            <condition type="eq" />
+          </conditions>
         </join>
       </joins>
+      <cache>false</cache>
     </transform>
-    <transform name="tf-FT [Attr]: Version (Forecast_Mmm)" type="FieldTransform" modified="1611185531020" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Attr]: Version (Forecast_Mmm)" type="FieldTransform" modified="1643934110775" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Rename the fields so the ensuing join does not give a warninng]]></comment>
       <sources>
         <source nameref="ex-Jedox [Attr]: Parameters (Forecast_Mmm)" />
@@ -1684,7 +1693,7 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-TJ [Cube]: Fin (Fcst_mmm Z-Out) 1" type="TableJoin" modified="1611185531020" modifiedBy="ONEPAS\richards">
+    <transform name="tf-TJ [Cube]: Fin (Fcst_mmm Z-Out) 1" type="TableJoin" modified="1643934110775" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Zero out Actuals Months]]></comment>
       <sources>
         <source nameref="tf-TJ [Cube]: Fin (Fcst_Mmm Z-Out) 0" />
@@ -1701,13 +1710,13 @@ ORDER BY FYear, Period]]></query>
         </join>
       </joins>
     </transform>
-    <transform modified="1611185531020" name="tf-TJ [Cube]: Fin (Forecast)" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934286432" name="tf-TJ [Cube]: Fin (Forecast)" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: (Forecast Fcst To Fcst_mmm)" />
         <source nameref="ex-Jedox [Attr]: Parameters (CurrYear)" />
       </sources>
       <joins persist="false">
-        <join allColumns="false" type="inner" unique="false">
+        <join allColumns="true" type="inner" unique="false">
           <left nameref="ex-Jedox [Cube]: (Forecast Fcst To Fcst_mmm)">
             <key nameref="FYear" />
           </left>
@@ -1719,8 +1728,9 @@ ORDER BY FYear, Period]]></query>
           </conditions>
         </join>
       </joins>
+      <cache>false</cache>
     </transform>
-    <transform modified="1611185531020" name="tf-FT [Cube]: (Fcst 2 Fcst_Mmm)" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-FT [Cube]: (Fcst 2 Fcst_Mmm)" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Cube]: Fin (Forecast)" />
       </sources>
@@ -1784,7 +1794,7 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tf-FT [Cube]: (Fcst to Fcst_mmm) 2" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-FT [Cube]: (Fcst to Fcst_mmm) 2" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Cube]: Fin (Fcst_mmm Z-Out) 1" />
       </sources>
@@ -1835,7 +1845,7 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tf-FH [Dim]: Customer - Alt Hierarchy" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tf-FH [Dim]: Customer - Alt Hierarchy" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Wholesale Customers Alt Hierarchy" />
       </sources>
@@ -1863,13 +1873,13 @@ ORDER BY FYear, Period]]></query>
         <attributes />
       </target>
     </transform>
-    <transform modified="1611185531020" name="tf-TJ - [Cube]:(Budget Extract)" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934134419" name="tf-TJ - [Cube]:(Budget Extract)" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: (Budget)" />
         <source nameref="ex-[Parameter] - BudYearETL" />
       </sources>
       <joins persist="false">
-        <join allColumns="false" type="inner" unique="false">
+        <join allColumns="true" type="inner" unique="false">
           <left nameref="ex-Jedox [Cube]: (Budget)">
             <key nameref="FYear" />
           </left>
@@ -1881,8 +1891,9 @@ ORDER BY FYear, Period]]></query>
           </conditions>
         </join>
       </joins>
+      <cache>false</cache>
     </transform>
-    <transform modified="1611185531020" name="tr-FT [Wholesale Budget Extract]" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tr-FT [Wholesale Budget Extract]" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ - [Cube]:(Budget Extract)" />
       </sources>
@@ -1915,7 +1926,7 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tr-FT [Wholesale Forecast Extract]" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934110775" name="tr-FT [Wholesale Forecast Extract]" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Cube]: (Forecast_ForReport)" />
       </sources>
@@ -1948,13 +1959,13 @@ ORDER BY FYear, Period]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1611185531020" name="tf-TJ - [Cube]:(Forecast Extract)" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934153304" name="tf-TJ - [Cube]:(Forecast Extract)" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: (Budget)" />
         <source nameref="ex-[Parameter] - BudYearETL" />
       </sources>
       <joins persist="false">
-        <join allColumns="false" type="inner" unique="false">
+        <join allColumns="true" type="inner" unique="false">
           <left nameref="ex-Jedox [Cube]: (Budget)">
             <key nameref="FYear" />
           </left>
@@ -1966,14 +1977,15 @@ ORDER BY FYear, Period]]></query>
           </conditions>
         </join>
       </joins>
+      <cache>false</cache>
     </transform>
-    <transform modified="1611185531020" name="tf-TJ [Cube]: (Forecast_ForReport)" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1643934224114" name="tf-TJ [Cube]: (Forecast_ForReport)" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: (Forecast_ForReport)" />
         <source nameref="ex-Jedox [Attr]: Parameters (CurrYear)" />
       </sources>
       <joins persist="false">
-        <join allColumns="false" type="inner" unique="false">
+        <join allColumns="true" type="inner" unique="false">
           <left nameref="ex-Jedox [Cube]: (Forecast_ForReport)">
             <key nameref="FYear" />
           </left>
@@ -1985,10 +1997,11 @@ ORDER BY FYear, Period]]></query>
           </conditions>
         </join>
       </joins>
+      <cache>false</cache>
     </transform>
   </transforms>
   <loads>
-    <load modified="1611185531020" name="ld-Jedox [Dim]: WholesaleCustomer" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Dim]: WholesaleCustomer" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Customer" />
       <connection nameref="Jedox" />
       <dimension name="Wholesale Customer">
@@ -1997,7 +2010,7 @@ ORDER BY FYear, Period]]></query>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1611185531020" name="ld-Jedox [Dim]: ProductByDepartment" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Dim]: ProductByDepartment" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Product by Department" />
       <connection nameref="Jedox" />
       <dimension name="Product">
@@ -2006,7 +2019,7 @@ ORDER BY FYear, Period]]></query>
         <attributes mode="insert" />
       </dimension>
     </load>
-    <load modified="1611185531020" name="ld-Jedox [Dim]: Season" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Dim]: Season" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Season" />
       <connection nameref="Jedox" />
       <dimension name="Season">
@@ -2015,7 +2028,7 @@ ORDER BY FYear, Period]]></query>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1611185531020" name="ld-Jedox [Dim]: ProductByCategory" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Dim]: ProductByCategory" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Product By Category" />
       <connection nameref="Jedox" />
       <dimension name="Product">
@@ -2024,7 +2037,7 @@ ORDER BY FYear, Period]]></query>
         <attributes mode="inactive" />
       </dimension>
     </load>
-    <load modified="1611185531020" name="ld-Jedox [Dim]: Story" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Dim]: Story" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Story" />
       <connection nameref="Jedox" />
       <dimension name="Story">
@@ -2033,7 +2046,7 @@ ORDER BY FYear, Period]]></query>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1611185531020" name="ld-Jedox [Dim]: Colour" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Dim]: Colour" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Colour" />
       <connection nameref="Jedox" />
       <dimension name="Colour">
@@ -2042,7 +2055,7 @@ ORDER BY FYear, Period]]></query>
         <attributes mode="inactive" />
       </dimension>
     </load>
-    <load modified="1611185531020" name="ld-Jedox [Dim]: Size" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Dim]: Size" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Size" />
       <connection nameref="Jedox" />
       <dimension name="Size">
@@ -2051,7 +2064,7 @@ ORDER BY FYear, Period]]></query>
         <attributes mode="insert" />
       </dimension>
     </load>
-    <load modified="1611185531020" name="ld-Jedox[Wholesale]:Invoices-Actual" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox[Wholesale]:Invoices-Actual" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tr-FT [Wholesale Invoice Load] - Actual" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -2074,7 +2087,7 @@ ORDER BY FYear, Period]]></query>
         </dimensions>
       </cube>
     </load>
-    <load modified="1611185531020" name="ld-Jedox[Wholesale]:Orders-Actual" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox[Wholesale]:Orders-Actual" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tr-FT [Wholesale Order Load] - Actual" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -2097,19 +2110,19 @@ ORDER BY FYear, Period]]></query>
         </dimensions>
       </cube>
     </load>
-    <load modified="1611185531020" name="ld-Jedox [Cube]: Sales Orders Z-Out (Actual)" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Cube]: Sales Orders Z-Out (Actual)" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="ex-Jedox [Cube Slice]: Sales Order (Actual) Z-Out" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
       <cube name="Wholesale" splash="default" cubeLayoutChangeMode="noneWithDefaultWrite" />
     </load>
-    <load modified="1611185531020" name="ld-Jedox [Cube]: Sales Invoice Z-Out (Actual)" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Cube]: Sales Invoice Z-Out (Actual)" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="ex-Jedox [Cube Slice]: Sales Invoice (Actual) Z-Out" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
       <cube cubeLayoutChangeMode="none" name="Wholesale" splash="default" />
     </load>
-    <load modified="1611185531020" name="ld-Jedox [Cube]: (Fcst Z-Out)" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Cube]: (Fcst Z-Out)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Zero out Actual months for the current Forecast]]></comment>
       <source nameref="tf-FT [Cube]: (Fcst Z-Out) 2" />
       <connection nameref="Jedox" />
@@ -2133,7 +2146,7 @@ ORDER BY FYear, Period]]></query>
         </dimensions>
       </cube>
     </load>
-    <load modified="1611185531020" name="ld-Jedox [Cube]: (Act 2  Fcst)" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Cube]: (Act 2  Fcst)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Backup current forecast into Forecast_Mmm]]></comment>
       <source nameref="tf-FT [Cube]: (Act 2 Fcst) 2" />
       <connection nameref="Jedox" />
@@ -2157,7 +2170,7 @@ ORDER BY FYear, Period]]></query>
         </dimensions>
       </cube>
     </load>
-    <load modified="1611185531020" name="ld-Jedox [Cube]: (Fcst_Mmm Z-Out)" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Cube]: (Fcst_Mmm Z-Out)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Forecast_Mmm = e.g. Forecast_Jul]]></comment>
       <source nameref="tf-FT [Cube]: (Fcst to Fcst_mmm) 2" />
       <connection nameref="Jedox" />
@@ -2181,7 +2194,7 @@ ORDER BY FYear, Period]]></query>
         </dimensions>
       </cube>
     </load>
-    <load modified="1611185531020" name="ld-Jedox [Cube]: (Fcst 2 Fcst_Mmm)" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Cube]: (Fcst 2 Fcst_Mmm)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Backup current forecast into Forecast_Mmm]]></comment>
       <source nameref="tf-FT [Cube]: (Fcst 2 Fcst_Mmm)" />
       <connection nameref="Jedox" />
@@ -2205,13 +2218,13 @@ ORDER BY FYear, Period]]></query>
         </dimensions>
       </cube>
     </load>
-    <load modified="1611185531020" name="ld-DW [Dim]: Wholesale Customers - Alternate Hierarchy" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-DW [Dim]: Wholesale Customers - Alternate Hierarchy" type="Relational" modifiedBy="ONEPAS\richards">
       <source format="fh" nameref="Wholesale Customer Manually Managed" />
       <connection nameref="PAS-DW RAW" />
       <mode>create</mode>
       <table name="JEDOX_WHOLESALE_CUSTOMER_ALTERNATE" schema="dbo" />
     </load>
-    <load modified="1611185531020" name="ld-Jedox [Dim]: WholesaleCustomer - Alt Hierarchy" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-Jedox [Dim]: WholesaleCustomer - Alt Hierarchy" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Customer - Alt Hierarchy" />
       <connection nameref="Jedox" />
       <dimension name="Wholesale Customer">
@@ -2220,13 +2233,13 @@ ORDER BY FYear, Period]]></query>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1611185531020" name="ld-DW [Fact]: Wholesale Budget Extract" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-DW [Fact]: Wholesale Budget Extract" type="Relational" modifiedBy="ONEPAS\richards">
       <source nameref="tr-FT [Wholesale Budget Extract]" />
       <connection nameref="Jets-DW RAW" />
       <mode>create</mode>
       <table name="WholesaleBudgetRaw" schema="dbo" />
     </load>
-    <load modified="1611185531020" name="ld-DW [Fact]: Wholesale Forecast Extract" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1643934110775" name="ld-DW [Fact]: Wholesale Forecast Extract" type="Relational" modifiedBy="ONEPAS\richards">
       <source nameref="tr-FT [Wholesale Forecast Extract]" />
       <connection nameref="Jets-DW RAW" />
       <mode>create</mode>
@@ -2234,17 +2247,17 @@ ORDER BY FYear, Period]]></query>
     </load>
   </loads>
   <jobs>
-    <job modified="1611185675836" name="zz Not Used load[Cube]:Wholesale - Sales Invoice (Z-Out) - Current Period - Year" type="Loop" modifiedBy="ONEPAS\richards">
+    <job modified="1643934110775" name="zz Not Used load[Cube]:Wholesale - Sales Invoice (Z-Out) - Current Period - Year" type="Loop" modifiedBy="ONEPAS\richards">
       <execution nameref="ld-Jedox [Cube]: Sales Invoice Z-Out (Actual)" type="load" />
       <failStatus>error</failStatus>
       <loop nameref="tr-TJ [Wholesale Invoice Z-Out] - Join Current Year and Period" />
     </job>
-    <job modified="1611185696544" name="load[Cube]:Wholesale - Sales Invoice (Z-Out) - 18 Periods" type="Loop" modifiedBy="ONEPAS\richards">
+    <job modified="1643934110775" name="load[Cube]:Wholesale - Sales Invoice (Z-Out) - 18 Periods" type="Loop" modifiedBy="ONEPAS\richards">
       <loop nameref="18 Periods" />
       <execution nameref="ld-Jedox [Cube]: Sales Invoice Z-Out (Actual)" type="load" />
       <failStatus>error</failStatus>
     </job>
-    <job modified="1611185814550" name="Wholesale Nightly Load" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1643934110775" name="Wholesale Nightly Load" type="Standard" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: Sales Orders Z-Out (Actual)" type="load" />
         <execution nameref="load[Cube]:Wholesale - Sales Invoice (Z-Out) - 18 Periods" type="job" />
@@ -2256,7 +2269,7 @@ ORDER BY FYear, Period]]></query>
       </executions>
       <failStatus>error</failStatus>
     </job>
-    <job modified="1611185531020" name="Forecast Load" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1643934110775" name="Forecast Load" type="Standard" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: (Fcst Z-Out)" type="load" />
         <execution nameref="ld-Jedox [Cube]: (Act 2  Fcst)" type="load" />
