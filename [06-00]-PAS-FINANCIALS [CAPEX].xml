@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[06-00]-PAS-FINANCIALS [CAPEX]" version="20.3" modified="1623283962821" modifiedBy="ONEPAS\richards" olapId="p9">
+<project name="[06-00]-PAS-FINANCIALS [CAPEX]" version="21.4" modified="1643933734066" modifiedBy="ONEPAS\richards" olapId="p28">
   <headers>
-    <header name="comment" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <header name="comment" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
     </header>
   </headers>
   <variables>
-    <variable modified="1602549748469" name="CurrentYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1643933734066" name="CurrentYear" modifiedBy="ONEPAS\richards">
       <comment />
       <default>2018</default>
     </variable>
-    <variable modified="1602549748469" name="Forecast_MMM" modifiedBy="ONEPAS\richards">
+    <variable modified="1643933734066" name="Forecast_MMM" modifiedBy="ONEPAS\richards">
       <comment />
       <default>Forecast_Sep</default>
     </variable>
-    <variable modified="1623283955179" name="BudgetYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1643933734066" name="BudgetYear" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Used to determine the FYear that is used in the Budget Copy process]]></comment>
       <default>2022</default>
     </variable>
-    <variable modified="1623283962821" name="Budget Copy Target" modifiedBy="ONEPAS\richards">
+    <variable modified="1643933734066" name="Budget Copy Target" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Determines the target version of the Budget Copy process]]></comment>
       <default>Budget_1</default>
     </variable>
   </variables>
   <connections>
-    <connection name="Jedox" type="JedoxOlap" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <connection name="Jedox" type="JedoxOlap" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
       <global nameref="localhost" />
       <database>PAS-Financials</database>
     </connection>
-    <connection name="CAPEX Forecast Out" type="File" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <connection name="CAPEX Forecast Out" type="File" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <location type="FileSystem" />
       <database>\\mtwjed01\d$\Jedox\ETL\files\CapexFcastOut.txt</database>
       <header>true</header>
@@ -38,7 +38,7 @@
       <ssl>verify</ssl>
       <enableEscape>false</enableEscape>
     </connection>
-    <connection name="CAPEX Actual Out" type="File" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <connection name="CAPEX Actual Out" type="File" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <location type="FileSystem" />
       <database>\\mtwjed01\d$\Jedox\ETL\files\CapexActOut.txt</database>
       <header>true</header>
@@ -49,7 +49,7 @@
     </connection>
   </connections>
   <extracts>
-    <extract name="ex-Jedox [Cube]: CAPEX (Forecast)" type="Cube" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Cube]: CAPEX (Forecast)" type="Cube" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[1- Source to zero out before loading
 2- Source to Copy (Act 2 Fcst)]]></comment>
       <connection nameref="Jedox" />
@@ -65,7 +65,7 @@
         <cube name="CAPEX" />
       </query>
     </extract>
-    <extract name="ex-Jedox [Cube]: CAPEX (Budget Copy)" type="Cube" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Cube]: CAPEX (Budget Copy)" type="Cube" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract of Budget Year and Budget Version for Budget Copy]]></comment>
       <connection nameref="Jedox" />
       <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
@@ -80,7 +80,7 @@
         <cube name="CAPEX" />
       </query>
     </extract>
-    <extract modified="1602549748469" name="ex-Jedox [Attr]: Period (Actual)" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643933734066" name="ex-Jedox [Attr]: Period (Actual)" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Is Used to:
 1- Copy Act 2 Fcst
 2- Fcst Z-Out]]></comment>
@@ -94,7 +94,7 @@
         <cube name="#_Period" />
       </query>
     </extract>
-    <extract name="ex-Jedox [Cube]: CAPEX (Forecast) Z-Out" type="Cube" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Cube]: CAPEX (Forecast) Z-Out" type="Cube" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[1- Source to zero out before loading
 2- Source to Copy (Act 2 Fcst)]]></comment>
       <connection nameref="Jedox" />
@@ -112,7 +112,7 @@
     </extract>
   </extracts>
   <transforms>
-    <transform name="tf-FT [Cube]: CAPEX (Fcst 2 Act) 2" type="FieldTransform" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Cube]: CAPEX (Fcst 2 Act) 2" type="FieldTransform" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Cube]: CAPEX (Fcst2 Act) 1" />
       </sources>
@@ -145,7 +145,7 @@
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549748469" name="tf-FT [Cube]: CAPEX - Forecast (Fcst 2 Fcst_Mmm)" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643933734066" name="tf-FT [Cube]: CAPEX - Forecast (Fcst 2 Fcst_Mmm)" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: CAPEX (Forecast)" />
       </sources>
@@ -191,7 +191,7 @@
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT [Cube]: CAPEX - Budget (Budget Copy)" type="FieldTransform" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Cube]: CAPEX - Budget (Budget Copy)" type="FieldTransform" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Transforms the version of the budget copy from Budget to what ever the variable ${Budget Target Copy} is set to.
 To change the target change the version in the variable.]]></comment>
       <sources>
@@ -226,7 +226,7 @@ To change the target change the version in the variable.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT [Attr]: Period (Actual)" type="FieldTransform" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Attr]: Period (Actual)" type="FieldTransform" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Rename the fields so the ensuing join does not give a warninng]]></comment>
       <sources>
         <source nameref="ex-Jedox [Attr]: Period (Actual)" />
@@ -245,7 +245,7 @@ To change the target change the version in the variable.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-TJ [Cube]: CAPEX (Fcst2 Act) 1" type="TableJoin" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <transform name="tf-TJ [Cube]: CAPEX (Fcst2 Act) 1" type="TableJoin" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: CAPEX (Forecast)" />
         <source nameref="tf-FT [Attr]: Period (Actual)" />
@@ -261,7 +261,7 @@ To change the target change the version in the variable.]]></comment>
         </join>
       </joins>
     </transform>
-    <transform name="tf-FT [Cube]: CAPEX (Fcst 2 Act) 2 Z-Out" type="FieldTransform" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Cube]: CAPEX (Fcst 2 Act) 2 Z-Out" type="FieldTransform" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: CAPEX (Forecast) Z-Out" />
       </sources>
@@ -294,7 +294,7 @@ To change the target change the version in the variable.]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549748469" name="tf-FT [Cube]: CAPEX - Forecast (Fcst 2 Fcst_Mmm Z-Out)" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643933734066" name="tf-FT [Cube]: CAPEX - Forecast (Fcst 2 Fcst_Mmm Z-Out)" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: CAPEX (Forecast) Z-Out" />
       </sources>
@@ -342,21 +342,21 @@ To change the target change the version in the variable.]]></comment>
     </transform>
   </transforms>
   <loads>
-    <load name="ld-Jedox [Cube]: CAPEX (Fcst 2  Act)" type="Cube" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube]: CAPEX (Fcst 2  Act)" type="Cube" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Backup current forecast into Forecast_Mmm]]></comment>
       <source nameref="tf-FT [Cube]: CAPEX (Fcst 2 Act) 2" />
       <connection nameref="Jedox" />
       <mode>add</mode>
       <cube name="CAPEX" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite" />
     </load>
-    <load name="ld-Jedox [Cube]: CAPEX (Fcst 2 Act) - [Z-Out]" type="Cube" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube]: CAPEX (Fcst 2 Act) - [Z-Out]" type="Cube" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Backup current forecast into Forecast_Mmm]]></comment>
       <source nameref="tf-FT [Cube]: CAPEX (Fcst 2 Act) 2 Z-Out" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
       <cube name="CAPEX" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite" />
     </load>
-    <load name="ld-Jedox [Cube]: CAPEX - Forecast (Fcst2Fcst_mmm Z-Out)" type="Cube" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube]: CAPEX - Forecast (Fcst2Fcst_mmm Z-Out)" type="Cube" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Cube]: CAPEX - Forecast (Fcst 2 Fcst_Mmm Z-Out)" />
       <connection nameref="Jedox" />
       <mode>delete</mode>
@@ -372,7 +372,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load name="ld-Jedox [Cube]: CAPEX - Forecast (Fcst2Fcst_mmm)" type="Cube" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube]: CAPEX - Forecast (Fcst2Fcst_mmm)" type="Cube" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Cube]: CAPEX - Forecast (Fcst 2 Fcst_Mmm)" />
       <connection nameref="Jedox" />
       <mode>add</mode>
@@ -388,7 +388,7 @@ To change the target change the version in the variable.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load name="ld-Jedox [Cube]: CAPEX - Budget (Budget Copy)" type="Cube" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube]: CAPEX - Budget (Budget Copy)" type="Cube" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Second step in the budget copy process
 Copies the Budget to the Budget target version (as defined in the variable Budget Copy Target) for the budget year (as defined in the variable BudgetYear).]]></comment>
       <source nameref="tf-FT [Cube]: CAPEX - Budget (Budget Copy)" />
@@ -406,7 +406,7 @@ Copies the Budget to the Budget target version (as defined in the variable Budge
         </dimensions>
       </cube>
     </load>
-    <load name="ld-Jedox [Cube]: CAPEX - Budget (Budget Copy Z-Out)" type="Cube" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube]: CAPEX - Budget (Budget Copy Z-Out)" type="Cube" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[First step in the budget copy process
 Zeros out the Budget target version (as defined in the variable Budget Copy Target) for the budget year (as defined in the variable BudgetYear).]]></comment>
       <source nameref="tf-FT [Cube]: CAPEX - Budget (Budget Copy)" />
@@ -424,37 +424,37 @@ Zeros out the Budget target version (as defined in the variable Budget Copy Targ
         </dimensions>
       </cube>
     </load>
-    <load name="CAPEX Forecast Export" type="File" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <load name="CAPEX Forecast Export" type="File" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Cube]: CAPEX - Forecast (Fcst 2 Fcst_Mmm)" />
       <connection nameref="CAPEX Forecast Out" />
       <mode>create</mode>
     </load>
-    <load name="CAPEX Actual Export" type="File" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <load name="CAPEX Actual Export" type="File" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Cube]: CAPEX (Fcst 2 Act) 2" />
       <connection nameref="CAPEX Actual Out" />
       <mode>create</mode>
     </load>
   </loads>
   <jobs>
-    <job name="[01-01]-load[Cube]: CAPEX Forecast(Fcst2Act)" type="Standard" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <job name="[01-01]-load[Cube]: CAPEX Forecast(Fcst2Act)" type="Standard" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: CAPEX (Fcst 2 Act) - [Z-Out]" type="load" />
         <execution nameref="ld-Jedox [Cube]: CAPEX (Fcst 2  Act)" type="load" />
       </executions>
     </job>
-    <job name="[01-02]-load[Cube]: CAPEX Forecast2Fcst_mmm" type="Standard" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <job name="[01-02]-load[Cube]: CAPEX Forecast2Fcst_mmm" type="Standard" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: CAPEX - Forecast (Fcst2Fcst_mmm Z-Out)" type="load" />
         <execution nameref="ld-Jedox [Cube]: CAPEX - Forecast (Fcst2Fcst_mmm)" type="load" />
       </executions>
     </job>
-    <job name="[01-00] CAPEX Actual And Forecast_MMM Load" type="Standard" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <job name="[01-00] CAPEX Actual And Forecast_MMM Load" type="Standard" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="[01-01]-load[Cube]: CAPEX Forecast(Fcst2Act)" type="job" />
         <execution nameref="[01-02]-load[Cube]: CAPEX Forecast2Fcst_mmm" type="job" />
       </executions>
     </job>
-    <job name="[99-00-01]-load[Cube]:Budget Copy" type="Standard" modified="1602549748469" modifiedBy="ONEPAS\richards">
+    <job name="[99-00-01]-load[Cube]:Budget Copy" type="Standard" modified="1643933734066" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube]: CAPEX - Budget (Budget Copy Z-Out)" type="load" />
         <execution nameref="ld-Jedox [Cube]: CAPEX - Budget (Budget Copy)" type="load" />

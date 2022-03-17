@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[99-00] Administrative Tasks" version="20.3" modified="1605227220280" modifiedBy="ONEPAS\richards" olapId="p15">
+<project name="[99-00] Administrative Tasks" version="21.4" modified="1643930598994" modifiedBy="ONEPAS\richards" olapId="p26">
   <headers>
-    <header name="comment" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <header name="comment" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment>This project is for updating system cubes (#_Parameters) or attributes in dimensions based on the values in #_Parameters.</comment>
     </header>
   </headers>
   <variables>
-    <variable modified="1602549892330" name="CurrYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1643930598994" name="CurrYear" modifiedBy="ONEPAS\richards">
       <comment />
       <default>2017</default>
     </variable>
-    <variable modified="1602549892330" name="PrevYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1643930598994" name="PrevYear" modifiedBy="ONEPAS\richards">
       <comment />
       <default>2016</default>
     </variable>
-    <variable modified="1602549892330" name="BudYear" modifiedBy="ONEPAS\richards">
+    <variable modified="1643930598994" name="BudYear" modifiedBy="ONEPAS\richards">
       <comment />
       <default>2017</default>
     </variable>
   </variables>
   <connections>
-    <connection modified="1602643209877" name="CurrentWeekTextFile" type="File" modifiedBy="ONEPAS\richards">
+    <connection modified="1643930598994" name="CurrentWeekTextFile" type="File" modifiedBy="ONEPAS\richards">
       <location type="FileSystem" />
       <database><![CDATA[C:\Program Files\Jedox\Jedox Suite\tomcat\client\CurrentWeek.txt]]></database>
       <delimiter>,</delimiter>
@@ -28,16 +28,16 @@
       <enableEscape>false</enableEscape>
       <header>false</header>
     </connection>
-    <connection modified="1602549892330" name="Jedox" type="JedoxOlap" modifiedBy="ONEPAS\richards">
+    <connection modified="1643930598994" name="Jedox" type="JedoxOlap" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
       <global nameref="localhost" />
       <database>PAS-Financials</database>
       <ssl>off</ssl>
     </connection>
-    <connection modified="1602552569239" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1643930598994" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <global nameref="DW" />
     </connection>
-    <connection modified="1602643238223" name="Parameter Cube Contents" type="File" modifiedBy="ONEPAS\richards">
+    <connection modified="1643930598994" name="Parameter Cube Contents" type="File" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Contains the value of the #_parameter cube]]></comment>
       <location type="FileSystem" />
       <database><![CDATA[C:\Program Files\Jedox\Jedox Suite\tomcat\client\ParameterCube.txt]]></database>
@@ -46,10 +46,10 @@
       <enableEscape>false</enableEscape>
       <header>false</header>
     </connection>
-    <connection modified="1602552603502" name="AP21" type="Oracle" modifiedBy="ONEPAS\richards">
+    <connection modified="1643930598994" name="AP21" type="Oracle" modifiedBy="ONEPAS\richards">
       <global nameref="AP21" />
     </connection>
-    <connection modified="1602643222913" name="file-SalesDailyUpdate" type="File" modifiedBy="ONEPAS\richards">
+    <connection modified="1643930598994" name="file-SalesDailyUpdate" type="File" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Used for sending the SalesDaily update times in an email.]]></comment>
       <location type="FileSystem" />
       <database><![CDATA[C:\Program Files\Jedox\Jedox Suite\tomcat\client\SailesDailyUpdate.txt]]></database>
@@ -58,14 +58,14 @@
       <quote>#none</quote>
       <enableEscape>false</enableEscape>
     </connection>
-    <connection name="Jedox System Cubes" type="JedoxOlap" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <connection name="Jedox System Cubes" type="JedoxOlap" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <host>localhost</host>
       <port>7777</port>
       <user>admin</user>
       <database>System</database>
       <password encryption="AES">kUdvvoBnlqH8ua02/w1L2lQssD55</password>
     </connection>
-    <connection modified="1602643284662" name="Stat PandL Check" type="File" modifiedBy="ONEPAS\richards">
+    <connection modified="1643930598994" name="Stat PandL Check" type="File" modifiedBy="ONEPAS\richards">
       <location type="FileSystem" />
       <database><![CDATA[C:\Program Files\Jedox\Jedox Suite\tomcat\client\StatPandLCheck.txt]]></database>
       <delimiter>#space</delimiter>
@@ -73,10 +73,10 @@
       <enableEscape>false</enableEscape>
       <header>false</header>
     </connection>
-    <connection modified="1602552584628" name="DW Raw" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1643930598994" name="DW Raw" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <global nameref="DW Raw" />
     </connection>
-    <connection modified="1602643274284" name="Review Concession Profit Centre  Check" type="File" modifiedBy="ONEPAS\richards">
+    <connection modified="1643930598994" name="Review Concession Profit Centre  Check" type="File" modifiedBy="ONEPAS\richards">
       <location type="FileSystem" />
       <database><![CDATA[C:\Program Files\Jedox\Jedox Suite\tomcat\client\ReviewConcessionProfitCentreCheck.txt]]></database>
       <delimiter>#space</delimiter>
@@ -86,7 +86,7 @@
     </connection>
   </connections>
   <extracts>
-    <extract name="ex-Jedox [Attr]: Parameters (Period)" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Attr]: Parameters (Period)" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Is used to extract the FYear(CurrYear) for following :
 1- Copy Act 2 Fcst
 2- Copy  Fcst_mmm]]></comment>
@@ -103,7 +103,7 @@
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract name="ex-Jedox [Dim]: Period" type="Dimension" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Dim]: Period" type="Dimension" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extracts the base level periods of the period dimension.
 This will be used to join the Current Period extracted from the #_Parameters cube.]]></comment>
       <connection nameref="Jedox" />
@@ -114,7 +114,7 @@ This will be used to join the Current Period extracted from the #_Parameters cub
       </query>
       <attributesMode>none</attributesMode>
     </extract>
-    <extract name="ex-Jedox [Attr]: Parameters (Week)" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Attr]: Parameters (Week)" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Is used to extract the FYear(CurrYear) for following :
 1- Copy Act 2 Fcst
 2- Copy  Fcst_mmm]]></comment>
@@ -131,7 +131,7 @@ This will be used to join the Current Period extracted from the #_Parameters cub
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract name="ex-Jedox [Dim]: Week" type="Dimension" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Dim]: Week" type="Dimension" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extracts the base level periods of the period dimension.
 This will be used to join the Current Period extracted from the #_Parameters cube.]]></comment>
       <connection nameref="Jedox" />
@@ -142,7 +142,7 @@ This will be used to join the Current Period extracted from the #_Parameters cub
       </query>
       <attributesMode>none</attributesMode>
     </extract>
-    <extract name="ex-Jedox [Attr]: Parameters (Year)" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Attr]: Parameters (Year)" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Is used to extract the FYear(CurrYear) for following :
 1- Copy Act 2 Fcst
 2- Copy  Fcst_mmm]]></comment>
@@ -156,7 +156,7 @@ This will be used to join the Current Period extracted from the #_Parameters cub
         </dimensions>
       </query>
     </extract>
-    <extract name="ex-Jedox [Dim]: Year" type="Dimension" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Dim]: Year" type="Dimension" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extracts the base level periods of the period dimension.
 This will be used to join the Current Period extracted from the #_Parameters cube.]]></comment>
       <connection nameref="Jedox" />
@@ -167,7 +167,7 @@ This will be used to join the Current Period extracted from the #_Parameters cub
       </query>
       <attributesMode>none</attributesMode>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [Dim] Week - Current Retail Week" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [Dim] Week - Current Retail Week" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract the current retail week based on the current date.]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[select 'Item' [#_Parameter_]
@@ -223,7 +223,7 @@ where CalDate = CONVERT(date, getdate())
         <alias origin="#Value">3</alias>
       </alias_map>
     </extract>
-    <extract name="ex FY14 Actual For Copy to Forecast" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex FY14 Actual For Copy to Forecast" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -240,7 +240,7 @@ where CalDate = CONVERT(date, getdate())
         <cube name="Retail Sales Weekly" />
       </query>
     </extract>
-    <extract name="Duplicate of ex-Jedox [Dim]: Week" type="Dimension" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="Duplicate of ex-Jedox [Dim]: Week" type="Dimension" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extracts the base level periods of the period dimension.
 This will be used to join the Current Period extracted from the #_Parameters cube.]]></comment>
       <connection nameref="Jedox" />
@@ -249,7 +249,7 @@ This will be used to join the Current Period extracted from the #_Parameters cub
       </query>
       <attributesMode>standardAttributes</attributesMode>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [Store Calendar] Store Status Dates" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [Store Calendar] Store Status Dates" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extracts the Store Open, Store Closed, Refurb Start and RefurbEnd dates from the profit centre view (vProfCen)
 for loading into the Store Calendar cube - store status elements]]></comment>
       <connection nameref="DW" />
@@ -544,7 +544,7 @@ AND DimProfitCentre.ForecastOpenDate IS NOT NULL
         <alias origin="#Value">6</alias>
       </alias_map>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [Store Calendar Week ] Store Status Dates" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [Store Calendar Week ] Store Status Dates" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extracts the Store Open, Store Closed, Refurb Start and RefurbEnd dates from the profit centre view (vProfCen)
 for loading into the Store Calendar cube - store status elements]]></comment>
       <connection nameref="DW" />
@@ -840,7 +840,7 @@ AND DimProfitCentre.ForecastOpenDate IS NOT NULL
         <alias origin="#Value">6</alias>
       </alias_map>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [vProfCen] Profit Centre Attribute Checksum" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [vProfCen] Profit Centre Attribute Checksum" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[SET CONCAT_NULL_YIELDS_NULL OFF
 
@@ -886,12 +886,12 @@ SELECT 'ETLProfitCentreAttributeChecksum' as [ConfigurationKey], GetDate() as [D
 
 drop table #a]]></query>
     </extract>
-    <extract name="ex-AP21 Store Polling Data (Raw)" type="Relational" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-AP21 Store Polling Data (Raw)" type="Relational" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract from the Store view in AP21]]></comment>
       <connection nameref="AP21" />
       <query><![CDATA[select widx, code, name, last_contact, last_sale from stores where last_contact is not null]]></query>
     </extract>
-    <extract name="ex-DW AP21 Store Polling Data (Transform)" type="Relational" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-DW AP21 Store Polling Data (Transform)" type="Relational" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Combine the raw AP21 store polling data with the location details from the data warehouse.]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[select COALESCE(l.ProfCen,lm.ProfCen,lb.ProfCen) ProfCen
@@ -906,7 +906,7 @@ left join PAS_DWH_ME.ME.Location lm on a.code = lm.locationCode
 left join PAS_DWH_BY.[BY].Location lb on a.code = lb.LocationCode
 order by 1]]></query>
     </extract>
-    <extract name="ex-DW SalesDaily Update Time" type="Relational" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-DW SalesDaily Update Time" type="Relational" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract the most recent update date/time of the SalesDaily table that is used to populate the Retail Weekly Sales cube]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[select 'SalesDaily Update Date' Activity, GetDate() 'Date', 'Review SalesDaily Update' Description, Cast(UpdateDate as DateTime) "Value" from PAS_DWH.dbo.runlog where UpdateDate = (select max(UpdateDate) from PAS_DWH.dbo.runlog)
@@ -933,7 +933,7 @@ order by 4
         <alias origin="Value">4</alias>
       </alias_map>
     </extract>
-    <extract modified="1602549892330" name="ex-Jedox [Cube]: Store Calendar Week" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-Jedox [Cube]: Store Calendar Week" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -962,7 +962,7 @@ order by 4
         <cube name="Store Calendar Week" />
       </query>
     </extract>
-    <extract name="ex-DW [Status] Profit Centre Attribute Checksum" type="Relational" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-DW [Status] Profit Centre Attribute Checksum" type="Relational" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[SELECT 'ItemN' [#_Parameter_]
 , 'Store Attribute Checksum' [Parameter]
@@ -971,7 +971,7 @@ from Status
 where 1=1
 and [Date] = (select max([Date]) from Status where [Activity] = 'Store Attribute Checksum')]]></query>
     </extract>
-    <extract name="ex-DW [Status] Store Attribute Update" type="Relational" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-DW [Status] Store Attribute Update" type="Relational" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[create table #a (
 [#_Parameter_] nvarchar(4000) NULL
@@ -1010,7 +1010,7 @@ select 'Item' [#_Parameter_]
   end [#Value]
 */]]></query>
     </extract>
-    <extract modified="1602549892330" name="ex-Jedox [Cube]: Store Calendar" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-Jedox [Cube]: Store Calendar" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -1038,7 +1038,7 @@ select 'Item' [#_Parameter_]
         <cube name="Store Calendar" />
       </query>
     </extract>
-    <extract name="ex-Jedox [Cube]: Parameters - All Paremters" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Cube]: Parameters - All Paremters" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract all parameters from the Parameters cube
 These are used by jobs that follow in project [04-01] this as variables passed as parameters for BudYear, CurrYear, PrevYear, Forecast_MMM]]></comment>
       <connection nameref="Jedox" />
@@ -1052,7 +1052,7 @@ These are used by jobs that follow in project [04-01] this as variables passed a
         <cube name="#_Parameter" />
       </query>
     </extract>
-    <extract name="ex-DW AP21 Store Polling Data (F_StorePollData)" type="Relational" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-DW AP21 Store Polling Data (F_StorePollData)" type="Relational" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Combine the raw AP21 store polling data with the location details from the data warehouse.]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[/* Store Polling Starts Here */
@@ -1215,7 +1215,7 @@ drop table #poll_summary
 
 select Store, RetailDay, [Store Polling Measure], #Value from F_StorePollData]]></query>
     </extract>
-    <extract name="ex-System [Cube]: User Properties" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-System [Cube]: User Properties" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox System Cubes" />
       <query celltype="only_string" drillthrough="false" onlyBasisAsDefault="true" useRules="false" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -1227,7 +1227,7 @@ select Store, RetailDay, [Store Polling Measure], #Value from F_StorePollData]]>
         <cube name="#_USER_USER_PROPERTIES" />
       </query>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [Dim]: Days from PTime" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [Dim]: Days from PTime" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[2015-01-30 RKS Extracts the day and attribute data from the pTime table in PAS data warehouse PAS-DWH.]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[SELECT DISTINCT 'AllDays' LEVLE1 
@@ -1306,7 +1306,7 @@ ORDER BY 2]]></query>
         <alias origin="ExcelDate">22</alias>
       </alias_map>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [Dim]: RetailDays from PTime" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [Dim]: RetailDays from PTime" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[2015-01-30 RKS Extracts the day and attribute data from the pTime table in PAS data warehouse PAS-DWH.]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[SELECT DISTINCT 'AllRetailYears' LEVLE1
@@ -1325,7 +1325,7 @@ ORDER BY 5]]></query>
         <alias origin="LEVEL5">5</alias>
       </alias_map>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [Dim]: FinancialDays from PTime" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [Dim]: FinancialDays from PTime" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[2015-01-30 RKS Extracts the day and attribute data from the pTime table in PAS data warehouse PAS-DWH.]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[SELECT DISTINCT 'AllFinancialYears' LEVLE1
@@ -1342,7 +1342,7 @@ ORDER BY 4]]></query>
         <alias origin="LEVEL4">4</alias>
       </alias_map>
     </extract>
-    <extract name="ex-Jedox [Dim]: Accounts - Stat P&amp;L" type="Dimension" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Dim]: Accounts - Stat P&amp;L" type="Dimension" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query>
         <dimension name="Account">
@@ -1351,7 +1351,7 @@ ORDER BY 4]]></query>
       </query>
       <attributesMode>none</attributesMode>
     </extract>
-    <extract name="ex-Jedox [Dim]: Accounts - P&amp;L" type="Dimension" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Dim]: Accounts - P&amp;L" type="Dimension" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query>
         <dimension name="Account">
@@ -1360,14 +1360,14 @@ ORDER BY 4]]></query>
       </query>
       <attributesMode>none</attributesMode>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [Dim] Account - Stat PandL Check" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [Dim] Account - Stat PandL Check" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extracts accounts that are in the P&L but not the Stat P&L]]></comment>
       <connection nameref="DW Raw" />
       <query><![CDATA[select account from JEDOX_STAT_PANDL_CHECK where Source = 'PandL'
 except
 select account from JEDOX_STAT_PANDL_CHECK where Source = 'Stat_PandL']]></query>
     </extract>
-    <extract name="ex-Jedox [Cube]: Stat PandL Balance Check" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Cube]: Stat PandL Balance Check" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="both" drillthrough="false" onlyBasisAsDefault="false" useRules="false" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -1399,7 +1399,7 @@ select account from JEDOX_STAT_PANDL_CHECK where Source = 'Stat_PandL']]></query
         <cube name="Financials" />
       </query>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [Store Calendar - Week] Store Status Dates" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [Store Calendar - Week] Store Status Dates" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extracts the store status dates by both period and week so that only 1 query is required (and maintained).]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[/* =============  Actual Start ============ */
@@ -1675,7 +1675,7 @@ and vpc.FOpenDate is not null
 order by Year,Period,Week, Store, Version, 'Store Status' desc
 /* =============  Forecast End ============ */]]></query>
     </extract>
-    <extract modified="1602549892330" name="Duplicate of ex-Jedox [Cube]: Store Calendar Week" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="Duplicate of ex-Jedox [Cube]: Store Calendar Week" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="both" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -1704,7 +1704,7 @@ order by Year,Period,Week, Store, Version, 'Store Status' desc
         <cube name="Store Calendar Week" />
       </query>
     </extract>
-    <extract modified="1602549892330" name="zzProfCenTest" type="Dimension" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="zzProfCenTest" type="Dimension" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query>
         <dimension name="Region">
@@ -1713,7 +1713,7 @@ order by Year,Period,Week, Store, Version, 'Store Status' desc
       </query>
       <attributesMode>none</attributesMode>
     </extract>
-    <extract modified="1602549892330" name="ex-Jedox Review Reporting Concessions" type="Dimension" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-Jedox Review Reporting Concessions" type="Dimension" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query>
         <dimension name="Profit-Cost Centre">
@@ -1722,7 +1722,7 @@ order by Year,Period,Week, Store, Version, 'Store Status' desc
       </query>
       <attributesMode>none</attributesMode>
     </extract>
-    <extract modified="1602549892330" name="ex-Jedox Review Profit Centre Concessions" type="Dimension" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-Jedox Review Profit Centre Concessions" type="Dimension" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query>
         <dimension name="Profit-Cost Centre">
@@ -1731,7 +1731,7 @@ order by Year,Period,Week, Store, Version, 'Store Status' desc
       </query>
       <attributesMode>none</attributesMode>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [Dim]: Review Profit Centre Concession Check" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [Dim]: Review Profit Centre Concession Check" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extracts any Review concession profit centres that are not mapped into the Review concession reporting hierarchy]]></comment>
       <connection nameref="DW Raw" />
       <query><![CDATA[SELECT
@@ -1741,7 +1741,7 @@ WHERE NOT EXISTS (SELECT
 		*
 	FROM DataWarehouseRawData.dbo.Jedox_review_reporting_concessions)]]></query>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [Attr] ETL Financial Period" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [Attr] ETL Financial Period" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[select 'Item' [#_Parameter_]
 , 'Current Period ETL'  Parameter
@@ -1749,7 +1749,7 @@ WHERE NOT EXISTS (SELECT
 from DataWarehouse.dbo.SysConfiguration 
 where SysConfiguration.ConfigurationKey = 'ReportingFinancialMonth']]></query>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [Dim]: Days - PayDates for Payroll Cube" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [Dim]: Days - PayDates for Payroll Cube" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[2015-01-30 RKS Extracts the day and attribute data from the pTime table in PAS data warehouse PAS-DWH.]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[IF OBJECT_ID('tempdb..#Dates') IS NOT NULL DROP TABLE #Dates
@@ -1839,7 +1839,7 @@ order by 2,3,4]]></query>
         <alias origin="LEVLE4">4</alias>
       </alias_map>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [Attr] ETL Financial Year" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [Attr] ETL Financial Year" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[select 'Item' [#_Parameter_]
 , 'Financial Year ETL'  Parameter
@@ -1847,7 +1847,7 @@ order by 2,3,4]]></query>
 from DataWarehouse.dbo.SysConfiguration 
 where SysConfiguration.ConfigurationKey = 'ReportingFinancialYear']]></query>
     </extract>
-    <extract modified="1602549892330" name="ex-DW [Attr] Retail ETL Forecast Version" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-DW [Attr] Retail ETL Forecast Version" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[SELECT 'Item' [#_Parameter_]
 ,'Retail ETL Forecast' [Parameter]
@@ -1860,7 +1860,7 @@ WHERE DimDate.CalendarDate = CAST(GETDATE() AS DATE)]]></query>
         <alias origin="Week">3</alias>
       </alias_map>
     </extract>
-    <extract modified="1602549892330" name="ex-Jedox [Cube]: Parameters - BudYear Only" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1643930598994" name="ex-Jedox [Cube]: Parameters - BudYear Only" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract all parameters from the Parameters cube
 These are used by jobs that follow in project [04-01] this as variables passed as parameters for BudYear, CurrYear, PrevYear, Forecast_MMM]]></comment>
       <connection nameref="Jedox" />
@@ -1879,7 +1879,7 @@ These are used by jobs that follow in project [04-01] this as variables passed a
     </extract>
   </extracts>
   <transforms>
-    <transform name="tf-FT [Atr]: Current Period" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Atr]: Current Period" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the Current Period in the parameter cube to the Current Period attribute in the Period dimension]]></comment>
       <sources>
         <source nameref="tf-TJ [Dim]: Period to Current Period" />
@@ -1895,7 +1895,7 @@ These are used by jobs that follow in project [04-01] this as variables passed a
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-TJ [Dim]: Period to Current Period" type="TableJoin" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-TJ [Dim]: Period to Current Period" type="TableJoin" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Joins the extract of the #_Parameter Current Period with the extract of base periods from the Period Dimension.
 
 The result is the single member whose Current Period attribute in the period dimension will be updated.]]></comment>
@@ -1914,7 +1914,7 @@ The result is the single member whose Current Period attribute in the period dim
         </join>
       </joins>
     </transform>
-    <transform name="tf-FT [Atr]: Current Period Attribute Clear" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Atr]: Current Period Attribute Clear" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the period to a blank Current Period value.
 Used to clear out the Current Period attribute in the period dimension.]]></comment>
       <sources>
@@ -1931,7 +1931,7 @@ Used to clear out the Current Period attribute in the period dimension.]]></comm
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-TJ [Dim]: Week to Current Week" type="TableJoin" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-TJ [Dim]: Week to Current Week" type="TableJoin" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Joins the extract of the #_Parameter Current Period with the extract of base periods from the Period Dimension.
 
 The result is the single member whose Current Period attribute in the period dimension will be updated.]]></comment>
@@ -1950,7 +1950,7 @@ The result is the single member whose Current Period attribute in the period dim
         </join>
       </joins>
     </transform>
-    <transform name="tf-FT [Atr]: Current Week" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Atr]: Current Week" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the Current Period in the parameter cube to the Current Period attribute in the Period dimension]]></comment>
       <sources>
         <source nameref="tf-TJ [Dim]: Week to Current Week" />
@@ -1966,7 +1966,7 @@ The result is the single member whose Current Period attribute in the period dim
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT [Atr]: Current Week Attribute Clear" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Atr]: Current Week Attribute Clear" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the period to a blank Current Period value.
 Used to clear out the Current Period attribute in the period dimension.]]></comment>
       <sources>
@@ -1983,7 +1983,7 @@ Used to clear out the Current Period attribute in the period dimension.]]></comm
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT [Atr]: Current Year" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Atr]: Current Year" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the Current Period in the parameter cube to the Current Period attribute in the Period dimension]]></comment>
       <sources>
         <source nameref="tf-TJ [Dim]: Year to Current Year" />
@@ -1999,7 +1999,7 @@ Used to clear out the Current Period attribute in the period dimension.]]></comm
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-TJ [Dim]: Year to Current Year" type="TableJoin" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-TJ [Dim]: Year to Current Year" type="TableJoin" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Joins the extract of the #_Parameter Current Period with the extract of base periods from the Period Dimension.
 
 The result is the single member whose Current Period attribute in the period dimension will be updated.]]></comment>
@@ -2018,7 +2018,7 @@ The result is the single member whose Current Period attribute in the period dim
         </join>
       </joins>
     </transform>
-    <transform name="tf-FT [Atr]: Current Year Attribute Clear" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Atr]: Current Year Attribute Clear" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the period to a blank Current Period value.
 Used to clear out the Current Period attribute in the period dimension.]]></comment>
       <sources>
@@ -2035,7 +2035,7 @@ Used to clear out the Current Period attribute in the period dimension.]]></comm
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT [Atr]: Current Week for Parameter Update" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Atr]: Current Week for Parameter Update" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the current period based on date from the DW that will be used to update the Parameter cube.]]></comment>
       <sources>
         <source nameref="ex-DW [Dim] Week - Current Retail Week" />
@@ -2054,7 +2054,7 @@ Used to clear out the Current Period attribute in the period dimension.]]></comm
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT [Atr]: Current Week for Current Week Text File" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Atr]: Current Week for Current Week Text File" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the current period based on date from the DW that will be used to update the Parameter cube.]]></comment>
       <sources>
         <source nameref="ex-DW [Dim] Week - Current Retail Week" />
@@ -2067,7 +2067,7 @@ Used to clear out the Current Period attribute in the period dimension.]]></comm
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT [Cube]: Parameter Cube Export for File" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Cube]: Parameter Cube Export for File" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Formats the #_Parameter cube extract for use in an email.]]></comment>
       <sources>
         <source nameref="ex-Jedox [Cube]: Parameters - All Paremters" />
@@ -2093,7 +2093,7 @@ Used to clear out the Current Period attribute in the period dimension.]]></comm
         </coordinates>
       </target>
     </transform>
-    <transform name="Convert Actual to Forecast" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="Convert Actual to Forecast" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex FY14 Actual For Copy to Forecast" />
       </sources>
@@ -2129,7 +2129,7 @@ Used to clear out the Current Period attribute in the period dimension.]]></comm
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549892330" name="tf-TD [Cube]: Store Calendar Week - (Comp Type Export to DW)" type="TableDenormalization" modifiedBy="ONEPAS\richards">
+    <transform modified="1643930598994" name="tf-TD [Cube]: Store Calendar Week - (Comp Type Export to DW)" type="TableDenormalization" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Store Calendar Week" />
       </sources>
@@ -2161,7 +2161,7 @@ Used to clear out the Current Period attribute in the period dimension.]]></comm
         </measures>
       </target>
     </transform>
-    <transform name="tf-TD [Cube]: Store Calendar - (Comp Type Export to DW)" type="TableDenormalization" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-TD [Cube]: Store Calendar - (Comp Type Export to DW)" type="TableDenormalization" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Store Calendar" />
       </sources>
@@ -2193,7 +2193,7 @@ Used to clear out the Current Period attribute in the period dimension.]]></comm
         </measures>
       </target>
     </transform>
-    <transform name="tf-TD [Cube]: Parameters - (Parameter Export to DW)" type="TableDenormalization" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-TD [Cube]: Parameters - (Parameter Export to DW)" type="TableDenormalization" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Parameters - All Paremters" />
       </sources>
@@ -2213,7 +2213,7 @@ Used to clear out the Current Period attribute in the period dimension.]]></comm
         </measures>
       </target>
     </transform>
-    <transform name="tf-FT [Cube]: Parameter Cube Export for DW" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Cube]: Parameter Cube Export for DW" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TD [Cube]: Parameters - (Parameter Export to DW)" />
       </sources>
@@ -2231,7 +2231,7 @@ Used to clear out the Current Period attribute in the period dimension.]]></comm
         </coordinates>
       </target>
     </transform>
-    <transform name="New Transform" type="TableDenormalization" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="New Transform" type="TableDenormalization" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-System [Cube]: User Properties" />
       </sources>
@@ -2266,7 +2266,7 @@ Used to clear out the Current Period attribute in the period dimension.]]></comm
         </measures>
       </target>
     </transform>
-    <transform name="tf-FT [Dim] : RetailDay" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Dim] : RetailDay" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Groovy scripts developed by Naked Data
 
 This transform calculates various attribute values.]]></comment>
@@ -2441,7 +2441,7 @@ prevYear = sYear;]]></script>
         </function>
       </functions>
     </transform>
-    <transform modified="1602549892330" name="tf-FH [Dim] : Day" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1643930598994" name="tf-FH [Dim] : Day" type="TreeFH" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Brings in the attributes associated with each day.]]></comment>
       <sources>
         <source nameref="ex-DW [Dim]: Days from PTime" />
@@ -2541,7 +2541,7 @@ prevYear = sYear;]]></script>
         </levels>
       </target>
     </transform>
-    <transform modified="1602549892330" name="tf-FH [Dim]: FinancialDay" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1643930598994" name="tf-FH [Dim]: FinancialDay" type="TreeFH" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Brings in the attributes associated with each day.]]></comment>
       <sources>
         <source nameref="ex-DW [Dim]: FinancialDays from PTime" />
@@ -2564,7 +2564,7 @@ prevYear = sYear;]]></script>
         <attributes />
       </target>
     </transform>
-    <transform name="tf-FT [Dim]: FinancialDay" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Dim]: FinancialDay" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Groovy scripts developed by Naked Data
 
 This transform calculates various attribute values.]]></comment>
@@ -2739,7 +2739,7 @@ prevYear = sYear;]]></script>
         </function>
       </functions>
     </transform>
-    <transform modified="1602549892330" name="tf-FH [Dim] : RetailDay" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1643930598994" name="tf-FH [Dim] : RetailDay" type="TreeFH" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Brings in the attributes associated with each day.]]></comment>
       <sources>
         <source nameref="ex-DW [Dim]: RetailDays from PTime" />
@@ -2765,7 +2765,7 @@ prevYear = sYear;]]></script>
         <attributes />
       </target>
     </transform>
-    <transform name="tf-FT [Dim]: Accounts P&amp;L Check" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Dim]: Accounts P&amp;L Check" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Dim]: Accounts - P&amp;L" />
       </sources>
@@ -2780,7 +2780,7 @@ prevYear = sYear;]]></script>
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT [Dim]: Accounts Stat P&amp;L Check" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Dim]: Accounts Stat P&amp;L Check" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Dim]: Accounts - Stat P&amp;L" />
       </sources>
@@ -2795,7 +2795,7 @@ prevYear = sYear;]]></script>
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FT [Dim]: Financials PandL Check" type="FieldTransform" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FT [Dim]: Financials PandL Check" type="FieldTransform" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Stat PandL Balance Check" />
       </sources>
@@ -2817,7 +2817,7 @@ prevYear = sYear;]]></script>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549892330" name="tf-FT [Cube]:Store Calendar - Store Status" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643930598994" name="tf-FT [Cube]:Store Calendar - Store Status" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Store Calendar - Week] Store Status Dates" />
       </sources>
@@ -2844,7 +2844,7 @@ prevYear = sYear;]]></script>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549892330" name="tf-FT [Cube]:Store Calendar Week - Store Status" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643930598994" name="tf-FT [Cube]:Store Calendar Week - Store Status" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Store Calendar - Week] Store Status Dates" />
       </sources>
@@ -2871,7 +2871,7 @@ prevYear = sYear;]]></script>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549892330" name="Duplicate of tf-TD [Cube]: Store Calendar Week - (Comp Type Export to DW)" type="TableDenormalization" modifiedBy="ONEPAS\richards">
+    <transform modified="1643930598994" name="Duplicate of tf-TD [Cube]: Store Calendar Week - (Comp Type Export to DW)" type="TableDenormalization" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Duplicate of ex-Jedox [Cube]: Store Calendar Week" />
       </sources>
@@ -2903,7 +2903,7 @@ prevYear = sYear;]]></script>
         </measures>
       </target>
     </transform>
-    <transform modified="1602549892330" name="tf-FT [Atr]: Current Financial Period ETL for Parameter Update" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643930598994" name="tf-FT [Atr]: Current Financial Period ETL for Parameter Update" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the current period based on date from the DW that will be used to update the Parameter cube.]]></comment>
       <sources>
         <source nameref="ex-DW [Attr] ETL Financial Period" />
@@ -2922,7 +2922,7 @@ prevYear = sYear;]]></script>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549892330" name="tf-FH [Dim] : Day - PayDates for Payroll Cube" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1643930598994" name="tf-FH [Dim] : Day - PayDates for Payroll Cube" type="TreeFH" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Brings in the attributes associated with each day.]]></comment>
       <sources>
         <source nameref="ex-DW [Dim]: Days - PayDates for Payroll Cube" />
@@ -2945,7 +2945,7 @@ prevYear = sYear;]]></script>
         <attributes />
       </target>
     </transform>
-    <transform modified="1602549892330" name="tf-FT [Atr]: Current Financial Year ETL for Parameter Update" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643930598994" name="tf-FT [Atr]: Current Financial Year ETL for Parameter Update" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Maps the current period based on date from the DW that will be used to update the Parameter cube.]]></comment>
       <sources>
         <source nameref="ex-DW [Attr] ETL Financial Year" />
@@ -2964,7 +2964,7 @@ prevYear = sYear;]]></script>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1602549892330" name="tf-FT [Attr]: Retail ETL Forecast Version" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1643930598994" name="tf-FT [Attr]: Retail ETL Forecast Version" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Attr] Retail ETL Forecast Version" />
       </sources>
@@ -2999,7 +2999,7 @@ prevYear = sYear;]]></script>
     </transform>
   </transforms>
   <loads>
-    <load name="ld-Jedox [Dim]: Current Period Attribute" type="Dimension" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim]: Current Period Attribute" type="Dimension" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Update the Current Period attribute in the period dimension.]]></comment>
       <source nameref="tf-FT [Atr]: Current Period" />
       <connection nameref="Jedox" />
@@ -3009,7 +3009,7 @@ prevYear = sYear;]]></script>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim]: Period - Clear Current Period Attribute" type="Dimension" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim]: Period - Clear Current Period Attribute" type="Dimension" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Update the Current Period attribute in the period dimension.]]></comment>
       <source nameref="tf-FT [Atr]: Current Period Attribute Clear" />
       <connection nameref="Jedox" />
@@ -3019,7 +3019,7 @@ prevYear = sYear;]]></script>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim]: Week - Current Week Attribute" type="Dimension" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim]: Week - Current Week Attribute" type="Dimension" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Update the Current Week attribute in the Week dimension.]]></comment>
       <source nameref="tf-FT [Atr]: Current Week" />
       <connection nameref="Jedox" />
@@ -3029,7 +3029,7 @@ prevYear = sYear;]]></script>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim]: Week - Clear Current Week Attribute" type="Dimension" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim]: Week - Clear Current Week Attribute" type="Dimension" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Update the Current Week attribute in the Week dimension.]]></comment>
       <source nameref="tf-FT [Atr]: Current Week Attribute Clear" />
       <connection nameref="Jedox" />
@@ -3039,7 +3039,7 @@ prevYear = sYear;]]></script>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim]: Year - Clear Current Year Attribute" type="Dimension" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim]: Year - Clear Current Year Attribute" type="Dimension" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Update the Current Week attribute in the Week dimension.]]></comment>
       <source nameref="tf-FT [Atr]: Current Year Attribute Clear" />
       <connection nameref="Jedox" />
@@ -3049,7 +3049,7 @@ prevYear = sYear;]]></script>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim]: Year- Current Year Attribute" type="Dimension" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim]: Year- Current Year Attribute" type="Dimension" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Update the Current Week attribute in the Week dimension.]]></comment>
       <source nameref="tf-FT [Atr]: Current Year" />
       <connection nameref="Jedox" />
@@ -3059,7 +3059,7 @@ prevYear = sYear;]]></script>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Cube] Parameters - Week" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube] Parameters - Week" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Updates the Week parameter in the #_Parameters cube]]></comment>
       <source nameref="tf-FT [Atr]: Current Week for Parameter Update" />
       <connection nameref="Jedox" />
@@ -3071,30 +3071,30 @@ prevYear = sYear;]]></script>
       </cube>
       <mode>insert</mode>
     </load>
-    <load name="ld-File: Export Current Week Value" type="File" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-File: Export Current Week Value" type="File" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Writes the value of the current week based on the current date to a text file.]]></comment>
       <source nameref="tf-FT [Atr]: Current Week for Current Week Text File" />
       <connection nameref="CurrentWeekTextFile" />
       <mode>create</mode>
     </load>
-    <load name="ld-File: Parameter Cube Export" type="File" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-File: Parameter Cube Export" type="File" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Cube]: Parameter Cube Export for File" />
       <connection nameref="Parameter Cube Contents" />
       <mode>create</mode>
     </load>
-    <load modified="1602549892330" name="ld-DW JedoxParameters" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-DW JedoxParameters" type="Relational" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Cube]: Parameter Cube Export for DW" />
       <connection nameref="DW" />
       <mode>update</mode>
       <table name="SysJedoxParameters" schema="dbo" />
     </load>
-    <load name="Load FY14 Forecast" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="Load FY14 Forecast" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <source nameref="Convert Actual to Forecast" />
       <connection nameref="Jedox" />
       <mode>add</mode>
       <cube name="Retail Sales Weekly" splash="disabled" cubeLayoutChangeMode="noneWithDefaultWrite" />
     </load>
-    <load name="ld-Jedox [Cube] ETL_Parameters - Week" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube] ETL_Parameters - Week" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Updates the Week parameter in the #_Parameters cube]]></comment>
       <source nameref="tf-FT [Atr]: Current Week for Parameter Update" />
       <connection nameref="Jedox" />
@@ -3106,7 +3106,7 @@ prevYear = sYear;]]></script>
         </dimensions>
       </cube>
     </load>
-    <load name="ld-Jedox [Cube] Store Calendar - Store Status Dates" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube] Store Calendar - Store Status Dates" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Loads the store open/closed refurbstart/end dates from the profit centre view into the Store Calendar cube for use by the comp rules.
 This]]></comment>
       <source nameref="ex-DW [Store Calendar] Store Status Dates" />
@@ -3122,7 +3122,7 @@ This]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load name="ld-Jedox [Cube] Store Calendar Week - Store Status Dates" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube] Store Calendar Week - Store Status Dates" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Loads the store open/closed refurbstart/end dates from the profit centre view into the Store Calendar cube for use by the comp rules.
 This]]></comment>
       <source nameref="ex-DW [Store Calendar Week ] Store Status Dates" />
@@ -3138,34 +3138,34 @@ This]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load name="ld-DW AP21 Store Polling Data (Raw)" type="Relational" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-DW AP21 Store Polling Data (Raw)" type="Relational" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Loads the data from AP21 Store view into a table so it can be joined to the locations in Jedox]]></comment>
       <source nameref="ex-AP21 Store Polling Data (Raw)" />
       <connection nameref="DW" />
       <mode>create</mode>
       <table name="AP21_Store_Polling_Data" schema="FIN" aggregate="false" />
     </load>
-    <load name="ld-DW Store Polling Data (Transformed)" type="Relational" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-DW Store Polling Data (Transformed)" type="Relational" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Loads the transformed polling data into a table.]]></comment>
       <source nameref="ex-DW AP21 Store Polling Data (Transform)" />
       <connection nameref="DW" />
       <mode>add</mode>
       <table name="Store_Polling_Data" schema="Fin" />
     </load>
-    <load name="ld-DW SalesDaily Update" type="Relational" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-DW SalesDaily Update" type="Relational" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Loaded the SalesDaily update date time into the Status table]]></comment>
       <source nameref="ex-DW SalesDaily Update Time" />
       <connection nameref="DW" />
       <mode>add</mode>
       <table name="Status" schema="Fin" aggregate="false" />
     </load>
-    <load name="ld-File SalesDaily Update Details" type="File" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-File SalesDaily Update Details" type="File" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Write out the update times to a text file to be sent via email.]]></comment>
       <source nameref="ex-DW SalesDaily Update Time" />
       <connection nameref="file-SalesDailyUpdate" />
       <mode>create</mode>
     </load>
-    <load modified="1602549892330" name="ld-DW Store Comp Types - Store Calendar Week" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-DW Store Comp Types - Store Calendar Week" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Loads the comp types FROM STORE CALENDAR WEEK cube into the DW table Jedox_Store_CompType
 NOTE: This job uses UPDATE mode which means it will delete the contents of the table prior to loading
 
@@ -3175,13 +3175,13 @@ THIS JOB must be run BEFORE the Store Calendar comp type load]]></comment>
       <mode>create</mode>
       <table name="JEDOX_STORE_COMPTYPE" schema="dbo" />
     </load>
-    <load modified="1602549892330" name="ld-DW Status (Profit Centre Attribute Checksum)" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-DW Status (Profit Centre Attribute Checksum)" type="Relational" modifiedBy="ONEPAS\richards">
       <source nameref="ex-DW [vProfCen] Profit Centre Attribute Checksum" />
       <connection nameref="DW" />
       <mode>add</mode>
       <table name="Status" schema="dbo" />
     </load>
-    <load name="ld-Jedox [Cube] Parameters - Store Attribute Update" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube] Parameters - Store Attribute Update" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <source nameref="ex-DW [Status] Store Attribute Update" />
       <connection nameref="Jedox" />
       <mode>insert</mode>
@@ -3192,7 +3192,7 @@ THIS JOB must be run BEFORE the Store Calendar comp type load]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549892330" name="ld-DW Store Comp Types - Store Calendar" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-DW Store Comp Types - Store Calendar" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Loads the comp types  FROM STORE CALENDAR cube into the DW table Jedox_Store_CompType
 NOTE: This job uses INSERT mode which means it will NOT delete ANY DATA. 
 
@@ -3202,7 +3202,7 @@ IT MUST BE RUN AFTER THE STORE CALENDAR WEEK COMP TYPE LOAD.]]></comment>
       <mode>insert</mode>
       <table name="JEDOX_STORE_COMPTYPE" schema="dbo" />
     </load>
-    <load name="ld-Jedox [Cube] Store Polling" type="Cube" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Cube] Store Polling" type="Cube" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <source nameref="ex-DW AP21 Store Polling Data (F_StorePollData)" />
       <connection nameref="Jedox" />
       <mode>update</mode>
@@ -3214,7 +3214,7 @@ IT MUST BE RUN AFTER THE STORE CALENDAR WEEK COMP TYPE LOAD.]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549892330" name="ld-Jedox-[Dim] : Day" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-Jedox-[Dim] : Day" type="Dimension" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Uses insert functionality...
 inser The same as "add", with the following exception: duplicate consolidations are deleted and replaced with new consolidations
 Target dimension name is set in the variable DateDimName]]></comment>
@@ -3226,7 +3226,7 @@ Target dimension name is set in the variable DateDimName]]></comment>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1602549892330" name="ld-Jedox-[Dim] : RetailDay" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-Jedox-[Dim] : RetailDay" type="Dimension" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Uses insert functionality...
 inser The same as "add", with the following exception: duplicate consolidations are deleted and replaced with new consolidations
 Target dimension name is set in the variable DateDimName]]></comment>
@@ -3238,7 +3238,7 @@ Target dimension name is set in the variable DateDimName]]></comment>
         <attributes mode="inactive" />
       </dimension>
     </load>
-    <load modified="1602549892330" name="ld-Jedox-[Dim]: FinancialDay" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-Jedox-[Dim]: FinancialDay" type="Dimension" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Uses insert functionality...
 inser The same as "add", with the following exception: duplicate consolidations are deleted and replaced with new consolidations
 Target dimension name is set in the variable DateDimName]]></comment>
@@ -3250,7 +3250,7 @@ Target dimension name is set in the variable DateDimName]]></comment>
         <attributes mode="inactive" />
       </dimension>
     </load>
-    <load name="zz Testing ld-DW Store Comp Types - Store Calendar Week" type="Relational" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <load name="zz Testing ld-DW Store Comp Types - Store Calendar Week" type="Relational" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Loads the comp types FROM STORE CALENDAR WEEK cube into the DW table Jedox_Store_CompType
 NOTE: This job uses UPDATE mode which means it will delete the contents of the table prior to loading
 
@@ -3260,25 +3260,25 @@ THIS JOB must be run BEFORE the Store Calendar comp type load]]></comment>
       <mode>update</mode>
       <table name="zzTesting_Jedox_Store_CompType" schema="FIN" />
     </load>
-    <load modified="1602549892330" name="ld-DW PandL Check" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-DW PandL Check" type="Relational" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Dim]: Accounts P&amp;L Check" />
       <connection nameref="DW Raw" />
       <mode>create</mode>
       <table name="JEDOX_STAT_PANDL_CHECK" schema="dbo" />
     </load>
-    <load modified="1602549892330" name="ld-DW Stat PandL Check" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-DW Stat PandL Check" type="Relational" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Dim]: Accounts Stat P&amp;L Check" />
       <connection nameref="DW Raw" />
       <mode>add</mode>
       <table name="JEDOX_STAT_PANDL_CHECK" schema="dbo" />
     </load>
-    <load modified="1605227220280" name="ld-File: Stat PandL Check" type="File" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-File: Stat PandL Check" type="File" modifiedBy="ONEPAS\richards">
       <source nameref="ex-DW [Dim] Account - Stat PandL Check" />
       <connection nameref="Stat PandL Check" />
       <mode>create</mode>
       <useScientificNotation>true</useScientificNotation>
     </load>
-    <load modified="1602549892330" name="ld-Jedox [Cube] Store Calendar - Store Status Dates - New" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-Jedox [Cube] Store Calendar - Store Status Dates - New" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Cube]:Store Calendar - Store Status" />
       <connection nameref="Jedox" />
       <mode>insert</mode>
@@ -3292,7 +3292,7 @@ THIS JOB must be run BEFORE the Store Calendar comp type load]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549892330" name="ld-Jedox [Cube] Store Calendar Week - Store Status Dates - New" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-Jedox [Cube] Store Calendar Week - Store Status Dates - New" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Cube]:Store Calendar Week - Store Status" />
       <connection nameref="Jedox" />
       <mode>insert</mode>
@@ -3306,7 +3306,7 @@ THIS JOB must be run BEFORE the Store Calendar comp type load]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549892330" name="New Load" type="RelationalSQL" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="New Load" type="RelationalSQL" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[SELECT [Code]
   + [Name]
@@ -3357,24 +3357,24 @@ UPDATE [PlayPen].[dbo].[SysConfiguration]
 --SELECT 'ETLProfitCentreAttributeChecksum' as [ConfigurationKey], GetDate() as [Date], '' as [Description],  checksum(LEFT(@Txt1,LEN(@Txt1)-1)) as 'Value'
 drop table #a]]></query>
     </load>
-    <load modified="1602549892330" name="ld-File: Review Concession Profit Centre Check" type="File" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-File: Review Concession Profit Centre Check" type="File" modifiedBy="ONEPAS\richards">
       <source nameref="ex-DW [Dim]: Review Profit Centre Concession Check" />
       <connection nameref="Review Concession Profit Centre  Check" />
       <mode>create</mode>
     </load>
-    <load modified="1602549892330" name="ld-DW Review Profit Centre Concessions" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-DW Review Profit Centre Concessions" type="Relational" modifiedBy="ONEPAS\richards">
       <source nameref="ex-Jedox Review Profit Centre Concessions" />
       <connection nameref="DW Raw" />
       <mode>create</mode>
       <table name="JEDOX_REVIEW_PROFITCENTRE_CONCESSIONS" schema="dbo" />
     </load>
-    <load modified="1602549892330" name="ld-DW Review Reporting Concessions" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-DW Review Reporting Concessions" type="Relational" modifiedBy="ONEPAS\richards">
       <source nameref="ex-Jedox Review Reporting Concessions" />
       <connection nameref="DW Raw" />
       <mode>create</mode>
       <table name="JEDOX_REVIEW_REPORTING_CONCESSIONS" schema="dbo" />
     </load>
-    <load modified="1602549892330" name="ld-Jedox [Cube] Parameters - Current Period ETL" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-Jedox [Cube] Parameters - Current Period ETL" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Updates the Current Period ETL parameter in the #_Parameters cube]]></comment>
       <source nameref="tf-FT [Atr]: Current Financial Period ETL for Parameter Update" />
       <connection nameref="Jedox" />
@@ -3386,7 +3386,7 @@ drop table #a]]></query>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549892330" name="ld-Jedox-[Dim] : Day - PayDates for Payroll Cube" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-Jedox-[Dim] : Day - PayDates for Payroll Cube" type="Dimension" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Uses insert functionality...
 inser The same as "add", with the following exception: duplicate consolidations are deleted and replaced with new consolidations
 Target dimension name is set in the variable DateDimName]]></comment>
@@ -3398,7 +3398,7 @@ Target dimension name is set in the variable DateDimName]]></comment>
         <attributes mode="inactive" />
       </dimension>
     </load>
-    <load modified="1602549892330" name="ld-Jedox [Cube] Parameters - Current Financial Year ETL" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-Jedox [Cube] Parameters - Current Financial Year ETL" type="Cube" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Updates the Current Period ETL parameter in the #_Parameters cube]]></comment>
       <source nameref="tf-FT [Atr]: Current Financial Year ETL for Parameter Update" />
       <connection nameref="Jedox" />
@@ -3410,7 +3410,7 @@ Target dimension name is set in the variable DateDimName]]></comment>
         </dimensions>
       </cube>
     </load>
-    <load modified="1602549892330" name="ld-Jedox [Cube] Parameters - Retail ETL Forecast" type="Cube" modifiedBy="ONEPAS\richards">
+    <load modified="1643930598994" name="ld-Jedox [Cube] Parameters - Retail ETL Forecast" type="Cube" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FT [Attr]: Retail ETL Forecast Version" />
       <connection nameref="Jedox" />
       <mode>insert</mode>
@@ -3425,28 +3425,28 @@ Target dimension name is set in the variable DateDimName]]></comment>
     </load>
   </loads>
   <jobs>
-    <job name="[01-01]-load[Attr] Period - Current Period" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-01]-load[Attr] Period - Current Period" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Dim]: Period - Clear Current Period Attribute" type="load" />
         <execution nameref="ld-Jedox [Dim]: Current Period Attribute" type="load" />
       </executions>
       <comment><![CDATA[Updates the current period attribute in the Period dimension]]></comment>
     </job>
-    <job name="[01-02]-load[Attr] Week - Current Week" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-02]-load[Attr] Week - Current Week" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Dim]: Week - Clear Current Week Attribute" type="load" />
         <execution nameref="ld-Jedox [Dim]: Week - Current Week Attribute" type="load" />
       </executions>
       <comment><![CDATA[Updates the current week attribute in the Week dimension]]></comment>
     </job>
-    <job name="[01-03]-load[Attr]:FYear - Current Year" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-03]-load[Attr]:FYear - Current Year" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Dim]: Year - Clear Current Year Attribute" type="load" />
         <execution nameref="ld-Jedox [Dim]: Year- Current Year Attribute" type="load" />
       </executions>
       <comment><![CDATA[Updates the current Year attribute in the FYear dimension]]></comment>
     </job>
-    <job modified="1602549892330" name="[01-04]-load[Cube]:Parameter - Week" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1643930598994" name="[01-04]-load[Cube]:Parameter - Week" type="Standard" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube] Parameters - Week" type="load" />
         <execution nameref="ld-Jedox [Cube] Parameters - Current Period ETL" type="load" />
@@ -3459,19 +3459,19 @@ Then exports the value of the current week to a file for use in email.
 Then exports the value of the #_Parameter cube to a file for use in email.]]></comment>
       <failStatus>error</failStatus>
     </job>
-    <job name="[01-05]-load[DW]:Jedox_Parameters Table" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-05]-load[DW]:Jedox_Parameters Table" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-DW JedoxParameters" type="load" />
       </executions>
       <comment><![CDATA[Updates JedoxParameters table in PAS_DWH]]></comment>
     </job>
-    <job name="[01-06]-Export[Cube]:Parameters to File" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-06]-Export[Cube]:Parameters to File" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-File: Parameter Cube Export" type="load" />
       </executions>
       <comment><![CDATA[Exports the contents of the ETL_Parameter cube to a text file for use during the nightly processing.]]></comment>
     </job>
-    <job name="[01-07]-load [Cube]:Store Calendar and Store Calendar Week - Store Status Dates" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-07]-load [Cube]:Store Calendar and Store Calendar Week - Store Status Dates" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube] Store Calendar - Store Status Dates" type="load" />
         <execution nameref="ld-Jedox [Cube] Store Calendar Week - Store Status Dates" type="load" />
@@ -3479,7 +3479,7 @@ Then exports the value of the #_Parameter cube to a file for use in email.]]></c
       <comment><![CDATA[Loads store status dates from vProfCen (view of profcen table) into the store calendar cube.
 Load StoreOpenDate StoreOpenDateS, StoreCloseDate, RefurbStartDate RefurbEndDate]]></comment>
     </job>
-    <job name="[01-09]-Load AP21 Store Poll Data" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-09]-Load AP21 Store Poll Data" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-DW AP21 Store Polling Data (Raw)" type="load" />
         <execution nameref="ld-DW Store Polling Data (Transformed)" type="load" />
@@ -3487,7 +3487,7 @@ Load StoreOpenDate StoreOpenDateS, StoreCloseDate, RefurbStartDate RefurbEndDate
       </executions>
       <comment><![CDATA[Extracts store polling information from AP21, transforms it into Jedox format (profit centres) and loads it into the Store_Polling_Data table]]></comment>
     </job>
-    <job name="[01-10]-Update Status Table with SalesDaily Load Dates" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-10]-Update Status Table with SalesDaily Load Dates" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-DW SalesDaily Update" type="load" />
         <execution nameref="ld-File SalesDaily Update Details" type="load" />
@@ -3495,7 +3495,7 @@ Load StoreOpenDate StoreOpenDateS, StoreCloseDate, RefurbStartDate RefurbEndDate
       <comment><![CDATA[Updates the status table with the date and time when the SalesDaily table in the DW was updated overnight. 
 The same values are written to a file for email attachment on Mondays.]]></comment>
     </job>
-    <job name="[01-08]-Load Store Comp Type into DW" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-08]-Load Store Comp Type into DW" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-DW Store Comp Types - Store Calendar Week" type="load" />
         <execution nameref="ld-DW Store Comp Types - Store Calendar" type="load" />
@@ -3505,7 +3505,7 @@ The jobs must be run in this order (SCW then SC) as the SCW job clears the table
 This job is only run on an "as needed" basis and relies on job 01-11 to determine whether or not it is required.
 The store comp type by week/period is then used during the data load for the Retail and Retail Sales Weekly cubes to improve performance during the data loads.]]></comment>
     </job>
-    <job modified="1602549892330" name="[01-11]-Parameter Cube Export" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1643930598994" name="[01-11]-Parameter Cube Export" type="Standard" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-File: Parameter Cube Export" type="load" />
       </executions>
@@ -3515,12 +3515,12 @@ The ETL Parameter cube is updated with the word Update when an attribute changes
 These values are used to determine whether or not the Comp Types need to be exported from the Store Calendar and Store Calendar Week cubes because of a change in date which will affect the comp dates.]]></comment>
       <failStatus>error</failStatus>
     </job>
-    <job name="[01-12]-load Dim Days" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-12]-load Dim Days" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox-[Dim] : Day" type="load" />
       </executions>
     </job>
-    <job name="[01-13-00]-Load Retail - Financial Days Dimensions" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-13-00]-Load Retail - Financial Days Dimensions" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="[01-13-01]-load Dim FinancialDays" type="job" />
         <execution nameref="[01-13-02]-load Dim RetailDays" type="job" />
@@ -3529,23 +3529,23 @@ These values are used to determine whether or not the Comp Types need to be expo
 1. FinancialDays dimension
 2. RetailDays dimension]]></comment>
     </job>
-    <job name="[01-13-01]-load Dim FinancialDays" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-13-01]-load Dim FinancialDays" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox-[Dim]: FinancialDay" type="load" />
       </executions>
     </job>
-    <job name="[01-13-02]-load Dim RetailDays" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-13-02]-load Dim RetailDays" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox-[Dim] : RetailDay" type="load" />
       </executions>
     </job>
-    <job name="[99-01]-Nightly Sequence - Start" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[99-01]-Nightly Sequence - Start" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="[01-11]-Parameter Cube Export" type="job" />
       </executions>
       <comment><![CDATA[This is a job that is meant to be run interactively. It simulates the admin jobs that are run as part of the nightly batch process.]]></comment>
     </job>
-    <job name="[01-14]-Stat PandL Check" type="Standard" modified="1602549892330" modifiedBy="ONEPAS\richards">
+    <job name="[01-14]-Stat PandL Check" type="Standard" modified="1643930598994" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-DW PandL Check" type="load" />
         <execution nameref="ld-DW Stat PandL Check" type="load" />
@@ -3557,7 +3557,7 @@ The results are written to the file C:\Progra~1\Jedox\Jedox Suite\tomcat\client\
 
 NOTE: The order is important ad the load ld-DW PandL Check creates that table!!]]></comment>
     </job>
-    <job modified="1602549892330" name="[01-15]-Review Concession Profit Centre Check" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1643930598994" name="[01-15]-Review Concession Profit Centre Check" type="Standard" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-DW Review Profit Centre Concessions" type="load" />
         <execution nameref="ld-DW Review Reporting Concessions" type="load" />
@@ -3565,13 +3565,13 @@ NOTE: The order is important ad the load ld-DW PandL Check creates that table!!]
       </executions>
       <failStatus>error</failStatus>
     </job>
-    <job modified="1602549892330" name="[01-13-02]-load Dim Day - PayDates for Payroll Cube" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1643930598994" name="[01-13-02]-load Dim Day - PayDates for Payroll Cube" type="Standard" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox-[Dim] : Day - PayDates for Payroll Cube" type="load" />
       </executions>
       <failStatus>error</failStatus>
     </job>
-    <job modified="1602549892330" name="[01-16]-Nightly Update Retail ETL Forecast Version" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1643930598994" name="[01-16]-Nightly Update Retail ETL Forecast Version" type="Standard" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Cube] Parameters - Retail ETL Forecast" type="load" />
       </executions>
