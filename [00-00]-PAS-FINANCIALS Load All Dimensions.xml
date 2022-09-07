@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="22.2" modified="1662527622799" modifiedBy="ONEPAS\richards" olapId="p23">
+<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="22.2" modified="1662531069108" modifiedBy="ONEPAS\richards" olapId="p23">
   <headers>
     <header name="comment" modified="1662522307708" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
@@ -1792,7 +1792,7 @@ ORDER BY
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662522307708" name="ex-DW [Dim]: Currency - BC" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662531054138" name="ex-BCDW [Dim]: Currency - BC" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Joins the 2 currency dimensions from 
 1. DataWarehouse.dbo.DimCurrency
 2. BrandCollectiveDataWarehouse.dbo.DimCurrency]]></comment>
@@ -1896,7 +1896,7 @@ UNION ALL
 INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
       <cache>false</cache>
     </extract>
-    <extract modified="1662522307708" name="ex-DW [Dim]: Brand - BC" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662531012784" name="ex-BCDW [Dim]: Brand - BC" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract the brands from the Brand Collective Data Warehouse to be loaded into Jedox Brand dimension]]></comment>
       <connection nameref="DWBC" />
       <query><![CDATA[SELECT
@@ -1909,7 +1909,7 @@ BY
   DimBrand.Code]]></query>
       <cache>false</cache>
     </extract>
-    <extract modified="1662523579162" name="ex-DW [Dim]: Channel -BC" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662531033699" name="ex-BCDW [Dim]: Channel -BC" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extracts DimChannel from Brand Collective Data Warehouse and loads into Channel dimension]]></comment>
       <connection nameref="DWBC" />
       <query><![CDATA[SELECT
@@ -1917,6 +1917,27 @@ BY
   DimChannel.Code,
   DimChannel.Name
 FROM DimChannel]]></query>
+      <cache>false</cache>
+    </extract>
+    <extract modified="1662531069108" name="ex-BCDW [Dim]: Department - BC" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Extracts department dimension from Brand Collective Data Warehouse DimDepartment]]></comment>
+      <connection nameref="DWBC" />
+      <query><![CDATA[SELECT
+  'Total Department' [TotalDepartment],
+  DimDepartment.Code,
+  DimDepartment.Name
+FROM DimDepartment]]></query>
+      <cache>false</cache>
+    </extract>
+    <extract modified="1662530089359" name="ex-BCDW [Dim]: Location - BC" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Extract locations from Brand Collective Data Warehouse from DimLocation for Location dimension]]></comment>
+      <connection nameref="DWBC" />
+      <query><![CDATA[SELECT
+  'Total Location' [TotalLocation],
+  DimLocation.Code,
+  DimLocation.Name
+FROM DimLocation
+ORDER BY DimLocation.Code]]></query>
       <cache>false</cache>
     </extract>
   </extracts>
@@ -3655,17 +3676,17 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </levels>
       </target>
     </transform>
-    <transform modified="1662522307708" name="tf-TJ [Dim]:Currency" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform name="tf-TJ [Dim]:Currency" type="TableJoin" modified="1662531050378" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: Currency" />
-        <source nameref="ex-DW [Dim]: Currency - BC" />
+        <source nameref="ex-BCDW [Dim]: Currency - BC" />
       </sources>
       <joins persist="false">
-        <join allColumns="true" type="left outer" unique="false">
+        <join type="left outer" unique="false" allColumns="true">
           <left nameref="ex-DW [Dim]: Currency">
             <key nameref="Currency" />
           </left>
-          <right nameref="ex-DW [Dim]: Currency - BC">
+          <right nameref="ex-BCDW [Dim]: Currency - BC">
             <key nameref="Currency" />
           </right>
           <conditions>
@@ -3685,9 +3706,9 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
       </target>
       <cache>false</cache>
     </transform>
-    <transform modified="1662522307708" name="tf-FH [Dim]: Brand" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FH [Dim]: Brand" type="TreeFH" modified="1662531010072" modifiedBy="ONEPAS\richards">
       <sources>
-        <source nameref="ex-DW [Dim]: Brand - BC" />
+        <source nameref="ex-BCDW [Dim]: Brand - BC" />
       </sources>
       <target>
         <attributes>
@@ -3708,9 +3729,9 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </levels>
       </target>
     </transform>
-    <transform modified="1662524374850" name="tf-FH [Dim]: Channel" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FH [Dim]: Channel" type="TreeFH" modified="1662531033659" modifiedBy="ONEPAS\richards">
       <sources>
-        <source nameref="ex-DW [Dim]: Channel -BC" />
+        <source nameref="ex-BCDW [Dim]: Channel -BC" />
       </sources>
       <target>
         <attributes>
@@ -3724,6 +3745,52 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
             <input nameref="Code" />
             <attributes>
               <attribute name="Channel Name">
+                <input nameref="Name" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform name="tf-FH [Dim]: Department - BC" type="TreeFH" modified="1662531069065" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-BCDW [Dim]: Department - BC" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="Department Name" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input nameref="TotalDepartment" />
+          </level>
+          <level>
+            <input nameref="Code" />
+            <attributes>
+              <attribute name="Department Name">
+                <input nameref="Name" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
+    <transform modified="1662530339475" name="tf-FH [Dim]: Location - BC" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-BCDW [Dim]: Location - BC" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="Location Name" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input nameref="TotalLocation" />
+          </level>
+          <level>
+            <input nameref="Code" />
+            <attributes>
+              <attribute name="Location Name">
                 <input nameref="Name" />
               </attribute>
             </attributes>
@@ -4039,9 +4106,27 @@ Does not load level 0/bottom level accounts]]></comment>
         <attributes mode="add" />
       </dimension>
     </load>
+    <load modified="1662529085158" name="ld-Jedox [Dim-BCFinancials]: Department" type="Dimension" modifiedBy="ONEPAS\richards">
+      <source nameref="tf-FH [Dim]: Department - BC" />
+      <connection nameref="Jedox" />
+      <dimension generateSubsets="false" name="Department">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
+    <load name="ld-Jedox [Dim-BCFinacials]: Location" type="Dimension" modified="1662530337379" modifiedBy="ONEPAS\richards">
+      <connection nameref="Jedox" />
+      <source nameref="tf-FH [Dim]: Location - BC" />
+      <dimension name="Location" generateSubsets="false">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
   </loads>
   <jobs>
-    <job modified="1662527622799" name="Dimension Load - Parallel" type="Parallel" modifiedBy="ONEPAS\richards">
+    <job modified="1662530748637" name="Dimension Load - Parallel" type="Parallel" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Dim-Wholesale]: Colour" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Wholesale]: Season" parallel="true" type="load" />
@@ -4057,6 +4142,8 @@ Does not load level 0/bottom level accounts]]></comment>
         <execution nameref="ld-Jedox [Dim-Stock]: Style Colour - PAS PC" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Stock]: Style Colour - Designworks PC" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-BCFinancials]: Channel" parallel="true" type="load" />
+        <execution nameref="ld-Jedox [Dim-BCFinancials]: Department" parallel="true" type="load" />
+        <execution nameref="ld-Jedox [Dim-BCFinacials]: Location" parallel="true" type="load" />
       </executions>
       <failStatus>error</failStatus>
     </job>
