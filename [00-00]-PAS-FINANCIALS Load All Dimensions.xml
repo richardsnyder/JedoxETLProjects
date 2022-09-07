@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="21.4" modified="1662519910343" modifiedBy="ONEPAS\richards" olapId="p42">
+<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="21.4" modified="1662522122330" modifiedBy="ONEPAS\richards" olapId="p42">
   <headers>
-    <header name="comment" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <header name="comment" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
     </header>
   </headers>
   <variables />
   <connections>
-    <connection modified="1662446820992" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1662520611005" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <global nameref="DW" />
     </connection>
-    <connection modified="1662446820992" name="DW Raw" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1662520611005" name="DW Raw" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <host>MTWSQL06</host>
       <port>1433</port>
       <database>DataWarehouseRawData</database>
@@ -19,13 +19,13 @@
         <parameter name="autoCommit">true</parameter>
       </parameters>
     </connection>
-    <connection modified="1662446820992" name="Jedox" type="JedoxOlap" modifiedBy="ONEPAS\richards">
+    <connection modified="1662520611005" name="Jedox" type="JedoxOlap" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
       <global nameref="PALOPROD" />
       <database><![CDATA[PAS-Financials]]></database>
       <ssl>off</ssl>
     </connection>
-    <connection modified="1662446820992" name="PAS-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1662520611005" name="PAS-DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Connection to Data warehouse MTWSQL06]]></comment>
       <host>MTWSQL06</host>
       <port>1433</port>
@@ -35,12 +35,12 @@
         <parameter name="integratedSecurity">true</parameter>
       </parameters>
     </connection>
-    <connection modified="1662446820992" name="DWBC" type="Sqlserver" modifiedBy="ONEPAS\richards">
+    <connection modified="1662520611005" name="DWBC" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <global nameref="DWBC" />
     </connection>
   </connections>
   <extracts>
-    <extract modified="1662446820992" name="ex-DW [Dim]: Accounts (BaseLevel)" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: Accounts (BaseLevel)" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Accounts to only update the base level account. The parent hierarchy is manually build and not to be touched by etl.]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[SELECT
@@ -61,7 +61,7 @@ ON DimGeneralLedgerAccount.GeneralLedgerAccountGroupId = DimGeneralLedgerAccount
         <alias name="LoadFactor" origin="LoadFactor">5</alias>
       </alias_map>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: Accounts (All Levels)" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: Accounts (All Levels)" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW Raw" />
       <query><![CDATA[SELECT
     [:parent]
@@ -90,7 +90,7 @@ From DataWarehouseRawData.dbo.JEDOX_ACCOUNTS_ATTRIBUTES
         <alias origin="Name">4</alias>
       </alias_map>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: BusDiv" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: BusDiv" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[SELECT DISTINCT 
 --, DimBusinessDivision2.id 
@@ -106,7 +106,7 @@ ORDER BY DimBusinessDivision2.code]]></query>
         <alias origin="description">3</alias>
       </alias_map>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: Company" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: Company" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Uncomplete - Build [Dim]:Company]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[SELECT  'All AP21 B Companies' AS AllCo
@@ -120,7 +120,7 @@ ORDER BY DimLegalEntity.Code]]></query>
         <alias origin="Description">3</alias>
       </alias_map>
     </extract>
-    <extract modified="1662447163802" name="ex-DW [Dim]: Currency" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: Currency" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[/* PAS Currency */
 SELECT DISTINCT
@@ -210,7 +210,7 @@ FROM (
 INNER JOIN DimCurrency on GLBalance_GLMovement.Currency = DimCurrency.Code]]></query>
       <cache>false</cache>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: ProfCen (Retail)" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: ProfCen (Retail)" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[NOT COMPLETE - requires update from DW
 Build two hierarchies:
 1. ProfCen Ty by BusDiv
@@ -332,7 +332,7 @@ ORDER BY DimProfitCentre.[Code]]]></query>
         <alias origin="ExternalPartner">39</alias>
       </alias_map>
     </extract>
-    <extract modified="1662446820992" name="ex-Jedox [Attr]: (ProfCenType) Excl-OutLets and Ecomm" type="ConstantTree" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-Jedox [Attr]: (ProfCenType) Excl-OutLets and Ecomm" type="ConstantTree" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Load only NonLegacyStore attribute = 1]]></comment>
       <data>
         <header>
@@ -361,7 +361,7 @@ ORDER BY DimProfitCentre.[Code]]]></query>
         </row>
       </data>
     </extract>
-    <extract modified="1662446820992" name="ex-Jedox [Attr]: (ProfCenType) Ecomm" type="ConstantTree" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-Jedox [Attr]: (ProfCenType) Ecomm" type="ConstantTree" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Load only NonLegacyStore attribute = 1]]></comment>
       <data>
         <header>
@@ -378,7 +378,7 @@ ORDER BY DimProfitCentre.[Code]]]></query>
         </row>
       </data>
     </extract>
-    <extract modified="1662446820992" name="ex-Jedox [Attr]: (ProfCenType) OutLets" type="ConstantTree" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-Jedox [Attr]: (ProfCenType) OutLets" type="ConstantTree" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Load only NonLegacyStore attribute = 1]]></comment>
       <data>
         <header>
@@ -395,7 +395,7 @@ ORDER BY DimProfitCentre.[Code]]]></query>
         </row>
       </data>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: ProfCen (Non-Retail)" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: ProfCen (Non-Retail)" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[NOT COMPLETE - requires update from DW
 Build two hierarchies:
 1. ProfCen Ty by BusDiv
@@ -424,7 +424,7 @@ ORDER BY DimProfitCentre.[Code]]]></query>
         <alias origin="BusDevDesc">6</alias>
       </alias_map>
     </extract>
-    <extract name="ex-Jedox [Dim]: Store (Hierarchy1)" type="Dimension" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Dim]: Store (Hierarchy1)" type="Dimension" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query>
         <dimension name="Profit-Cost Centre">
@@ -433,7 +433,7 @@ ORDER BY DimProfitCentre.[Code]]]></query>
       </query>
       <attributesMode>standardAttributes</attributesMode>
     </extract>
-    <extract name="ex-Jedox [Dim]: Store (Hierarchy2)" type="Dimension" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Dim]: Store (Hierarchy2)" type="Dimension" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query>
         <dimension name="Profit-Cost Centre">
@@ -442,7 +442,7 @@ ORDER BY DimProfitCentre.[Code]]]></query>
       </query>
       <attributesMode>standardAttributes</attributesMode>
     </extract>
-    <extract name="ex-Jedox [Dim]: Store (Hierarchy3)" type="Dimension" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Dim]: Store (Hierarchy3)" type="Dimension" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query>
         <dimension name="Profit-Cost Centre">
@@ -451,7 +451,7 @@ ORDER BY DimProfitCentre.[Code]]]></query>
       </query>
       <attributesMode>standardAttributes</attributesMode>
     </extract>
-    <extract modified="1662446820992" name="Store [By Area Manager]" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="Store [By Area Manager]" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[DECLARE @ReportingRetailWeek INT = (SELECT ConfigurationValue from DataWarehouse.dbo.SysConfiguration WHERE ConfigurationKey = 'ReportingRetailWeek')
 DECLARE @ReportingRetailYear INT = (SELECT ConfigurationValue from DataWarehouse.dbo.SysConfiguration Where ConfigurationKey ='ReportingRetailYear')
@@ -741,7 +741,7 @@ ORDER BY MatWarehouse.AreaManagerName, MatWarehouse.ProfitCentreCode
         <alias origin="CloseDate">11</alias>
       </alias_map>
     </extract>
-    <extract modified="1662446820992" name="ex-Jedox [Cube]: Period LTM Calendar" type="Cube" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-Jedox [Cube]: Period LTM Calendar" type="Cube" modifiedBy="ONEPAS\richards">
       <connection nameref="Jedox" />
       <query celltype="only_string" drillthrough="false" onlyBasisAsDefault="true" useRules="true" zeroSuppressionType="excludeEmpty">
         <dimensions>
@@ -762,7 +762,7 @@ ORDER BY MatWarehouse.AreaManagerName, MatWarehouse.ProfitCentreCode
         <cube name="Period Calender" />
       </query>
     </extract>
-    <extract modified="1662446820992" name="Wholesale Products By Category" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="Wholesale Products By Category" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract products from Jets and PAS data warehouses. The source table in both instances is MATPRODUCT]]></comment>
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT  DimBusinessDivision.FinancialBusinessDivisionDescription + ' - by Category' AS'Division' 
@@ -784,7 +784,7 @@ ORDER BY Division, Category, Product]]></query>
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662446820992" name="Season" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="Season" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT DimSeason.Code 
   ,DimSeason.Name
@@ -803,7 +803,7 @@ ORDER BY Code]]></query>
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662446820992" name="SizeRange" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="SizeRange" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS 'Division' 
   ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(NULLIF(MatProduct.SizeRange,''), 'Size - NA') AS 'SizeRange' 
@@ -818,7 +818,7 @@ ORDER BY Division, SizeRange]]></query>
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662446820992" name="Story" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="Story" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS Division 
   ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.StoryCode, 'StoryNA') StoryCode 
@@ -840,7 +840,7 @@ ORDER BY Division
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662446820992" name="Wholesale Products by Department" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="Wholesale Products by Department" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract products from Jets and PAS data warehouses. The source table in both instances is MATPRODUCT]]></comment>
       <connection nameref="PAS-DW" />
       <query><![CDATA[/* PAS Product 
@@ -871,7 +871,7 @@ ORDER BY Division, Department, Category, Product]]></query>
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662446820992" name="Colour" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="Colour" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT MatProduct.BusinessDivisionName AS 'BusinessDivision' 
  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.ColourTypeName, 'Colour - NA') AS 'Colour' 
@@ -894,7 +894,7 @@ ORDER BY BusinessDivision
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662446820992" name="Wholesale Customers" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="Wholesale Customers" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract wholesale customers from DimCustomer]]></comment>
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS Division 
@@ -968,7 +968,7 @@ ORDER BY Division
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662446820992" name="ex-Jedox [Dim]: Accounts (Jedox - Balance Sheet Hierarchy To Consol Level)" type="Dimension" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-Jedox [Dim]: Accounts (Jedox - Balance Sheet Hierarchy To Consol Level)" type="Dimension" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract from root to consolidations and not base level.
 This is for the "main" hierarchy of Balance Sheet and P&L]]></comment>
       <connection nameref="Jedox" />
@@ -979,7 +979,7 @@ This is for the "main" hierarchy of Balance Sheet and P&L]]></comment>
       </query>
       <attributesMode>standardAttributes</attributesMode>
     </extract>
-    <extract name="ex-Jedox [Dim]: Accounts (Jedox - Alternate Hierarchies)" type="Dimension" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <extract name="ex-Jedox [Dim]: Accounts (Jedox - Alternate Hierarchies)" type="Dimension" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract from root to consolidations only not base level]]></comment>
       <connection nameref="Jedox" />
       <query>
@@ -991,7 +991,7 @@ This is for the "main" hierarchy of Balance Sheet and P&L]]></comment>
       </query>
       <attributesMode>standardAttributes</attributesMode>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: StyleColour - Full Hierarchy" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: StyleColour - Full Hierarchy" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[SELECT DISTINCT
   CAST(COALESCE(BusinessDivisionTranslation.FinancialBusinessDivisionDescription, MatProduct.BusinessDivisionName) AS VARCHAR(255)) AS Division,
@@ -1061,7 +1061,7 @@ ORDER BY
         <alias origin="StyleColourSeason">7</alias>
       </alias_map>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: Size" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: Size" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[SELECT DISTINCT
   'AllSizes' AllSizes,
@@ -1079,7 +1079,7 @@ ORDER BY
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: Jets StyleColour PC" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: Jets StyleColour PC" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[SELECT
 1 Sort,
@@ -1141,7 +1141,7 @@ WHERE IsActive = 1
         <alias origin="StyleSeasonCode">5</alias>
       </alias_map>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: PAS StyleColour PC" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: PAS StyleColour PC" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[SELECT
   1 AS Sort,
@@ -1290,7 +1290,7 @@ ORDER BY
         <alias origin="StyleColourSeason">9</alias>
       </alias_map>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: Designworks StyleColour PC" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: Designworks StyleColour PC" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[SELECT
   1 AS Sort,
@@ -1381,7 +1381,7 @@ ORDER BY
         <alias origin="StyleColourSeason">9</alias>
       </alias_map>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: PAS StyleColour PC - 2019" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: PAS StyleColour PC - 2019" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[IF OBJECT_ID('tempdb.dbo.#Products') IS NOT NULL
 	DROP TABLE #Products
@@ -1547,7 +1547,7 @@ DROP TABLE #Products]]></query>
         <alias origin="StyleColourSeason">9</alias>
       </alias_map>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: Designworks StyleColour PC - 2019" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: Designworks StyleColour PC - 2019" type="Relational" modifiedBy="ONEPAS\richards">
       <connection nameref="DW" />
       <query><![CDATA[IF OBJECT_ID('tempdb.dbo.#Products') IS NOT NULL
 	DROP TABLE #Products
@@ -1713,7 +1713,7 @@ DROP TABLE #Products]]></query>
         <alias origin="StyleColourSeason">9</alias>
       </alias_map>
     </extract>
-    <extract modified="1662446820992" name="ex-Jedox [Dim]: Accounts (Jedox - P&amp;L Hierarchy to Consol Level)" type="Dimension" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-Jedox [Dim]: Accounts (Jedox - P&amp;L Hierarchy to Consol Level)" type="Dimension" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract from root to consolidations and not base level.
 This is for the "main" hierarchy of Balance Sheet and P&L]]></comment>
       <connection nameref="Jedox" />
@@ -1724,7 +1724,7 @@ This is for the "main" hierarchy of Balance Sheet and P&L]]></comment>
       </query>
       <attributesMode>standardAttributes</attributesMode>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: Accounts (AP21 Levle 0 &amp; 1)" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: Accounts (AP21 Levle 0 &amp; 1)" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Accounts to only update the base level account. The parent hierarchy is manually build and not to be touched by etl.]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[SELECT
@@ -1749,7 +1749,7 @@ ON DimGeneralLedgerAccount.GeneralLedgerAccountGroupId = DimGeneralLedgerAccount
         <alias name="LoadFactor" origin="LoadFactor">7</alias>
       </alias_map>
     </extract>
-    <extract modified="1662446820992" name="ex-DW [Dim]: Accounts" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: Accounts" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Accounts to only update the base level account. The parent hierarchy is manually build and not to be touched by etl.]]></comment>
       <connection nameref="DW" />
       <query><![CDATA[SELECT
@@ -1773,7 +1773,7 @@ ORDER BY
         <alias name="LoadFactor" origin="LoadFactor">5</alias>
       </alias_map>
     </extract>
-    <extract modified="1662446820992" name="Wholesale Customers by Fashion Grade" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="Wholesale Customers by Fashion Grade" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Designworks wholesale customers grouped by fashion grade]]></comment>
       <connection nameref="PAS-DW" />
       <query><![CDATA[SELECT DISTINCT
@@ -1798,7 +1798,7 @@ ORDER BY
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662447146531" name="ex-DW [Dim]: Currency - BC" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662520611005" name="ex-DW [Dim]: Currency - BC" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Joins the 2 currency dimensions from 
 1. DataWarehouse.dbo.DimCurrency
 2. BrandCollectiveDataWarehouse.dbo.DimCurrency]]></comment>
@@ -1902,9 +1902,22 @@ UNION ALL
 INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
       <cache>false</cache>
     </extract>
+    <extract modified="1662521587963" name="ex-DW [Dim]: Brand - BC" type="Relational" modifiedBy="ONEPAS\richards">
+      <comment><![CDATA[Extract the brands from the Brand Collective Data Warehouse to be loaded into Jedox Brand dimension]]></comment>
+      <connection nameref="DWBC" />
+      <query><![CDATA[SELECT
+  'Total Brand Collective Brand' TotalBrand,
+  Code,
+  Name [Brand Name]
+FROM BrandCollectiveDataWarehouse.dbo.DimBrand
+ORDER
+BY
+  DimBrand.Code]]></query>
+      <cache>false</cache>
+    </extract>
   </extracts>
   <transforms>
-    <transform modified="1662446820992" name="tr-PC [Dim]:Accounts (AllLevels)" type="TreePC" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-PC [Dim]:Accounts (AllLevels)" type="TreePC" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tr-TU [Dim]:Accounts (All Levels)" />
       </sources>
@@ -1928,7 +1941,7 @@ INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
         </attributes>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-PC [Dim]: Account (BaseLevel)" type="TreePC" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-PC [Dim]: Account (BaseLevel)" type="TreePC" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[preparing the raw extract from DW into a PC format.]]></comment>
       <sources>
         <source nameref="ex-DW [Dim]: Accounts (BaseLevel)" />
@@ -1953,14 +1966,14 @@ INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
         </attributes>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tr-TU [Dim]:Accounts (All Levels)" type="TableUnion" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-TU [Dim]:Accounts (All Levels)" type="TableUnion" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Join two account extracts. 1-Consolidations From the manually built [Dim]:Accounts , 2-Baselevels From the auto updating DW]]></comment>
       <sources>
         <source nameref="tf-PC [Dim]: Account (BaseLevel)" />
         <source nameref="ex-DW [Dim]: Accounts (All Levels)" />
       </sources>
     </transform>
-    <transform modified="1662446820992" name="tf-FH [Dim]: BusDiv" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FH [Dim]: BusDiv" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: BusDiv" />
       </sources>
@@ -1983,7 +1996,7 @@ INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
         </levels>
       </target>
     </transform>
-    <transform name="tf-FH [Dim]: Company" type="TreeFH" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FH [Dim]: Company" type="TreeFH" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Define the hierarchy of the [Dim]: Company]]></comment>
       <sources>
         <source nameref="ex-DW [Dim]: Company" />
@@ -2012,7 +2025,7 @@ INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
         </attributes>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-FH [Dim]: Currency" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FH [Dim]: Currency" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-TJ [Dim]:Currency" />
       </sources>
@@ -2032,7 +2045,7 @@ INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
         </levels>
       </target>
     </transform>
-    <transform name="tf-TJ [Attr]: ProfCenType Excl-Outlets and Ecomm" type="TableJoin" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <transform name="tf-TJ [Attr]: ProfCenType Excl-Outlets and Ecomm" type="TableJoin" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: ProfCen (Retail)" />
         <source nameref="ex-Jedox [Attr]: (ProfCenType) Excl-OutLets and Ecomm" />
@@ -2048,7 +2061,7 @@ INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
         </join>
       </joins>
     </transform>
-    <transform name="tf-TJ [Attr]: ProfCenType Outlets" type="TableJoin" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <transform name="tf-TJ [Attr]: ProfCenType Outlets" type="TableJoin" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: ProfCen (Retail)" />
         <source nameref="ex-Jedox [Attr]: (ProfCenType) OutLets" />
@@ -2064,7 +2077,7 @@ INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
         </join>
       </joins>
     </transform>
-    <transform name="tf-FH [Dim]: ProfCen (Hierarchy2)" type="TreeFH" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FH [Dim]: ProfCen (Hierarchy2)" type="TreeFH" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[This is to build the second hierarchy of [Dim]: ProfCen hierarchies:
 1. ProfCen Ty by BusDiv
 2. BusDiv by ProfCen Ty]]></comment>
@@ -2102,7 +2115,7 @@ INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
         </levels>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tr-FT [Dim]: ProfCen (Hierarchy2) Outlets" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-FT [Dim]: ProfCen (Hierarchy2) Outlets" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Business division concatinated to (All Stores) to build the required format for Hierarchy2 of the [Dim]:profit/Cost Center]]></comment>
       <sources>
         <source nameref="tf-TJ [Attr]: ProfCenType Outlets" />
@@ -2251,7 +2264,7 @@ INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tr-FT [Dim]: ProfCen (Hierarchy2) Ecomm" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-FT [Dim]: ProfCen (Hierarchy2) Ecomm" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Business division concatinated to (All Stores) to build the required format for Hierarchy2 of the [Dim]:profit/Cost Center]]></comment>
       <sources>
         <source nameref="tf-TJ [Attr]: ProfCenType Ecomm" />
@@ -2410,7 +2423,7 @@ INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tr-FT [Dim]: ProfCen (Hierarchy2) ExOutlets and Ecomm" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-FT [Dim]: ProfCen (Hierarchy2) ExOutlets and Ecomm" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Business division concatinated to (All Stores) to build the required format for Hierarchy2 of the [Dim]:profit/Cost Center]]></comment>
       <sources>
         <source nameref="tf-TJ [Attr]: ProfCenType Excl-Outlets and Ecomm" />
@@ -2580,14 +2593,14 @@ INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-TU [Dim]:ProfCen (Hierarchy 2)" type="TableUnion" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <transform name="tf-TU [Dim]:ProfCen (Hierarchy 2)" type="TableUnion" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tr-FT [Dim]: ProfCen (Hierarchy2) Outlets" />
         <source nameref="tr-FT [Dim]: ProfCen (Hierarchy2) Ecomm" />
         <source nameref="tr-FT [Dim]: ProfCen (Hierarchy2) ExOutlets and Ecomm" />
       </sources>
     </transform>
-    <transform name="tf-TJ [Attr]: ProfCenType Ecomm" type="TableJoin" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <transform name="tf-TJ [Attr]: ProfCenType Ecomm" type="TableJoin" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Attr]: (ProfCenType) Ecomm" />
         <source nameref="ex-DW [Dim]: ProfCen (Retail)" />
@@ -2603,7 +2616,7 @@ INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
         </join>
       </joins>
     </transform>
-    <transform modified="1662446820992" name="tr-FT [Dim]: ProfCen (Non-Retail)" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-FT [Dim]: ProfCen (Non-Retail)" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: ProfCen (Non-Retail)" />
       </sources>
@@ -2647,7 +2660,7 @@ INNER JOIN DimCurrency on Query.Currency = DimCurrency.Code]]></query>
         </coordinates>
       </target>
     </transform>
-    <transform name="tf-FH [Dim]: ProfCen (Non-Retail)" type="TreeFH" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <transform name="tf-FH [Dim]: ProfCen (Non-Retail)" type="TreeFH" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Build two hierarchies:
 Hierarchy1. ProfCen Ty by BusDiv
 Hierarchy2. BusDiv by ProfCen Ty]]></comment>
@@ -2684,7 +2697,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </levels>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tr-FT [Dim]: ProfCen (Retail)" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-FT [Dim]: ProfCen (Retail)" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: ProfCen (Retail)" />
       </sources>
@@ -2845,7 +2858,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-FH [Dim]: ProfCen (Retail)" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FH [Dim]: ProfCen (Retail)" type="TreeFH" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Build two hierarchies:
 Hierarchy1. ProfCen Ty by BusDiv
 Hierarchy2. BusDiv by ProfCen Ty]]></comment>
@@ -3024,7 +3037,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </levels>
       </target>
     </transform>
-    <transform name="tr-TJ [Dim]: Store" type="TreeJoin" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <transform name="tr-TJ [Dim]: Store" type="TreeJoin" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Joins two hierarchies under one parent]]></comment>
       <sources>
         <source nameref="ex-Jedox [Dim]: Store (Hierarchy1)" root="All Stores" />
@@ -3032,7 +3045,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <source nameref="ex-Jedox [Dim]: Store (Hierarchy3)" />
       </sources>
     </transform>
-    <transform modified="1662446820992" name="tr-FH [Dim]: Store - Area Manager" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-FH [Dim]: Store - Area Manager" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tf-FT [Dim]: Store - Area Manager" />
       </sources>
@@ -3070,7 +3083,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </levels>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-FT [Dim]: Store - Area Manager" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FT [Dim]: Store - Area Manager" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Store [By Area Manager]" />
       </sources>
@@ -3091,7 +3104,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform name="tr- FH [Dim]: LTM Period" type="TreeFH" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <transform name="tr- FH [Dim]: LTM Period" type="TreeFH" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tr-FT [Dim]: LTM Period" />
       </sources>
@@ -3104,7 +3117,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes />
       </target>
     </transform>
-    <transform name="tr-FT [Dim]: LTM Period" type="FieldTransform" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <transform name="tr-FT [Dim]: LTM Period" type="FieldTransform" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-Jedox [Cube]: Period LTM Calendar" />
       </sources>
@@ -3116,7 +3129,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-FH [Dim]: Colour" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FH [Dim]: Colour" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Colour" />
       </sources>
@@ -3135,7 +3148,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes />
       </target>
     </transform>
-    <transform modified="1662446820992" name="tr-FT [Product By Category] - UpperLower Case" type="FieldTransform" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-FT [Product By Category] - UpperLower Case" type="FieldTransform" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Wholesale Products By Category" />
       </sources>
@@ -3164,7 +3177,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </coordinates>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-FH [Dim]: Product By Category" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FH [Dim]: Product By Category" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="tr-FT [Product By Category] - UpperLower Case" />
       </sources>
@@ -3186,7 +3199,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes />
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-FH [Dim]: Customer" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FH [Dim]: Customer" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Wholesale Customers" />
       </sources>
@@ -3259,7 +3272,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </levels>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-FH [Dim]: Season" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FH [Dim]: Season" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Season" />
       </sources>
@@ -3290,7 +3303,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </levels>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-FH [Dim]: Story" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FH [Dim]: Story" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Story" />
       </sources>
@@ -3320,7 +3333,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </levels>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-FH [Dim]: SizeRange" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FH [Dim]: SizeRange" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="SizeRange" />
       </sources>
@@ -3339,7 +3352,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes />
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-FH [Dim]: Product by Department" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FH [Dim]: Product by Department" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Wholesale Products by Department" />
       </sources>
@@ -3364,7 +3377,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes />
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-FH [Dim]: StyleColour - Full Hierarchy" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FH [Dim]: StyleColour - Full Hierarchy" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: StyleColour - Full Hierarchy" />
       </sources>
@@ -3403,7 +3416,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </levels>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-FH [Dim]: Size" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FH [Dim]: Size" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: Size" />
       </sources>
@@ -3419,7 +3432,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes />
       </target>
     </transform>
-    <transform modified="1662446820992" name="tr-PC [Dim]: StyleColour - Jets PC" type="TreePC" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-PC [Dim]: StyleColour - Jets PC" type="TreePC" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: Jets StyleColour PC" />
       </sources>
@@ -3443,7 +3456,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </attributes>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tr-PC [Dim]: StyleColour - PAS PC" type="TreePC" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-PC [Dim]: StyleColour - PAS PC" type="TreePC" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: PAS StyleColour PC" />
       </sources>
@@ -3479,7 +3492,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </attributes>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tr-PC [Dim]: StyleColour - Designworks PC" type="TreePC" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-PC [Dim]: StyleColour - Designworks PC" type="TreePC" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: Designworks StyleColour PC" />
       </sources>
@@ -3515,7 +3528,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </attributes>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tr-PC [Dim]: StyleColour - PAS PC - 2019" type="TreePC" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-PC [Dim]: StyleColour - PAS PC - 2019" type="TreePC" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: PAS StyleColour PC - 2019" />
       </sources>
@@ -3551,7 +3564,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </attributes>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tr-PC [Dim]: StyleColour - Designworks PC - 2019" type="TreePC" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tr-PC [Dim]: StyleColour - Designworks PC - 2019" type="TreePC" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: Designworks StyleColour PC - 2019" />
       </sources>
@@ -3587,7 +3600,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </attributes>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-PC [Dim]: Accounts" type="TreePC" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-PC [Dim]: Accounts" type="TreePC" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[preparing the raw extract from DW into a PC format.]]></comment>
       <sources>
         <source nameref="ex-DW [Dim]: Accounts" />
@@ -3612,7 +3625,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </attributes>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-FH [Dim]: Customer by Fashion Grade" type="TreeFH" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-FH [Dim]: Customer by Fashion Grade" type="TreeFH" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="Wholesale Customers by Fashion Grade" />
       </sources>
@@ -3638,7 +3651,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         </levels>
       </target>
     </transform>
-    <transform modified="1662446820992" name="tf-TJ [Dim]:Currency" type="TableJoin" modifiedBy="ONEPAS\richards">
+    <transform modified="1662520611005" name="tf-TJ [Dim]:Currency" type="TableJoin" modifiedBy="ONEPAS\richards">
       <sources>
         <source nameref="ex-DW [Dim]: Currency" />
         <source nameref="ex-DW [Dim]: Currency - BC" />
@@ -3668,9 +3681,32 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
       </target>
       <cache>false</cache>
     </transform>
+    <transform modified="1662521609273" name="tf-FH [Dim]: Brand" type="TreeFH" modifiedBy="ONEPAS\richards">
+      <sources>
+        <source nameref="ex-DW [Dim]: Brand - BC" />
+      </sources>
+      <target>
+        <attributes>
+          <attribute name="Brand Name" type="string" />
+        </attributes>
+        <levels>
+          <level>
+            <input nameref="TotalBrand" />
+          </level>
+          <level>
+            <input nameref="Code" />
+            <attributes>
+              <attribute name="Brand Name">
+                <input nameref="Brand Name" />
+              </attribute>
+            </attributes>
+          </level>
+        </levels>
+      </target>
+    </transform>
   </transforms>
   <loads>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Financials]: Account (All Levels)" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Financials]: Account (All Levels)" type="Dimension" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Account load only at base levels. Keep the top levels untouched since they are manually created through excel spreedsheet.]]></comment>
       <source nameref="tf-PC [Dim]: Accounts" />
       <connection nameref="Jedox" />
@@ -3680,7 +3716,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="insert" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim-Financials]: BusDiv" type="Dimension" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim-Financials]: BusDiv" type="Dimension" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Loads business division code to [Dim]: Business Division]]></comment>
       <source nameref="tf-FH [Dim]: BusDiv" />
       <connection nameref="Jedox" />
@@ -3690,7 +3726,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim-Financials]: Company" type="Dimension" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim-Financials]: Company" type="Dimension" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Company" />
       <connection nameref="Jedox" />
       <dimension name="Company">
@@ -3699,7 +3735,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim-Financials]: Currency" type="Dimension" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim-Financials]: Currency" type="Dimension" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Currency" />
       <connection nameref="Jedox" />
       <dimension name="Currency">
@@ -3708,7 +3744,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim-Financials]: ProfCen (Hierarchy2)" type="Dimension" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim-Financials]: ProfCen (Hierarchy2)" type="Dimension" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Build two hierarchies:
 1. ProfCen Ty by BusDiv
 2. BusDiv by ProfCen Ty]]></comment>
@@ -3720,7 +3756,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="inactive" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim-Financials]: ProfCen (Non-Retail)" type="Dimension" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim-Financials]: ProfCen (Non-Retail)" type="Dimension" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Build two hierarchies:
 1. ProfCen Ty by BusDiv
 2. BusDiv by ProfCen Ty]]></comment>
@@ -3732,7 +3768,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="insert" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim-Financials]: ProfCen (Retail)" type="Dimension" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim-Financials]: ProfCen (Retail)" type="Dimension" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Build two hierarchies:
 1. ProfCen Ty by BusDiv
 2. BusDiv by ProfCen Ty]]></comment>
@@ -3744,7 +3780,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="insert" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim-Retail]: Store" type="Dimension" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim-Retail]: Store" type="Dimension" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <source nameref="tr-TJ [Dim]: Store" />
       <connection nameref="Jedox" />
       <dimension name="Store">
@@ -3753,7 +3789,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="insert" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Retail]: Store by Area Manager" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Retail]: Store by Area Manager" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tr-FH [Dim]: Store - Area Manager" />
       <connection nameref="Jedox" />
       <dimension name="Store">
@@ -3762,7 +3798,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim-Retail LTM]: LTM Period" type="Dimension" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim-Retail LTM]: LTM Period" type="Dimension" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <source nameref="tr- FH [Dim]: LTM Period" />
       <connection nameref="Jedox" />
       <dimension name="LTM Period">
@@ -3771,7 +3807,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load name="ld-Jedox [Dim-Financial LTM]: LTM Period" type="Dimension" modified="1662446820992" modifiedBy="ONEPAS\richards">
+    <load name="ld-Jedox [Dim-Financial LTM]: LTM Period" type="Dimension" modified="1662520611005" modifiedBy="ONEPAS\richards">
       <source nameref="tr- FH [Dim]: LTM Period" />
       <connection nameref="Jedox" />
       <dimension name="LTM Period">
@@ -3780,7 +3816,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Wholesale]: ProductByDepartment" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Wholesale]: ProductByDepartment" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Product by Department" />
       <connection nameref="Jedox" />
       <dimension name="Product">
@@ -3789,7 +3825,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="insert" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Wholesale]: ProductByCategory" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Wholesale]: ProductByCategory" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Product By Category" />
       <connection nameref="Jedox" />
       <dimension name="Product">
@@ -3798,7 +3834,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="inactive" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Wholesale]: WholesaleCustomer" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Wholesale]: WholesaleCustomer" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Customer" />
       <connection nameref="Jedox" />
       <dimension name="Wholesale Customer">
@@ -3807,7 +3843,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Wholesale]: Colour" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Wholesale]: Colour" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Colour" />
       <connection nameref="Jedox" />
       <dimension name="Colour">
@@ -3816,7 +3852,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="inactive" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Wholesale]: Season" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Wholesale]: Season" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Season" />
       <connection nameref="Jedox" />
       <dimension name="Season">
@@ -3825,7 +3861,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Wholesale]: SizeRange" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Wholesale]: SizeRange" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: SizeRange" />
       <connection nameref="Jedox" />
       <dimension name="SizeRange">
@@ -3834,7 +3870,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="insert" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Wholesale]: Story" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Wholesale]: Story" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Story" />
       <connection nameref="Jedox" />
       <dimension name="Story">
@@ -3843,7 +3879,7 @@ Hierarchy2. BusDiv by ProfCen Ty]]></comment>
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-DW [Dim]: Account (Jedox Balance Sheet)" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-DW [Dim]: Account (Jedox Balance Sheet)" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Add (uses Insert mode) to the table JEDOX_ACCOUNTS_ATTRIBUTES
 This will add from Balance Sheet down to bottom CONSOL level. 
 Does not load level 0/bottom level accounts]]></comment>
@@ -3852,7 +3888,7 @@ Does not load level 0/bottom level accounts]]></comment>
       <mode>insert</mode>
       <table name="JEDOX_ACCOUNTS_ATTRIBUTES" schema="dbo" />
     </load>
-    <load modified="1662446820992" name="ld-DW [Dim]: Account (Jedox Alternate Hierarchies)" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-DW [Dim]: Account (Jedox Alternate Hierarchies)" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[APPEND to the table that houses the account dimension in Jedox.
 This is the second pass that loads all the alternate structures in their entirety. These will be reloaded when integrated with the accounts coming from AP21.]]></comment>
       <source format="pcwa" nameref="ex-Jedox [Dim]: Accounts (Jedox - Alternate Hierarchies)" />
@@ -3860,7 +3896,7 @@ This is the second pass that loads all the alternate structures in their entiret
       <mode>insert</mode>
       <table aggregate="true" name="JEDOX_ACCOUNTS_ATTRIBUTES" schema="dbo" />
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Stock]: StyleColour - Full Hierarchy" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Stock]: StyleColour - Full Hierarchy" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: StyleColour - Full Hierarchy" />
       <connection nameref="Jedox" />
       <dimension name="StyleColour">
@@ -3869,7 +3905,7 @@ This is the second pass that loads all the alternate structures in their entiret
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Stock]: Size" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Stock]: Size" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tf-FH [Dim]: Size" />
       <connection nameref="Jedox" />
       <dimension name="Size">
@@ -3878,7 +3914,7 @@ This is the second pass that loads all the alternate structures in their entiret
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Stock]: Style Colour - Jets PC" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Stock]: Style Colour - Jets PC" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tr-PC [Dim]: StyleColour - Jets PC" />
       <connection nameref="Jedox" />
       <dimension name="StyleColour">
@@ -3887,7 +3923,7 @@ This is the second pass that loads all the alternate structures in their entiret
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Stock]: Style Colour - PAS PC" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Stock]: Style Colour - PAS PC" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tr-PC [Dim]: StyleColour - PAS PC" />
       <connection nameref="Jedox" />
       <dimension name="StyleColour">
@@ -3896,7 +3932,7 @@ This is the second pass that loads all the alternate structures in their entiret
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Stock]: Style Colour - Designworks PC" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Stock]: Style Colour - Designworks PC" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tr-PC [Dim]: StyleColour - Designworks PC" />
       <connection nameref="Jedox" />
       <dimension name="StyleColour">
@@ -3905,7 +3941,7 @@ This is the second pass that loads all the alternate structures in their entiret
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Stock]: Style Colour - PAS PC - 2019" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Stock]: Style Colour - PAS PC - 2019" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tr-PC [Dim]: StyleColour - PAS PC - 2019" />
       <connection nameref="Jedox" />
       <dimension name="StyleColour">
@@ -3914,7 +3950,7 @@ This is the second pass that loads all the alternate structures in their entiret
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Stock]: Style Colour - Designworks PC - 2019" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Stock]: Style Colour - Designworks PC - 2019" type="Dimension" modifiedBy="ONEPAS\richards">
       <source nameref="tr-PC [Dim]: StyleColour - Designworks PC - 2019" />
       <connection nameref="Jedox" />
       <dimension name="StyleColour">
@@ -3923,7 +3959,7 @@ This is the second pass that loads all the alternate structures in their entiret
         <attributes mode="add" />
       </dimension>
     </load>
-    <load modified="1662446820992" name="ld-DW [Dim]: Account (Jedox P&amp;L)" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-DW [Dim]: Account (Jedox P&amp;L)" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Add (uses Insert mode) P&L hiearchy to the JEDOX_ACCOUNTS_ATTRIBUTES table
 This will add from P&L down to bottom CONSOL level. 
 Does not load level 0/bottom level accounts]]></comment>
@@ -3932,14 +3968,14 @@ Does not load level 0/bottom level accounts]]></comment>
       <mode>insert</mode>
       <table name="JEDOX_ACCOUNTS_ATTRIBUTES" schema="dbo" />
     </load>
-    <load modified="1662446820992" name="ld-DW Reset JEDOX_ACCOUNTS_ATTRIBUTES" type="RelationalSQL" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-DW Reset JEDOX_ACCOUNTS_ATTRIBUTES" type="RelationalSQL" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Truncates and resets the Sequence identity column back to 1]]></comment>
       <connection nameref="DW Raw" />
       <query><![CDATA[TRUNCATE TABLE dbo.JEDOX_ACCOUNTS_ATTRIBUTES
 
 DBCC CHECKIDENT ('dbo.JEDOX_ACCOUNTS_ATTRIBUTES', RESEED, 1);]]></query>
     </load>
-    <load modified="1662446820992" name="ld-DW [Dim]: AP21 Level 0 &amp; 1" type="Relational" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-DW [Dim]: AP21 Level 0 &amp; 1" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Add (uses Insert mode) P&L hiearchy to the JEDOX_ACCOUNTS_ATTRIBUTES table
 This will add from P&L down to bottom CONSOL level. 
 Does not load level 0/bottom level accounts]]></comment>
@@ -3948,7 +3984,7 @@ Does not load level 0/bottom level accounts]]></comment>
       <mode>insert</mode>
       <table name="JEDOX_ACCOUNTS_ATTRIBUTES" schema="dbo" />
     </load>
-    <load modified="1662446820992" name="ld-Jedox [Dim-Wholesale]: Wholesale Customer by Fashion Grade" type="Dimension" modifiedBy="ONEPAS\richards">
+    <load modified="1662520611005" name="ld-Jedox [Dim-Wholesale]: Wholesale Customer by Fashion Grade" type="Dimension" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Creates the alternate hierarchy for Wholesale Customer by Fashion Grade for Designworks Customers]]></comment>
       <source nameref="tf-FH [Dim]: Customer by Fashion Grade" />
       <connection nameref="Jedox" />
@@ -3958,9 +3994,18 @@ Does not load level 0/bottom level accounts]]></comment>
         <attributes mode="insert" />
       </dimension>
     </load>
+    <load modified="1662521744013" name="ld-Jedox [Dim-Sales_Dim-BCFinancials]: Brand" type="Dimension" modifiedBy="ONEPAS\richards">
+      <source nameref="tf-FH [Dim]: Brand" />
+      <connection nameref="Jedox" />
+      <dimension generateSubsets="false" name="Brand">
+        <elements mode="add" />
+        <consolidations mode="add" />
+        <attributes mode="add" />
+      </dimension>
+    </load>
   </loads>
   <jobs>
-    <job modified="1662446820992" name="Dimension Load - Parallel" type="Parallel" modifiedBy="ONEPAS\richards">
+    <job modified="1662522122330" name="Dimension Load - Parallel" type="Parallel" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Dim-Wholesale]: Colour" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Wholesale]: Season" parallel="true" type="load" />
@@ -3969,6 +4014,7 @@ Does not load level 0/bottom level accounts]]></comment>
         <execution nameref="ld-Jedox [Dim-Financials]: Company" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Financials]: BusDiv" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Financials]: Currency" parallel="true" type="load" />
+        <execution nameref="ld-Jedox [Dim-Sales_Dim-BCFinancials]: Brand" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Financial LTM]: LTM Period" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Retail LTM]: LTM Period" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Stock]: Size" parallel="true" type="load" />
@@ -3977,7 +4023,7 @@ Does not load level 0/bottom level accounts]]></comment>
       </executions>
       <failStatus>error</failStatus>
     </job>
-    <job modified="1662446820992" name="Dimension Load - Sequencial" type="Standard" modifiedBy="ONEPAS\richards">
+    <job modified="1662520611005" name="Dimension Load - Sequencial" type="Standard" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Dim-Financials]: ProfCen (Non-Retail)" type="load" />
         <execution nameref="ld-Jedox [Dim-Financials]: ProfCen (Retail)" type="load" />
@@ -3997,7 +4043,7 @@ Does not load level 0/bottom level accounts]]></comment>
       </executions>
       <failStatus>error</failStatus>
     </job>
-    <job modified="1662446820992" name="Load Dimensions" type="Parallel" modifiedBy="ONEPAS\richards">
+    <job modified="1662520611005" name="Load Dimensions" type="Parallel" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="Dimension Load - Sequencial" parallel="true" type="job" />
         <execution nameref="Dimension Load - Parallel" parallel="true" type="job" />
