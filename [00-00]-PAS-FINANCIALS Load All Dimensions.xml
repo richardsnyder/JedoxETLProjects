@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="22.2" modified="1662524663139" modifiedBy="ONEPAS\richards" olapId="p23">
+<project name="[00-00]-PAS-FINANCIALS Load All Dimensions" version="22.2" modified="1662527622799" modifiedBy="ONEPAS\richards" olapId="p23">
   <headers>
     <header name="comment" modified="1662522307708" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Project description]]></comment>
@@ -9,15 +9,6 @@
   <connections>
     <connection modified="1662522307708" name="DW" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <global nameref="DW" />
-    </connection>
-    <connection modified="1662522307708" name="DW Raw" type="Sqlserver" modifiedBy="ONEPAS\richards">
-      <host>MTWSQL06</host>
-      <port>1433</port>
-      <database>DataWarehouseRawData</database>
-      <parameters>
-        <parameter name="integratedSecurity">true</parameter>
-        <parameter name="autoCommit">true</parameter>
-      </parameters>
     </connection>
     <connection modified="1662522307708" name="Jedox" type="JedoxOlap" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[This is the "main" Jedox connection that is used for all connections to the PAS-DEV database.]]></comment>
@@ -37,6 +28,9 @@
     </connection>
     <connection modified="1662522307708" name="DWBC" type="Sqlserver" modifiedBy="ONEPAS\richards">
       <global nameref="DWBC" />
+    </connection>
+    <connection modified="1662526622881" name="DW Raw" type="Sqlserver" modifiedBy="ONEPAS\richards">
+      <global nameref="DW Raw" />
     </connection>
   </connections>
   <extracts>
@@ -762,9 +756,9 @@ ORDER BY MatWarehouse.AreaManagerName, MatWarehouse.ProfitCentreCode
         <cube name="Period Calender" />
       </query>
     </extract>
-    <extract modified="1662522307708" name="Wholesale Products By Category" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662525249262" name="Wholesale Products By Category" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract products from Jets and PAS data warehouses. The source table in both instances is MATPRODUCT]]></comment>
-      <connection nameref="PAS-DW" />
+      <connection nameref="DW" />
       <query><![CDATA[SELECT DISTINCT  DimBusinessDivision.FinancialBusinessDivisionDescription + ' - by Category' AS'Division' 
   , DimBusinessDivision.FinancialBusinessDivisionDescription + ' -  '  + MatProduct.CategoryName AS 'Category' 
   , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + MatProduct.DepartmentName + ' - ' + MatProduct.CategoryName + ' - ' + MatProduct.SubCategoryName AS 'Product'
@@ -784,8 +778,8 @@ ORDER BY Division, Category, Product]]></query>
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662522307708" name="Season" type="Relational" modifiedBy="ONEPAS\richards">
-      <connection nameref="PAS-DW" />
+    <extract modified="1662525296804" name="Season" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
       <query><![CDATA[SELECT DISTINCT DimSeason.Code 
   ,DimSeason.Name
   ,DimSeason.Id 
@@ -803,8 +797,8 @@ ORDER BY Code]]></query>
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662522307708" name="SizeRange" type="Relational" modifiedBy="ONEPAS\richards">
-      <connection nameref="PAS-DW" />
+    <extract modified="1662525314212" name="SizeRange" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
       <query><![CDATA[SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS 'Division' 
   ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(NULLIF(MatProduct.SizeRange,''), 'Size - NA') AS 'SizeRange' 
 FROM DataWarehouse.dbo.MatProduct 
@@ -818,8 +812,8 @@ ORDER BY Division, SizeRange]]></query>
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662522307708" name="Story" type="Relational" modifiedBy="ONEPAS\richards">
-      <connection nameref="PAS-DW" />
+    <extract modified="1662525325780" name="Story" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
       <query><![CDATA[SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS Division 
   ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.StoryCode, 'StoryNA') StoryCode 
   ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.StoryName, 'StoryNameNA') StoryName 
@@ -840,9 +834,9 @@ ORDER BY Division
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662522307708" name="Wholesale Products by Department" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662525259951" name="Wholesale Products by Department" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract products from Jets and PAS data warehouses. The source table in both instances is MATPRODUCT]]></comment>
-      <connection nameref="PAS-DW" />
+      <connection nameref="DW" />
       <query><![CDATA[/* PAS Product 
    Division
           |
@@ -871,8 +865,8 @@ ORDER BY Division, Department, Category, Product]]></query>
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662522307708" name="Colour" type="Relational" modifiedBy="ONEPAS\richards">
-      <connection nameref="PAS-DW" />
+    <extract modified="1662525130055" name="Colour" type="Relational" modifiedBy="ONEPAS\richards">
+      <connection nameref="DW" />
       <query><![CDATA[SELECT DISTINCT MatProduct.BusinessDivisionName AS 'BusinessDivision' 
  , DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + COALESCE(MatProduct.ColourTypeName, 'Colour - NA') AS 'Colour' 
 FROM DataWarehouse.dbo.MatProduct
@@ -894,9 +888,9 @@ ORDER BY BusinessDivision
       </alias_map>
       <cache>false</cache>
     </extract>
-    <extract modified="1662522307708" name="Wholesale Customers" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662525148221" name="Wholesale Customers" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Extract wholesale customers from DimCustomer]]></comment>
-      <connection nameref="PAS-DW" />
+      <connection nameref="DW" />
       <query><![CDATA[SELECT DISTINCT DimBusinessDivision.FinancialBusinessDivisionDescription AS Division 
   ,DimBusinessDivision.FinancialBusinessDivisionDescription + ' - ' + MatCustomer.CustomerGroupName AS CustomerGroup 
   ,MatCustomer.CustomerCode AS CustomerCode 
@@ -1773,9 +1767,9 @@ ORDER BY
         <alias name="LoadFactor" origin="LoadFactor">5</alias>
       </alias_map>
     </extract>
-    <extract modified="1662522307708" name="Wholesale Customers by Fashion Grade" type="Relational" modifiedBy="ONEPAS\richards">
+    <extract modified="1662525238608" name="Wholesale Customers by Fashion Grade" type="Relational" modifiedBy="ONEPAS\richards">
       <comment><![CDATA[Designworks wholesale customers grouped by fashion grade]]></comment>
-      <connection nameref="PAS-DW" />
+      <connection nameref="DW" />
       <query><![CDATA[SELECT DISTINCT
   'Designworks By FashionGrade' Parent,
   COALESCE(MatCustomer.FashionGradeName, 'No Fashion Grade') AS FashionGrade,
@@ -4047,7 +4041,7 @@ Does not load level 0/bottom level accounts]]></comment>
     </load>
   </loads>
   <jobs>
-    <job modified="1662522307708" name="Dimension Load - Parallel" type="Parallel" modifiedBy="ONEPAS\richards">
+    <job modified="1662527622799" name="Dimension Load - Parallel" type="Parallel" modifiedBy="ONEPAS\richards">
       <executions>
         <execution nameref="ld-Jedox [Dim-Wholesale]: Colour" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Wholesale]: Season" parallel="true" type="load" />
@@ -4062,6 +4056,7 @@ Does not load level 0/bottom level accounts]]></comment>
         <execution nameref="ld-Jedox [Dim-Stock]: Size" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Stock]: Style Colour - PAS PC" parallel="true" type="load" />
         <execution nameref="ld-Jedox [Dim-Stock]: Style Colour - Designworks PC" parallel="true" type="load" />
+        <execution nameref="ld-Jedox [Dim-BCFinancials]: Channel" parallel="true" type="load" />
       </executions>
       <failStatus>error</failStatus>
     </job>
